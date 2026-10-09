@@ -120,7 +120,7 @@ var CACHE_KEY="prehlad_cache_v1";
 var state={view:localStorage.getItem("prehlad_view")||"ulohy",filter:localStorage.getItem("prehlad_filter")||"all",data:null,updated:null,open:{}};
 var DAYS=["Ne","Po","Ut","St","Št","Pi","So"];
 
-function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&","<":"<",">":">",'"':""","'":"&#39;"}[c]})}
 function linkify(s){return esc(s).replace(/(https?:\/\/[^\s<]+[^\s<.,;:)!?])/g,'<a href="$1" target="_blank" rel="noopener">$1</a>')}
 function unk(s){s=String(s||"").trim();return !s||/^\?/.test(s)}
 function val(s){return unk(s)?'<span class="unk">doplní Stefan</span>':esc(s)}
@@ -179,7 +179,7 @@ function refresh(){
   }).catch(function(e){
     var cached=!!state.data;state.failed=true;
     setStatus('<div class="msg">⚠️ Nepodarilo sa načítať živé dáta'+(cached?' — zobrazujem poslednú uloženú verziu.':'.')+
-      '<br><small>Skontroluj internet. Ak to trvá: tabuľka musí byť zdieľaná <b>Ktokoľvek s odkazom → Čiteľ</b> (v Google Tabuľke: Zdieľať → Všeobecný prístup).</small></div>');
+      '<br><small>Skontroluj internet. Ak to trvá: tabuľka musí byť zdieľaná <b>Ktokoľvek s odkazom → Čitateľ</b> (v Google Tabuľke: Zdieľať → Všeobecný prístup).</small></div>');
     render();
   }).then(function(){btn.classList.remove("spin")});
 }
