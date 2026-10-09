@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs><filter id="g" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+<pattern id="p" width="42.7" height="42.7" patternUnits="userSpaceOnUse"><path d="M42.7 0H0V42.7" fill="none" stroke="#101a30" stroke-width="2"/></pattern></defs>
+<rect width="512" height="512" fill="#0a0e1a"/><rect width="512" height="512" fill="url(#p)"/>
+<polygon points="256,97 415,256 256,415 97,256" fill="#3ad0ff" opacity=".7" filter="url(#g)"/>
+<polygon points="256,118 394,256 256,394 118,256" fill="#3ad0ff"/>
+<polygon points="256,194 318,256 256,318 194,256" fill="#0a0e1a"/>
+</svg>
