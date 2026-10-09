@@ -120,7 +120,7 @@ var CACHE_KEY="prehlad_cache_v1";
 var state={view:localStorage.getItem("prehlad_view")||"ulohy",filter:localStorage.getItem("prehlad_filter")||"all",data:null,updated:null,open:{}};
 var DAYS=["Ne","Po","Ut","St","Št","Pi","So"];
 
-function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&","<":"<",">":">",'"':""","'":"&#39;"}[c]})}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return"&#"+c.charCodeAt(0)+";"})}
 function linkify(s){return esc(s).replace(/(https?:\/\/[^\s<]+[^\s<.,;:)!?])/g,'<a href="$1" target="_blank" rel="noopener">$1</a>')}
 function unk(s){s=String(s||"").trim();return !s||/^\?/.test(s)}
 function val(s){return unk(s)?'<span class="unk">doplní Stefan</span>':esc(s)}
