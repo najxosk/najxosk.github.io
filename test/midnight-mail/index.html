@@ -86,6 +86,9 @@ footer{margin-top:16px;text-align:center;color:var(--muted);font:10px 'Courier N
 .shop-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
 .shop-row button{min-height:36px;padding:5px 10px;font-size:12px;white-space:nowrap}
 .swatch{letter-spacing:2px;font-size:14px}.ach{display:flex;gap:8px;padding:5px 0;font-size:13px;border-bottom:1px solid var(--line)}.ach.locked{opacity:.55}
+.stage{background:var(--stage,#111f20)}.pack{display:grid;grid-template-columns:minmax(0,240px) 1fr;gap:14px;align-items:center}.pack canvas{width:100%;border:1px solid var(--line);border-radius:4px}
+a.buy{display:inline-flex;align-items:center;min-height:36px;padding:6px 12px;background:var(--gold);color:#172322;text-decoration:none;font-weight:bold;font-size:13px}
+@media(max-width:740px){.pack{grid-template-columns:1fr}.head-btns{gap:4px}#music,#sound{font-size:10px;padding:3px 6px;min-height:32px}}
 .panel-note{font-size:12px;color:var(--muted)}#hint[hidden]{display:none}
 .newach{color:var(--gold);font-size:13px}
 @media(max-width:740px){.stamps{font-size:11px}.badge{min-width:19px;padding:0 3px;font-size:10.5px}.shop-row{font-size:11.5px}}
@@ -94,7 +97,7 @@ footer{margin-top:16px;text-align:center;color:var(--muted);font:10px 'Courier N
 <body>
 <noscript><div style="position:fixed;inset:0;z-index:99;background:#101b1b;color:#eae0c8;padding:32px;font:18px/1.6 Georgia,serif">This game needs JavaScript. Please open it in a web browser with JavaScript enabled.<br><br>Táto hra potrebuje JavaScript. Otvor ju v prehliadači so zapnutým JavaScriptom.</div></noscript>
 <main class="shell">
-<header><div><div class="eyebrow" data-i="Department of misplaced dreams|Oddelenie stratených snov"></div><h1 data-i="MIDNIGHT MAIL|POLNOČNÁ POŠTA"></h1></div><div class="head-btns"><span class="stamps" id="stampsHud"></span><button id="sound" class="small" aria-pressed="false"></button></div></header>
+<header><div><div class="eyebrow" data-i="Department of misplaced dreams|Oddelenie stratených snov"></div><h1 data-i="MIDNIGHT MAIL|POLNOČNÁ POŠTA"></h1></div><div class="head-btns"><span class="stamps" id="stampsHud"></span><button id="music" class="small" aria-pressed="true"></button><button id="sound" class="small" aria-pressed="false"></button></div></header>
 <section class="hud" data-aria="Game status|Stav hry">
 <div class="stat"><span data-i="ROUND TIME|ČAS KOLA"></span><strong id="time">36.0</strong></div>
 <div class="stat"><span data-i="SCORE|BODY"></span><strong id="score">0</strong></div>
@@ -148,13 +151,84 @@ function sanitize(o){
  const d=o.daily&&typeof o.daily==='object'?o.daily:{};
  return{stamps:int(o.stamps,0,1e7),night:int(o.night,1,999)||1,best:int(o.best,0,1e9),
   up:{time:int(up.time,0,3),life:int(up.life,0,2),hint:int(up.hint,0,3)},themes,theme:THEMES[o.theme]&&themes.includes(o.theme)?o.theme:'classic',ach,
-  daily:{date:/^\d{8}$/.test(d.date)?d.date:'',best:int(d.best,0,1e9)}};
+  daily:{date:/^\d{8}$/.test(d.date)?d.date:'',best:int(d.best,0,1e9)},pack:o.pack==='winter'?'winter':'classic'};
 }
 let prog;
 try{prog=sanitize(JSON.parse(localStorage.getItem(PKEY)||'{}'));const old=localStorage.getItem('polnocna-posta-best-v2');if(old)prog.best=Math.max(prog.best,int(old,0,1e9))}catch{storageAvailable=false;prog=sanitize({})}
 function save(){try{localStorage.setItem(PKEY,JSON.stringify(prog))}catch{storageAvailable=false}}
 function todayKey(){const d=new Date();return ''+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')}
-const colors=()=>THEMES[prog.theme].colors;
+const colors=()=>curTheme().colors;
+// ---------- build flag & theme pack ----------
+const SUPPORTER=false; // BUILD_FLAG: the supporter build sets this to true
+const SUPPORTER_URL='https://najxo.itch.io/midnight-mail-supporter-edition';
+const FLAKES=Array.from({length:46},(_,i)=>({x:(i*137.5)%640,y:(i*97.3)%540,r:1+(i%3)*.7,s:12+(i%5)*6}));
+const PACKS={
+ classic:{page:{bg:'#101b1b',gold:'#d4b779',stage:'#111f20',grad:'radial-gradient(ellipse at 50% 10%,#2e4140 0,transparent 65%)'},label:'#82948a',shelf:'#293b36',slot:'#192a2a',slotLine:'#3b504a',slotOn:'#738476',seal:'#f9eedb',flap:'#18252465'},
+ winter:{en:'Winter Express',sk:'Zimný expres',page:{bg:'#0e1823',gold:'#f0c97a',stage:'#0f1d2a',grad:'radial-gradient(ellipse at 50% 8%,#2d4a63 0,transparent 62%)'},
+  label:'#9fbad0',shelf:'#c9d9e6',slot:'#132636',slotLine:'#3a5870',slotOn:'#a9c4d8',seal:'#ffffff',flap:'#1a2a3a55',arc:'#24425a',cart:['#c0463a','#5a2a24'],
+  colors:['#f1f6fb','#e86a5c','#8fd0c0','#f2c26b','#9fbdf0','#cfa6e0'],
+  deco(c,t,layer){
+   if(layer==='back'){c.fillStyle='#0b1a27';for(const [x,h] of [[46,130],[96,86],[548,96],[600,140]]){for(let k=0;k<3;k++){const w=30-k*7,y=511-k*h/3.2;c.beginPath();c.moveTo(x-w,y);c.lineTo(x,y-h/2);c.lineTo(x+w,y);c.fill()}}
+    for(let i=0;i<=12;i++){const a=Math.PI+i*Math.PI/12,x=320+Math.cos(a)*260,y=247+Math.sin(a)*260;c.globalAlpha=.5+.5*Math.sin(t*2.2+i*1.3);c.fillStyle=['#e86a5c','#f2c26b','#8fd0c0','#9fbdf0'][i%4];c.beginPath();c.arc(x,y,4.5,0,7);c.fill()}c.globalAlpha=1;return}
+   c.fillStyle='#eef5fb';c.beginPath();c.moveTo(24,212);for(let x=24;x<616;x+=16)c.quadraticCurveTo(x+8,(x/16)%2?204:207,x+16,212);c.closePath();c.fill();
+   c.beginPath();c.moveTo(127,485);for(let x=127;x<513;x+=14)c.quadraticCurveTo(x+7,(x/14)%2?478:481,x+14,485);c.closePath();c.fill();
+   c.fillStyle='#ffffffa0';for(const f of FLAKES){const y=(f.y+t*f.s)%540,x=f.x+Math.sin(t*.8+f.y)*8;c.beginPath();c.arc(x,y,f.r,0,7);c.fill()}}}
+};
+const packOwned=id=>id==='classic'||SUPPORTER;
+function themeOf(id){if(id==='winter'&&packOwned('winter'))return PACKS.winter;const t=THEMES[prog.theme];return{...PACKS.classic,colors:t.colors,cart:t.cart,arc:t.arc}}
+const curTheme=()=>themeOf(prog.pack);
+function applyPageTheme(){const p=curTheme().page,r=document.documentElement.style;r.setProperty('--bg',p.bg);r.setProperty('--gold',p.gold);r.setProperty('--stage',p.stage);document.body.style.backgroundImage=p.grad}
+// ---------- music (WebAudio, generated, loops seamlessly) ----------
+let musicOn=true;try{if(localStorage.getItem('midnight-mail-music')==='off')musicOn=false}catch{}
+let mMaster=null,mBus=null,mEcho=null,mNoise=null,mStep=0,mNext=0,curSong='',previewSong=null,previewUntil=0;
+const hz=m=>440*Math.pow(2,(m-69)/12);
+const CH={C:[60,64,67],Am:[57,60,64],F:[53,57,60],G:[55,59,62],Em:[52,55,59],Dm:[50,53,57],Gm:[55,58,62],Bb:[58,62,65],C2:[60,64,67]};
+const SONGS={
+ classic:{bpm:84,dec:1.3,part:4,harm:0,prog:['C','Am','F','G','C','Em','F','G','Am','Em','F','C','Dm','G','C','G'],
+  mel:[76,0,79,0,76,74,72,0, 72,0,76,0,74,72,69,0, 69,0,72,0,77,0,76,74, 74,0,0,0,71,0,74,0, 76,0,79,0,84,0,79,0, 83,0,79,0,76,0,71,0, 77,0,76,0,72,0,69,0, 71,0,74,0,79,0,0,0,
+   81,0,0,79,76,0,72,0, 79,0,0,76,71,0,67,0, 77,0,0,76,72,0,69,72, 76,0,0,0,72,0,0,0, 74,0,77,0,81,0,77,0, 79,0,74,0,71,0,74,0, 72,0,76,0,79,0,84,0, 83,0,79,0,74,0,71,0],
+  perc(t,e){perc(t,e%2?2600:1700,5,e%2?.018:.032,.035);if(e===0)perc(t,420,2,.03,.08)}},
+ winter:{bpm:100,dec:1.0,part:3,harm:4,prog:['F','Dm','Gm','C2','F','Bb','C2','F','F','Dm','Gm','C2','F','Bb','C2','F'],
+  mel:[72,0,77,0,81,0,79,77, 74,0,77,0,81,0,0,0, 79,0,77,0,74,0,70,0, 72,0,76,0,79,0,0,0, 81,0,79,0,77,0,72,0, 74,0,77,0,82,0,81,79, 76,0,79,0,72,0,76,0, 77,0,0,0,0,0,0,0],
+  perc(t,e){perc(t,8200,1.2,e%2?.03:.016,.09);if(e===2||e===6)perc(t+.05,6800,1.5,.012,.07)}}
+};
+function ensureAudio(){if(!audio)audio=new(window.AudioContext||window.webkitAudioContext)();if(!mMaster){
+ mMaster=audio.createGain();mMaster.gain.value=0;mMaster.connect(audio.destination);
+ const lp=audio.createBiquadFilter();lp.type='lowpass';lp.frequency.value=4800;lp.connect(mMaster);
+ mBus=audio.createGain();mBus.connect(lp);mEcho=audio.createGain();mEcho.connect(mBus);
+ const dl=audio.createDelay(1),fb=audio.createGain(),wet=audio.createGain();dl.delayTime.value=.36;fb.gain.value=.3;wet.gain.value=.35;mEcho.connect(dl);dl.connect(fb);fb.connect(dl);dl.connect(wet);wet.connect(lp);
+ mNoise=audio.createBuffer(1,Math.floor(audio.sampleRate*.1),audio.sampleRate);const d=mNoise.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1}
+ return audio}
+function voice(t,f,type,vol,dec,dest){const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+dec);o.connect(g);g.connect(dest);o.start(t);o.stop(t+dec+.05)}
+function perc(t,freq,q,vol,len){const s=audio.createBufferSource(),f=audio.createBiquadFilter(),g=audio.createGain();s.buffer=mNoise;f.type='bandpass';f.frequency.value=freq;f.Q.value=q;g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+len);s.connect(f);f.connect(g);g.connect(mBus);s.start(t);s.stop(t+len+.02)}
+function playStep(S,s,t){const bar=s>>3,e=s&7,ch=CH[S.prog[bar]],m=S.mel[s%S.mel.length];
+ if(m){voice(t,hz(m),'sine',.1,S.dec,mEcho);voice(t,hz(m)*S.part,'sine',.012,.3,mEcho);if(S.harm&&s>=S.mel.length)voice(t,hz(m-S.harm),'sine',.035,S.dec*.8,mEcho)}
+ voice(t,hz(ch[[0,2,1,2,0,2,1,2][e]]),'triangle',.028,.45,mBus);
+ if(e===0||e===4)voice(t,hz(ch[0]-24),'triangle',.12,e?.55:.85,mBus);S.perc(t,e)}
+const previewing=()=>previewSong&&performance.now()<previewUntil;
+function musicWanted(){return previewing()||(musicOn&&state!=='paused'&&!document.hidden)}
+function setMusicLevel(){if(!mMaster)return;mMaster.gain.cancelScheduledValues(audio.currentTime);mMaster.gain.setTargetAtTime(musicWanted()?.3:0,audio.currentTime,.2)}
+function musicTick(){
+ if(previewSong&&!previewing()){previewSong=null;curSong='';setMusicLevel()}
+ if(!audio||!mMaster||audio.state!=='running'||!musicWanted())return;
+ const id=previewing()?previewSong:(prog.pack==='winter'&&packOwned('winter')?'winter':'classic'),S=SONGS[id];
+ if(id!==curSong){curSong=id;mStep=0;mNext=0}
+ const fast=!previewing()&&state==='playing'&&remaining<10,dt=60/(S.bpm*(fast?1.2:1))/2;
+ if(mNext<audio.currentTime)mNext=audio.currentTime+.06;
+ while(mNext<audio.currentTime+.2){playStep(S,mStep,mNext);mNext+=dt;mStep=(mStep+1)%(S.prog.length*8)}}
+setInterval(musicTick,40);
+function unlockAudio(){if(!musicOn&&muted)return;ensureAudio();if(state!=='paused'&&audio.state!=='running')audio.resume().catch(()=>{});setMusicLevel()}
+document.addEventListener('pointerdown',unlockAudio,true);document.addEventListener('keydown',unlockAudio,true);
+function musicLabel(){$('music').textContent='♪ '+(musicOn?L('Music: on','Hudba: zap.'):L('Music: off','Hudba: vyp.'));$('music').setAttribute('aria-pressed',String(musicOn))}
+function packs(){
+ const w=PACKS.winter,own=packOwned('winter'),p=$('panel');
+ p.innerHTML=`<h3>${L('Theme packs','Tematické balíčky')}</h3><div class="pack"><canvas id="packPrev" width="320" height="270" aria-hidden="true"></canvas><div><div class="eyebrow">${own?L('Unlocked','Odomknuté'):'🔒 Supporter Edition'}</div><b>❄ ${L(w.en,w.sk)}</b><p class="panel-note">${L('A snowy night station: its own music loop with sleigh bells, frosted shelves, festive envelopes, a red mail cart, snowfall and twinkling lights.','Zasnežená nočná stanica: vlastná hudobná slučka so spiežovcami, zamrznuté police, sviatočné obálky, červený vozík, sneženie a blikajúce svetielka.')}</p>
+<div class="menu-buttons"><button id="packMusic" class="small">♪ ${L('Preview music','Ukážka hudby')}</button>${own?`<button id="packUse" class="small ${prog.pack==='winter'?'':'primary'}">${prog.pack==='winter'?L('Use classic look','Použiť klasický vzhľad'):L('Use Winter Express','Použiť Zimný expres')}</button>`:`<a class="buy" href="${SUPPORTER_URL}" target="_blank" rel="noopener">${L('Get the Supporter Edition','Získaj Supporter Edition')}</a>`}</div></div></div>${own?'':`<p class="panel-note">${L('The free game always keeps the classic look and music. The Supporter Edition is a one-time purchase that supports development.','Bezplatná hra si vždy ponechá klasický vzhľad a hudbu. Supporter Edition je jednorazová kúpa, ktorá podporí vývoj.')}</p>`}`;
+ const cv=$('packPrev'),c=cv.getContext('2d');c.save();c.scale(.5,.5);
+ const sample=[[0,4,3,0],[1,2,4,1],[2,5,5,0],[3,6,1,0],[4,3,null,0]].map(([id,num,slot,rot])=>({id,num,color:id,rot,slot,x:slot===null?470:slots[slot].x,y:slot===null?194:slots[slot].y}));
+ drawScene(c,PACKS.winter,sample,0,null,2,true);c.restore();
+ $('packMusic').onclick=()=>{ensureAudio();audio.resume().catch(()=>{});previewSong='winter';previewUntil=performance.now()+12000;setMusicLevel()};
+ if($('packUse'))$('packUse').onclick=()=>{prog.pack=prog.pack==='winter'?'classic':'winter';save();applyPageTheme();refreshMenuKeep(packs)}}
 // ---------- game state ----------
 const canvas=$('board'),ctx=canvas.getContext('2d');
 let boardOffset=0;
@@ -170,7 +244,7 @@ function generator(text){let h=2166136261;for(const c of text)h=Math.imul(h^c.ch
  return()=>{h+=0x6D2B79F5;let t=h;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
 function pick(a){return a[Math.floor(rnd()*a.length)]}
 function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(rnd()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function tone(kind){if(muted)return;try{if(!audio)audio=new(window.AudioContext||window.webkitAudioContext)();audio.resume();
+function tone(kind){if(muted)return;try{ensureAudio();audio.resume();
  const notes=kind==='win'?[392,523,659]:kind==='fail'?[160,110]:kind==='ach'?[523,659,784,1046]:[310];
  notes.forEach((f,i)=>{let o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime+i*.09;o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.045,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+.18);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+.2)})}catch{}}
 const tag=b=>SYMBOLS[b.color]+b.num;
@@ -204,21 +278,21 @@ function renderRules(){
  $('modeLabel').textContent=modeLabel();updateHint();refreshRules()}
 function updateHint(){const h=$('hint');h.hidden=!(mode==='career'&&prog.up.hint>0);h.textContent=L('Hint','Rada')+' ('+hints+')';h.disabled=hints<=0}
 // ---------- menu & panels ----------
-const instructions=()=>L(`<ol><li>Drag falling letters from the arrivals shelf into the six mail cart slots.</li><li>Click or tap a letter to rotate it by 90°. Each letter has a colour, a symbol and a number.</li><li>Meet every wish and press “Send dreams”. Every top letter needs a letter underneath.</li><li>Dropping onto an occupied slot or running out of round time costs a life; sending an unfinished cart costs two seconds.</li><li><b>Career:</b> reach the night's goal to unlock the next, harder night. Earn ✉ stamps in every mode and spend them on upgrades and themes.</li></ol>`,
- `<ol><li>Presuň padajúce obálky z prijímacej police na šesť miest poštového vozíka.</li><li>Kliknutím alebo ťuknutím obálku otočíš o 90°. Každá obálka má farbu, symbol a číslo.</li><li>Splň všetky želania a stlač „Odoslať sny“. Každá horná obálka potrebuje obálku pod sebou.</li><li>Pustenie na obsadené miesto alebo vypršanie času kola stojí život; odoslanie nedokončeného vozíka uberie dve sekundy.</li><li><b>Kariéra:</b> dosiahni cieľ noci a odomkneš ďalšiu, ťažšiu noc. V každom režime zbieraš ✉ známky a míňaš ich na vylepšenia a témy.</li></ol>`);
+const instructions=()=>L(`<ol><li>Drag falling letters from the arrivals shelf into the six mail cart slots.</li><li>Click or tap a letter to rotate it by 90°. Each letter has a colour, a symbol and a number.</li><li>Meet every wish and press “Send dreams”. Every top letter needs a letter underneath.</li><li>Placed letters can be picked up again. Drop a letter onto an occupied slot to swap them. Running out of round time costs a life; sending an unfinished cart costs two seconds.</li><li><b>Career:</b> reach the night's goal to unlock the next, harder night. Earn ✉ stamps in every mode and spend them on upgrades and themes.</li></ol>`,
+ `<ol><li>Presuň padajúce obálky z prijímacej police na šesť miest poštového vozíka.</li><li>Kliknutím alebo ťuknutím obálku otočíš o 90°. Každá obálka má farbu, symbol a číslo.</li><li>Splň všetky želania a stlač „Odoslať sny“. Každá horná obálka potrebuje obálku pod sebou.</li><li>Uložené obálky môžeš znova zdvihnúť. Pustením na obsadené miesto si obálky vymeníš. Vypršanie času kola stojí život; odoslanie nedokončeného vozíka uberie dve sekundy.</li><li><b>Kariéra:</b> dosiahni cieľ noci a odomkneš ďalšiu, ťažšiu noc. V každom režime zbieraš ✉ známky a míňaš ich na vylepšenia a témy.</li></ol>`);
 const langBar=()=>`<div class="language-bar" role="group" aria-label="English / Slovenčina"><button id="langEn" class="small" aria-pressed="${lang==='en'}">English</button><button id="langSk" class="small" aria-pressed="${lang==='sk'}">Slovenčina</button></div>`;
 function bindLang(){$('langSk').onclick=()=>setLanguage('sk');$('langEn').onclick=()=>setLanguage('en')}
 function showMenu(){
  state='menu';drag=null;pausedState=null;$('overlay').hidden=false;
  const doneToday=prog.daily.date===todayKey();const achN=Object.keys(prog.ach).length;
- $('card').innerHTML=`${langBar()}<div class="eyebrow">${L('The last delivery before dawn','Posledná zásielka pred svitaním')}</div><h2>${L('Where do lost<br>dreams go?','Kam chodia sny,<br>ktoré sa stratili?')}</h2><p>${L('At the station between sleep and waking, the last train is running late. Envelopes hold forgotten flights, talking cats and oceans above the clouds. Honour their wishes and send them home before dawn.','Na stanici medzi spánkom a bdením mešká posledný vlak. V obálkach sa tlačia zabudnuté lety, hovoriace mačky aj moria nad oblakmi. Splň ich želania a pošli ich domov pred svitaním.')}</p>
+ $('card').innerHTML=`${langBar()}<div class="eyebrow">${SUPPORTER?'✦ Supporter Edition · ':''}${L('The last delivery before dawn','Posledná zásielka pred svitaním')}</div><h2>${L('Where do lost<br>dreams go?','Kam chodia sny,<br>ktoré sa stratili?')}</h2><p>${L('At the station between sleep and waking, the last train is running late. Envelopes hold forgotten flights, talking cats and oceans above the clouds. Honour their wishes and send them home before dawn.','Na stanici medzi spánkom a bdením mešká posledný vlak. V obálkach sa tlačia zabudnuté lety, hovoriace mačky aj moria nad oblakmi. Splň ich želania a pošli ich domov pred svitaním.')}</p>
 <div class="progress-line">✉ ${prog.stamps} · ${L('Night','Noc')} ${prog.night} · ${L('Best','Rekord')} ${prog.best}</div>
 <div class="menu-buttons"><button class="primary" id="career">${L('Career · Night ','Kariéra · Noc ')}${prog.night}</button><button id="quick">${L('Quick shift · 90 s','Rýchla služba · 90 s')}</button><button id="daily">${L('Daily challenge','Denná výzva')}${doneToday?' ✓':''}</button></div>
-<div class="menu-buttons secondary"><button class="small" id="shop">${L('Post office','Pošta')} ✉</button><button class="small" id="achBtn">${L('Achievements','Úspechy')} ${achN}/${ACH.length}</button><button class="small" id="help">${L('How to play','Ako hrať')}</button><button class="small" id="privacy">${L('Privacy','Súkromie')}</button></div>
+<div class="menu-buttons secondary"><button class="small" id="shop">${L('Post office','Pošta')} ✉</button><button class="small" id="achBtn">${L('Achievements','Úspechy')} ${achN}/${ACH.length}</button><button class="small" id="packsBtn">❄ ${L('Theme packs','Balíčky')}</button><button class="small" id="help">${L('How to play','Ako hrať')}</button><button class="small" id="privacy">${L('Privacy','Súkromie')}</button></div>
 <div id="panel">${instructions()}</div><label for="seedInput">${L('Replay a round using its seed (e.g. 3-ABC123)','Zopakuj kolo podľa seedu (napr. 3-ABC123)')}</label><form class="seed-form" id="seedForm"><input id="seedInput" maxlength="24" placeholder="${L('ROUND-SEED','KOLO-SEED')}" aria-label="${L('Round seed','Seed kola')}" required pattern="[1-9][0-9]{0,2}-[A-Za-z0-9]{1,16}"><button>${L('Play seed','Hrať seed')}</button></form>`;
  bindLang();
  $('career').onclick=()=>start('career');$('quick').onclick=()=>start('quick');$('daily').onclick=()=>start('daily');
- $('shop').onclick=shop;$('achBtn').onclick=achievements;$('help').onclick=()=>{$('panel').innerHTML=instructions()};$('privacy').onclick=privacy;
+ $('shop').onclick=shop;$('packsBtn').onclick=packs;$('achBtn').onclick=achievements;$('help').onclick=()=>{$('panel').innerHTML=instructions()};$('privacy').onclick=privacy;
  $('seedForm').onsubmit=e=>{e.preventDefault();start('quick',$('seedInput').value.trim().toUpperCase())};
 }
 function shop(){
@@ -244,7 +318,7 @@ function updateStampsHud(){$('stampsHud').textContent='✉ '+prog.stamps;$('stam
 // ---------- flow ----------
 function start(m,replay){
  if(replay&&!/^[1-9][0-9]{0,2}-[A-Z0-9]{1,16}$/.test(replay)){$('panel').textContent=L('Use a seed such as 3-ABC123.','Zadaj seed napríklad 3-ABC123.');return}
- mode=replay?'quick':m;night=prog.night;dailyDate=todayKey();
+ previewSong=null;mode=replay?'quick':m;night=prog.night;dailyDate=todayKey();
  score=0;combo=0;errors=[];cleared=0;cleanRounds=0;secrets=0;newAch=[];shiftLeft=SHIFT_SECONDS;
  lives=START_LIVES+(mode==='career'?prog.up.life:0);hints=mode==='career'?prog.up.hint:0;
  target=mode==='career'?1500+night*500:0;
@@ -323,15 +397,17 @@ function hit(b,p){const d=dims(b);return Math.abs(p.x-b.x)<d.w/2+8&&Math.abs(p.y
 // Smoothly glide a letter back to its place on the arrivals shelf.
 function sendHome(b){b.slot=null;b.vx=0;b.vy=0;b.home={t:0,fx:b.x,fy:b.y}}
 canvas.onpointerdown=e=>{if(state!=='playing'||drag||e.button>0)return;const p=point(e),b=[...bones].reverse().find(b=>hit(b,p));if(!b)return;
- canvas.setPointerCapture(e.pointerId);b.home=null;drag={b,id:e.pointerId,start:p,dx:p.x-b.x,dy:p.y-b.y,moved:false}};
+ canvas.setPointerCapture(e.pointerId);b.home=null;drag={b,id:e.pointerId,start:p,dx:p.x-b.x,dy:p.y-b.y,moved:false,old:b.slot}};
 canvas.onpointermove=e=>{if(!drag||e.pointerId!==drag.id)return;const p=point(e),d=drag;if(Math.hypot(p.x-d.start.x,p.y-d.start.y)>7)d.moved=true;
  if(d.moved){d.b.slot=null;d.b.x=Math.max(45,Math.min(595,p.x-d.dx));d.b.y=Math.max(boardOffset+43,Math.min(492,p.y-d.dy));d.b.vy=0;d.b.vx=0;refreshRules()}};
 canvas.onpointerup=e=>{if(!drag||e.pointerId!==drag.id)return;const d=drag,b=d.b;drag=null;
  if(!d.moved){if(b.rules.some(r=>r.type==='lock')){$('message').textContent=L('This letter asks you not to rotate it.','Táto obálka prosí: nesmieš ma otočiť.');tone('click');return}
   b.rot=(b.rot+1)%4;b.vy=0;tone('click');refreshRules();return}
  const t=slots.findIndex(s=>Math.abs(s.x-b.x)<53&&Math.abs(s.y-b.y)<49);
- if(t>=0){if(bones.some(v=>v!==b&&v.slot===t)){sendHome(b);fail(L('Collision: two letters in one slot.','Zrážka: dve obálky na jednom mieste.'));return}
-  if(t<3&&!bones.some(v=>v.slot===t+3)){clean=false;$('message').textContent=L('No support! Fill the slot directly underneath first.','Bez opory! Najprv zaplň miesto priamo pod obálkou.');sendHome(b)}
+ if(t>=0){const o=bones.find(v=>v!==b&&v.slot===t);
+  if(o){if(d.old!==null&&d.old!==t){o.home=null;o.slot=d.old;o.x=slots[d.old].x;o.y=slots[d.old].y;o.vx=o.vy=0}else sendHome(o);
+   b.slot=t;b.x=slots[t].x;b.y=slots[t].y;b.vy=0;$('message').textContent=L('Swapped ','Vymenené ')+tag(b)+' ⇄ '+tag(o)+'.';tone('click')}
+  else if(t<3&&!bones.some(v=>v.slot===t+3)){clean=false;$('message').textContent=L('No support! Fill the slot directly underneath first.','Bez opory! Najprv zaplň miesto priamo pod obálkou.');sendHome(b)}
   else{b.slot=t;b.x=slots[t].x;b.y=slots[t].y;b.vy=0;tone('click')}}
  else if(b.y>230){clean=false;sendHome(b)}else{b.vy=50}
  refreshRules()};
@@ -340,30 +416,34 @@ canvas.onpointercancel=e=>{if(drag&&drag.id===e.pointerId){sendHome(drag.b);drag
 function physics(dt){for(const b of bones){
  if(drag&&drag.b===b)continue;
  if(b.home){const h=b.home;h.t=Math.min(1,h.t+dt/.45);const k=1-Math.pow(1-h.t,3);b.x=h.fx+(shelfX(b)-h.fx)*k;b.y=h.fy+(SHELF_Y-h.fy)*k-Math.sin(Math.PI*h.t)*40;if(h.t>=1)b.home=null;continue}
- if(b.slot!==null){if(b.slot<3&&!bones.some(v=>v.slot===b.slot+3)){clean=false;$('message').textContent=L('Support removed! The top letter returns to the shelf.','Opora zmizla. Horná obálka sa vracia na policu.');sendHome(b);refreshRules()}continue}
+ if(b.slot!==null){if(b.slot<3&&!bones.some(v=>v.slot===b.slot+3)&&!(drag&&drag.moved&&drag.old===b.slot+3)){clean=false;$('message').textContent=L('Support removed! The top letter returns to the shelf.','Opora zmizla. Horná obálka sa vracia na policu.');sendHome(b);refreshRules()}continue}
  b.vy+=650*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;const d=dims(b),floor=b.y<240?211:513;
  if(b.y+d.h/2>floor&&b.vy>0){b.y=floor-d.h/2;b.vy=-b.vy*.22;b.vx*=.7;if(Math.abs(b.vy)<20)b.vy=0}
  if(b.x<45||b.x>595){b.x=Math.max(45,Math.min(595,b.x));b.vx*=-.3}
  if(floor===513&&b.vy===0)sendHome(b)}}
-function rounded(x,y,w,h,r,fill,stroke){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.stroke()}}
-function draw(){
- const th=THEMES[prog.theme];ctx.clearRect(0,0,640,canvas.height);ctx.save();ctx.translate(0,-boardOffset);
- ctx.strokeStyle=th.arc;ctx.lineWidth=1;for(let i=0;i<5;i++){ctx.beginPath();ctx.arc(320,247,260-i*14,Math.PI,0);ctx.stroke()}
- ctx.fillStyle='#82948a';ctx.font='11px monospace';ctx.textAlign='left';ctx.fillText(L('I. ARRIVALS SHELF','I. PRIJÍMACIA POLICA'),26,boardOffset+20);
- ctx.fillStyle='#293b36';ctx.fillRect(24,211,592,7);ctx.fillStyle='#82948a';ctx.fillText(L('II. MAIL CART / FILL THE BOTTOM FIRST','II. POŠTOVÝ VOZÍK / NAJPRV SPODNÝ RAD'),26,267);
- slots.forEach((s,i)=>{const filled=bones.some(b=>b.slot===i),hover=drag&&drag.moved&&Math.abs(drag.b.x-s.x)<53&&Math.abs(drag.b.y-s.y)<49;
-  rounded(s.x-53,s.y-48,106,96,4,hover?(filled?'#643c39':'#344d42'):'#192a2a',filled?'#738476':'#3b504a');
-  ctx.fillStyle='#839287';ctx.textAlign='center';ctx.font='10px monospace';ctx.fillText(L(i<3?'T':'B',i<3?'H':'D')+(i%3+1),s.x,s.y+40)});
- rounded(127,484,386,12,2,th.cart[0]);rounded(144,496,352,17,2,th.cart[1]);
- const ordered=bones.filter(b=>!drag||b!==drag.b);if(drag)ordered.push(drag.b);
- ordered.forEach(b=>{ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.rot*Math.PI/2);
-  ctx.shadowColor='#0008';ctx.shadowBlur=drag&&drag.b===b?18:7;ctx.shadowOffsetY=5;rounded(-41,-17,82,34,4,th.colors[b.color]);
-  ctx.shadowColor='transparent';ctx.strokeStyle='#18252465';ctx.beginPath();ctx.moveTo(-39,-15);ctx.lineTo(0,7);ctx.lineTo(39,-15);ctx.moveTo(-39,15);ctx.lineTo(-17,0);ctx.moveTo(39,15);ctx.lineTo(17,0);ctx.stroke();
-  ctx.fillStyle='#f9eedb';ctx.beginPath();ctx.arc(0,0,12,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#192724cc';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold 13px sans-serif';ctx.fillText(SYMBOLS[b.color],-28,0);ctx.fillText(SYMBOLS[b.color],28,0);
-  ctx.rotate(-b.rot*Math.PI/2);ctx.fillStyle='#192724';ctx.font='bold 22px Georgia';ctx.fillText(b.num,0,1);ctx.restore()});
- ctx.textBaseline='alphabetic';if(!bones.length){ctx.textAlign='center';ctx.fillStyle='#d4b779';ctx.font='60px Georgia';ctx.fillText('✦',320,155)}
- ctx.restore()}
+function rounded(c,x,y,w,h,r,fill,stroke){c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.quadraticCurveTo(x+w,y,x+w,y+r);c.lineTo(x+w,y+h-r);c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);c.lineTo(x+r,y+h);c.quadraticCurveTo(x,y+h,x,y+h-r);c.lineTo(x,y+r);c.quadraticCurveTo(x,y,x+r,y);c.closePath();if(fill){c.fillStyle=fill;c.fill()}if(stroke){c.strokeStyle=stroke;c.stroke()}}
+function drawScene(c,th,list,off,dr,time,fillBg){
+ c.clearRect(0,0,640,540);c.save();c.translate(0,-off);
+ if(fillBg){c.fillStyle=th.page.stage;c.fillRect(0,0,640,540)}
+ c.strokeStyle=th.arc;c.lineWidth=1;for(let i=0;i<5;i++){c.beginPath();c.arc(320,247,260-i*14,Math.PI,0);c.stroke()}
+ if(th.deco)th.deco(c,time,'back');
+ c.fillStyle=th.label;c.font='11px monospace';c.textAlign='left';c.fillText(L('I. ARRIVALS SHELF','I. PRIJÍMACIA POLICA'),26,off+20);
+ c.fillStyle=th.shelf;c.fillRect(24,211,592,7);c.fillStyle=th.label;c.fillText(L('II. MAIL CART / FILL THE BOTTOM FIRST','II. POŠTOVÝ VOZÍK / NAJPRV SPODNÝ RAD'),26,267);
+ slots.forEach((s,i)=>{const filled=list.some(b=>b.slot===i&&(!dr||b!==dr.b)),hover=dr&&dr.moved&&Math.abs(dr.b.x-s.x)<53&&Math.abs(dr.b.y-s.y)<49;
+  rounded(c,s.x-53,s.y-48,106,96,4,hover?(filled?'#5c5532':'#344d42'):th.slot,filled?th.slotOn:th.slotLine);
+  c.fillStyle=th.label;c.textAlign='center';c.font='10px monospace';c.fillText(hover&&filled?'⇄':L(i<3?'T':'B',i<3?'H':'D')+(i%3+1),s.x,s.y+40)});
+ rounded(c,127,484,386,12,2,th.cart[0]);rounded(c,144,496,352,17,2,th.cart[1]);
+ const ordered=list.filter(b=>!dr||b!==dr.b);if(dr)ordered.push(dr.b);
+ ordered.forEach(b=>{c.save();c.translate(b.x,b.y);c.rotate(b.rot*Math.PI/2);
+  c.shadowColor='#0008';c.shadowBlur=dr&&dr.b===b?18:7;c.shadowOffsetY=5;rounded(c,-41,-17,82,34,4,th.colors[b.color]);
+  c.shadowColor='transparent';c.strokeStyle=th.flap;c.beginPath();c.moveTo(-39,-15);c.lineTo(0,7);c.lineTo(39,-15);c.moveTo(-39,15);c.lineTo(-17,0);c.moveTo(39,15);c.lineTo(17,0);c.stroke();
+  c.fillStyle=th.seal;c.beginPath();c.arc(0,0,12,0,Math.PI*2);c.fill();
+  c.fillStyle='#192724cc';c.textAlign='center';c.textBaseline='middle';c.font='bold 13px sans-serif';c.fillText(SYMBOLS[b.color],-28,0);c.fillText(SYMBOLS[b.color],28,0);
+  c.rotate(-b.rot*Math.PI/2);c.fillStyle='#192724';c.font='bold 22px Georgia';c.fillText(b.num,0,1);c.restore()});
+ c.textBaseline='alphabetic';if(!list.length){c.textAlign='center';c.fillStyle=th.page.gold;c.font='60px Georgia';c.fillText('✦',320,155)}
+ if(th.deco)th.deco(c,time,'front');
+ c.restore()}
+function draw(){drawScene(ctx,curTheme(),bones,boardOffset,drag,performance.now()/1000,false)}
 function frame(now){const el=Math.max(0,(now-last)/1000);last=now;
  if(state==='playing'||state==='transition'){shiftLeft-=el;
   if(state==='playing'){remaining-=el;physics(Math.min(el,.035));
@@ -374,27 +454,28 @@ function frame(now){const el=Math.max(0,(now-last)/1000);last=now;
 // ---------- pause & language ----------
 function pauseGame(){if(!['playing','transition'].includes(state))return;pausedState=state;state='paused';
  if(drag){if(drag.moved){sendHome(drag.b);clean=false}drag=null;refreshRules()}
- if(audio)audio.suspend().catch(()=>{});$('overlay').hidden=false;renderPause()}
+ setMusicLevel();if(audio)audio.suspend().catch(()=>{});$('overlay').hidden=false;renderPause()}
 function renderPause(){
  $('card').innerHTML=`${langBar()}<div class="eyebrow">${L('Your dreams can wait','Tvoje sny počkajú')}</div><h2>${L('Shift paused.','Služba pozastavená.')}</h2><p>${L('Your timers are stopped. Continue when you are ready.','Časovače sú zastavené. Pokračuj, keď budeš pripravený.')}</p><div class="menu-buttons"><button id="resume" class="primary">${L('Continue shift','Pokračovať v službe')}</button><button id="quit">${L('Quit to menu','Ukončiť do menu')}</button></div>`;
  bindLang();
- $('resume').onclick=()=>{state=pausedState;pausedState=null;last=performance.now();$('overlay').hidden=true;if(audio&&!muted)audio.resume().catch(()=>{})};
+ $('resume').onclick=()=>{state=pausedState;pausedState=null;last=performance.now();$('overlay').hidden=true;if(audio)audio.resume().catch(()=>{});setMusicLevel()};
  $('quit').onclick=showMenu}
-document.addEventListener('visibilitychange',()=>{if(document.hidden)pauseGame();last=performance.now()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)pauseGame();last=performance.now();setMusicLevel()});
 function soundLabel(){$('sound').textContent=L('Sound: ','Zvuk: ')+(muted?L('off','vypnutý'):L('on','zapnutý'));$('sound').setAttribute('aria-pressed',String(!muted))}
 function localizePage(){
- document.documentElement.lang=lang;document.title=L('Midnight Mail — the last dream train','Polnočná pošta — posledný vlak snov');
+ document.documentElement.lang=lang;document.title=L('Midnight Mail','Polnočná pošta')+(SUPPORTER?' — Supporter Edition':L(' — the last dream train',' — posledný vlak snov'));
  document.querySelectorAll('[data-i]').forEach(el=>{const [en,sk]=el.dataset.i.split('|');el.textContent=L(en,sk)});
  document.querySelectorAll('[data-aria]').forEach(el=>{const [en,sk]=el.dataset.aria.split('|');el.setAttribute('aria-label',L(en,sk))});
- soundLabel();updateStampsHud();updateHUD();renderRules();
+ soundLabel();musicLabel();updateStampsHud();updateHUD();renderRules();
  if(state==='menu'&&!bones.length)$('message').textContent=L('The last train to the dream world is waiting for you.','Posledný vlak do ríše snov čaká na teba.')}
 function setLanguage(v){if(!['sk','en'].includes(v)||!['menu','paused'].includes(state))return;
  lang=v;try{localStorage.setItem('midnight-mail-language',lang)}catch{}
  localizePage();if(state==='paused')renderPause();else{const s=$('seedInput').value;showMenu();$('seedInput').value=s}}
 $('sound').onclick=()=>{muted=!muted;soundLabel();tone('click')};
+$('music').onclick=()=>{musicOn=!musicOn;try{localStorage.setItem('midnight-mail-music',musicOn?'on':'off')}catch{}musicLabel();ensureAudio();audio.resume().catch(()=>{});setMusicLevel()};
 $('check').onclick=check;$('menu').onclick=pauseGame;$('hint').onclick=useHint;
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&state==='playing'&&e.target===document.body)check();if(e.key==='Escape'){if(state==='playing'||state==='transition')pauseGame();else if(state==='paused')$('resume').click()}});
-localizePage();showMenu();requestAnimationFrame(frame);
+applyPageTheme();localizePage();showMenu();requestAnimationFrame(frame);
 </script>
 </body>
 </html>
