@@ -209,13 +209,29 @@ const previewing=()=>previewSong&&performance.now()<previewUntil;
 function musicWanted(){return previewing()||(musicOn&&state!=='paused'&&!document.hidden)}
 function setMusicLevel(){if(!mMaster)return;mMaster.gain.cancelScheduledValues(audio.currentTime);mMaster.gain.setTargetAtTime(musicWanted()?.3:0,audio.currentTime,.2)}
 function musicTick(){
- if(previewSong&&!previewing()){previewSong=null;curSong='';setMusicLevel()}
+ if(previewSong&&!previewing()){previewSong=null;curSong='';stopTrack();setMusicLevel()}
  if(!audio||!mMaster||audio.state!=='running'||!musicWanted())return;
  const id=previewing()?previewSong:(prog.pack==='winter'&&packOwned('winter')?'winter':'classic'),S=SONGS[id];
+ if(trackTick(id))return;
  if(id!==curSong){curSong=id;mStep=0;mNext=0}
  const fast=!previewing()&&state==='playing'&&remaining<10,dt=60/(S.bpm*(fast?1.2:1))/2;
  if(mNext<audio.currentTime)mNext=audio.currentTime+.06;
  while(mNext<audio.currentTime+.2){playStep(S,mStep,mNext);mNext+=dt;mStep=(mStep+1)%(S.prog.length*8)}}
+// ---------- recorded loops (MP3, gapless via AudioBufferSourceNode loop; synth above is fallback) ----------
+const TRACKS={classic:{url:'audio/classic.mp3',len:57.0746},winter:SUPPORTER?{url:'audio/winter.mp3',len:57.5971}:{url:'audio/winter-preview.mp3',once:true}};
+const TPAD=.5,tBuf={},tFail={};let tSrc=null,tId='',tGain=null;
+function loadTrack(id){if(tBuf[id]||tFail[id]||tBuf[id]===0)return;tBuf[id]=0;
+ fetch(TRACKS[id].url).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()}).then(b=>new Promise((ok,no)=>ensureAudio().decodeAudioData(b,ok,no))).then(b=>{tBuf[id]=b}).catch(()=>{tBuf[id]=null;tFail[id]=1})}
+function stopTrack(){if(tSrc){try{tSrc.stop()}catch{}tSrc.disconnect();tSrc=null}tId=''}
+function trackTick(id){const T=TRACKS[id];if(!T||tFail[id]){stopTrack();return false}
+ loadTrack(id);const b=tBuf[id];if(!b)return true;// wait for decode (silence) instead of synth
+ if(!tGain){tGain=audio.createGain();tGain.gain.value=1.6;tGain.connect(mMaster)}
+ if(T.once&&tId===id&&!tSrc)return true;
+ if(tId!==id||!tSrc){stopTrack();const s=audio.createBufferSource();s.buffer=b;if(!T.once){s.loop=true;s.loopStart=TPAD;s.loopEnd=TPAD+T.len}
+  s.connect(tGain);s.start(audio.currentTime+.02,T.once?0:TPAD);s.onended=()=>{if(tSrc===s){tSrc=null}};tSrc=s;tId=id}
+ const fast=!previewing()&&state==='playing'&&remaining<10;tSrc.playbackRate.setTargetAtTime(fast?1.08:1,audio.currentTime,.3);return true}
+setInterval(()=>{if(audio&&tSrc&&audio.state==='running'&&!musicWanted()&&mMaster&&mMaster.gain.value<.002){stopTrack()}},500);
+window.mmMusic=()=>({id:tId,loop:tSrc&&[tSrc.loop,tSrc.loopStart,tSrc.loopEnd],rate:tSrc&&tSrc.playbackRate.value,state:audio&&audio.state,decoded:Object.fromEntries(Object.entries(tBuf).map(([k,b])=>[k,b&&+b.duration.toFixed(2)])),failed:tFail});
 setInterval(musicTick,40);
 function unlockAudio(){if(!musicOn&&muted)return;ensureAudio();if(state!=='paused'&&audio.state!=='running')audio.resume().catch(()=>{});setMusicLevel()}
 document.addEventListener('pointerdown',unlockAudio,true);document.addEventListener('keydown',unlockAudio,true);
@@ -227,7 +243,7 @@ function packs(){
  const cv=$('packPrev'),c=cv.getContext('2d');c.save();c.scale(.5,.5);
  const sample=[[0,4,3,0],[1,2,4,1],[2,5,5,0],[3,6,1,0],[4,3,null,0]].map(([id,num,slot,rot])=>({id,num,color:id,rot,slot,x:slot===null?470:slots[slot].x,y:slot===null?194:slots[slot].y}));
  drawScene(c,PACKS.winter,sample,0,null,2,true);c.restore();
- $('packMusic').onclick=()=>{ensureAudio();audio.resume().catch(()=>{});previewSong='winter';previewUntil=performance.now()+12000;setMusicLevel()};
+ $('packMusic').onclick=()=>{ensureAudio();audio.resume().catch(()=>{});stopTrack();previewSong='winter';previewUntil=performance.now()+12000;setMusicLevel()};
  if($('packUse'))$('packUse').onclick=()=>{prog.pack=prog.pack==='winter'?'classic':'winter';save();applyPageTheme();refreshMenuKeep(packs)}}
 // ---------- game state ----------
 const canvas=$('board'),ctx=canvas.getContext('2d');
