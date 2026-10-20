@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#130f1f">
+<meta name="description" content="Little Alchemist — 150-level educational alchemy puzzle game. English and Slovak.">
+<title>Little Alchemist</title>
+<link rel="stylesheet" href="little-alchemist-v1.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <button class="iconbtn" id="homeBtn" title="Home" aria-label="Home">⌂</button>
+    <div class="brand"><b>Little Alchemist</b><small id="brandSub">Alchemy Academy</small></div>
+    <div class="pill">✨ <span id="xpTop">0</span> XP</div>
+    <div class="pill">🔥 <span id="streakTop">1</span></div>
+  </div>
+
+  <section id="home" class="screen on">
+    <div class="hero">
+      <div class="flask">⚗️</div><h1>Little Alchemist</h1>
+      <p id="heroText">Mix, discover and learn. 150 levels across three learning paths.</p>
+      <div class="stats">
+        <div class="stat"><b id="doneStat">0</b><span id="doneLbl">LEVELS DONE</span></div>
+        <div class="stat"><b id="starsStat">0</b><span id="starsLbl">STARS</span></div>
+        <div class="stat"><b id="xpStat">0</b><span>XP</span></div>
+      </div>
+    </div>
+    <div class="sectionTitle"><h2 id="chooseTitle">Choose a path</h2><span>50 + 50 + 50</span></div>
+    <div class="modegrid" id="modeGrid"></div>
+    <div class="sectionTitle"><h2 id="challengeTitle">Daily challenge</h2><span id="challengeDate"></span></div>
+    <div class="panel row"><div style="font-size:30px">🎯</div><div class="grow"><b id="challengeName"></b><div class="muted" style="font-size:12px" id="challengeText"></div></div><button class="btn" id="challengeBtn">Play</button></div>
+    <div class="sectionTitle"><h2 id="returnTitle">Return reward</h2><span id="streakLabel">Streak 1 day</span></div>
+    <div class="panel row"><div style="font-size:30px">🎁</div><div class="grow"><b id="dailyTitle">Daily spark</b><div class="muted" style="font-size:12px" id="dailyText">Open the game every day and earn bonus XP.</div></div><button class="btn" id="claimBtn">Claim</button></div>
+    <div class="sectionTitle"><h2 id="discTitle">Discoveries</h2><span id="discCount"></span></div>
+    <div class="panel badges" id="discList"></div>
+    <div class="sectionTitle"><h2 id="achTitle">Achievements</h2><span id="achCount"></span></div>
+    <div class="panel achList" id="achList"></div>
+    <div class="sectionTitle"><h2 id="settingsTitle">Language</h2><span>SK / EN</span></div>
+    <div class="langSwitch"><button data-lang="en">English</button><button data-lang="sk">Slovenčina</button></div>
+    <div class="footerNote" id="footer">Little Alchemist v1.2 · offline progress · no account</div>
+  </section>
+
+  <section id="map" class="screen">
+    <div class="levelHead"><button class="iconbtn" id="mapBack" aria-label="Back">←</button><div class="grow"><h2 id="mapTitle">Chemistry</h2><small id="mapSub">50 levels</small></div><div class="stars" id="mapStars"></div></div>
+    <div class="panel"><div class="progress"><i id="mapProg"></i></div><div style="height:14px"></div><div class="levelmap" id="levelMap"></div></div>
+  </section>
+
+  <section id="play" class="screen">
+    <div class="levelHead"><button class="iconbtn" id="playBack" aria-label="Back">←</button><div class="grow"><h2 id="playTitle"></h2><small id="playSub"></small></div><button class="iconbtn" id="restartBtn" title="Restart" aria-label="Restart level">↻</button><div class="pill">✨ <span id="runXp">0</span></div></div>
+    <div class="goal"><small id="goalKicker"></small><div class="big" id="goalText"></div><small id="goalHint"></small></div>
+    <div class="tiles" id="tiles"></div><div class="msg" id="msg" aria-live="polite"></div>
+  </section>
+
+  <section id="result" class="screen">
+    <div class="panel reward"><div class="orb">⚗️</div><h2 id="resultTitle">Done!</h2><div class="stars" id="resultStars" style="font-size:28px"></div><p id="resultText"></p><div class="row"><button class="btn secondary" id="resultMap">Map</button><button class="btn good" id="resultNext">Next level</button></div></div>
+  </section>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
