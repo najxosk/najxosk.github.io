@@ -39,7 +39,14 @@
     <div class="panel achList" id="achList"></div>
     <div class="sectionTitle"><h2 id="settingsTitle">Language</h2><span>SK / EN</span></div>
     <div class="langSwitch"><button data-lang="en">English</button><button data-lang="sk">Slovenčina</button></div>
-    <div class="footerNote" id="footer">Little Alchemist v1.2 · offline progress · no account</div>
+    <div class="sectionTitle"><h2 id="saveTitle">Save</h2><span>💾</span></div>
+    <div class="panel saveBox"><div class="muted" style="font-size:12px" id="saveHint"></div>
+      <div class="btnrow"><button class="btn secondary" id="exportBtn">Copy code</button><button class="btn secondary" id="downloadBtn">Download .json</button></div>
+      <textarea id="ioText" rows="3" spellcheck="false" aria-label="Backup code"></textarea>
+      <div class="btnrow"><button class="btn" id="importBtn">Load code</button><button class="btn" id="fileBtn">Choose file</button><input type="file" id="ioFile" accept=".json,application/json,text/plain" hidden></div>
+      <div class="msg" id="ioMsg" aria-live="polite"></div>
+      <button class="btn danger" id="resetBtn">Reset progress</button></div>
+    <div class="footerNote" id="footer">Little Alchemist v1.3 · offline progress · no account</div>
   </section>
 
   <section id="map" class="screen">
