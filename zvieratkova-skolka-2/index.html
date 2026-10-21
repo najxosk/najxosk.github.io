@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#ffe9f3">
+<meta name="zs-version" content="g2v1">
+<title>Zvieratková škôlka 2</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="sky" aria-hidden="true"><i class="cloud c1"></i><i class="cloud c2"></i><i class="cloud c3"></i><i class="heart h1"></i><i class="heart h2"></i><i class="heart h3"></i><i class="spark s1"></i><i class="spark s2"></i><i class="spark s3"></i><i class="spark s4"></i></div>
+<div id="app">
+  <header id="topbar">
+    <button id="btnHome" class="tb" aria-label="Domov">🏠</button>
+    <div id="tbTitle"></div>
+    <div id="tbStars" class="pill">⭐ <span>0</span></div>
+    <button id="btnSound" class="tb snd master" aria-label="Zvuk" aria-pressed="true">🔊</button>
+    <button id="btnMusic" class="tb snd mini" aria-label="Hudba" aria-pressed="true">🎵</button>
+    <button id="btnVoice" class="tb snd mini" aria-label="Hlas" aria-pressed="true">💬</button>
+    <button id="btnLang" class="tb lang" aria-label="Jazyk">SK</button>
+  </header>
+
+  <section id="scrWelcome" class="screen active">
+    <div class="welcome">
+      <img class="teacher" src="assets/animals/ucitelka-a.webp" alt="">
+      <div class="bubble big" id="welcomeText"></div>
+      <button id="btnStart" class="bigbtn" aria-label="Štart">▶</button>
+    </div>
+  </section>
+
+  <section id="scrName" class="screen">
+    <div class="welcome namebox">
+      <img class="teacher sm2" src="assets/animals/ucitelka-a.webp" alt="">
+      <div class="bubble big" id="nameText"></div>
+      <input id="nameInput" type="text" maxlength="24" autocomplete="off" autocapitalize="words" spellcheck="false" enterkeyhint="done">
+      <button id="btnNameOk" class="okbtn" aria-label="OK">OK 💖</button>
+    </div>
+  </section>
+
+  <section id="scrMenu" class="screen">
+    <h1 class="g2title">Zvieratková škôlka <span class="badge2" aria-label="2">2</span></h1>
+    <div class="menuhead"><img class="teacher sm" src="assets/animals/ucitelka-a.webp" alt=""><div class="bubble" id="menuText"></div></div>
+    <div class="namerow"><span class="namechip">🌟 <span id="menuName"></span></span><button id="btnEditName" class="editname" aria-label="Zmeniť meno">✏️</button></div>
+    <div id="cards"></div>
+    <div class="menufoot"><button id="btnResetAll" class="resetall"></button></div>
+  </section>
+
+  <section id="scrDiploma" class="screen">
+    <div class="diploma">
+      <img id="dipImg" class="dipimg" src="" alt="">
+      <div id="dipCard" class="dipcard">
+        <div id="dipTitle" class="diptitle"></div>
+        <div id="dipName" class="dipname"></div>
+        <div id="dipSub" class="dipsub"></div>
+        <div id="dipGame" class="dipgame"></div>
+        <div class="dipmeta"><span id="dipDate"></span> · <span id="dipStars"></span></div>
+      </div>
+      <div class="row"><button id="btnSaveDip" class="okbtn sm"></button><button id="btnDipMenu" class="bigbtn sm" aria-label="Menu">🏠</button></div>
+    </div>
+  </section>
+
+  <section id="scrGame" class="screen">
+    <div class="g-left">
+      <div class="helperrow"><img id="helperImg" class="helper" src="" alt=""><div class="bubble" id="bubble"></div></div>
+      <div id="scriptBar" class="scriptbar" hidden><button id="btnPrint" class="scbtn" data-s="print"><span class="aa">Aa</span><b></b></button><button id="btnCursive" class="scbtn" data-s="cursive"><span class="aa cur">Aa</span><b></b></button></div>
+      <div id="stage"></div>
+    </div>
+    <div class="g-right">
+      <div id="options"></div>
+      <div id="progress"><div id="progFill"></div><span id="progTxt"></span></div>
+    </div>
+  </section>
+
+  <section id="scrDone" class="screen">
+    <div class="welcome">
+      <div class="confetti">🌟💖⭐💖🌟</div>
+      <img id="doneImg" class="teacher" src="assets/animals/ucitelka-a.webp" alt="">
+      <div class="bubble big" id="doneText"></div>
+      <div class="row"><button id="btnAgain" class="bigbtn sm">🔁</button><button id="btnMenu2" class="bigbtn sm">🏠</button></div>
+    </div>
+  </section>
+</div>
+<div id="dlg" class="dlg" hidden><div class="dlgbox"><div class="dlgface">🐻</div><div id="dlgText" class="dlgtext"></div>
+  <button id="dlgName" class="dlgname" hidden></button>
+  <div class="dlgrow"><button id="dlgYes" class="dlgyes"></button><button id="dlgNo" class="dlgno"></button></div></div></div>
+<audio id="music" loop preload="auto"><source src="assets/audio/music.ogg" type="audio/ogg"><source src="assets/audio/music.mp3" type="audio/mpeg"></audio>
+<script src="js/games.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
