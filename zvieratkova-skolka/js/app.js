@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   const { GAMES, TASKS_PER_GAME, getTask, bunnySVG, itemSVG, num } = window.ZS_GAMES;
-  const VERSION = 'v5';
+  const VERSION = 'v6';
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   const $ = s => document.querySelector(s);
   const KEY = 'zvieratkovaSkolka.v1';
@@ -40,8 +40,22 @@
       dipVoice: (t, k) => [`Smart student, for the game ${t}.`, `You earned ${k} stars.`], dipHead: 'Diploma!', hiPlain: 'Hello!', soundOn: 'Sound is on.',
       retry: 'Try again.', done: 'Hooray! All 50 tasks are done! You are amazing. You can play again or choose another game.',
       home: 'Home', speak: 'Repeat', music: 'Music', voice: 'Voice', sound: 'Sound on / off', lang: 'Language'
+    },
+    es: {
+      welcome: '¡Hola! Soy la maestra Osa, de la escuela del bosque. Hoy vamos a jugar y aprender juntos. ¡Toca el botón verde!',
+      menu: '¡Elige un juego! Toca un dibujo.',
+      thisIs: 'Es', defName: 'Estudiante estrella', askName: '¿Cómo te llamas? Escribe tu nombre y toca OK.', hello: n => `¡Hola, ${n}! ¡Elige un juego! Toca un dibujo.`,
+      again: 'Jugar otra vez', resetAll: 'Borrar todo', yes: 'Sí', no: 'No', alsoName: 'Cambiar también el nombre',
+      confirmGame: t => `¿De verdad quieres jugar a ${t} desde el principio? Las estrellas de este juego desaparecerán.`, confirmAll: '¿De verdad quieres borrar todo? Desaparecerán todas las estrellas, los diplomas y el nombre.',
+      dipTitle: 'Diploma', dipSub: 'estudiante estrella', dipSave: 'Guardar diploma', dipFor: 'por el juego',
+      dipSay: (n, t, d, k) => `¡Diploma! ${n}, estudiante estrella, por el juego ${t}. ${d}. Ganaste ${k} estrellas.`,
+      dipVoice: (t, k) => [`Estudiante estrella, por el juego ${t}.`, `Ganaste ${k} estrellas.`], dipHead: '¡Diploma!', hiPlain: '¡Hola!', soundOn: 'El sonido está encendido.',
+      retry: 'Inténtalo otra vez.', done: '¡Listo! Las 50 tareas están hechas. Puedes jugar otra vez o elegir otro juego.',
+      home: 'Inicio', speak: 'Repetir', music: 'Música', voice: 'Voz', sound: 'Sonido sí / no', lang: 'Idioma'
     }
   };
+  const LANGS = ['sk', 'en', 'es'], FLAG = { sk: '🇸🇰', en: '🇬🇧', es: '🇪🇸' };
+  if (!LANGS.includes(save.lang)) save.lang = 'sk';
   const ui = () => UI[save.lang];
 
   // ---------- speech ----------
@@ -109,8 +123,8 @@
     if (!('speechSynthesis' in window) || !text) { if (done) done(); return; }
     try {
       const u = new SpeechSynthesisUtterance(text);
-      const code = save.lang === 'sk' ? 'sk' : 'en';
-      u.lang = code === 'sk' ? 'sk-SK' : 'en-GB';
+      const code = save.lang;
+      u.lang = { sk: 'sk-SK', en: 'en-GB', es: 'es-ES' }[code];
       const v = voices.find(v => v.lang && v.lang.toLowerCase().replace('_', '-').startsWith(code + '-')) || voices.find(v => v.lang && v.lang.toLowerCase().startsWith(code));
       if (v) u.voice = v;
       u.rate = (opt && opt.rate) || 0.88; u.pitch = 1.1;
@@ -176,7 +190,7 @@
   }
   function setTopbar(title) {
     $('#tbTitle').textContent = title || 'Zvieratková škôlka';
-    $('#btnLang').textContent = save.lang.toUpperCase();
+    $('#btnLang').innerHTML = `<span class="fl">${FLAG[save.lang]}</span><b>${save.lang.toUpperCase()}</b>`; $('#btnLang').setAttribute('aria-label', ui().lang + ': ' + save.lang.toUpperCase());
     $('#btnHome').setAttribute('aria-label', ui().home);
     $('#btnSound').setAttribute('aria-label', ui().sound); $('#btnMusic').setAttribute('aria-label', ui().music); $('#btnVoice').setAttribute('aria-label', ui().voice);
     applySound();
@@ -293,6 +307,7 @@
   const EN_NUMS = new Set(window.ZS_GAMES ? Array.from({ length: 21 }, (_, n) => num('en', n)) : []);
   function thisIsText(lang, x) {
     if (lang === 'sk') return `To je ${x}.`;
+    if (lang === 'es') return /^(los|las|unos|unas) |bellotas$|^uvas$/.test(x) ? `Son ${x}.` : `Es ${x}.`;
     if (/^(the |small )/.test(x) || EN_NUMS.has(x)) return `That is ${x}.`;
     const first = x.split(' ')[0];
     if (/s$/.test(x) && !/(bus|dress|cactus)$/.test(x)) return EN_NUMS.has(first) ? `Those are ${x}.` : `Those are the ${x}.`;
@@ -336,7 +351,7 @@
   }
   // ---------- diploma ----------
   let dipGame = null;
-  const fmtDate = iso => { const [y, m, d] = iso.split('-').map(Number); return save.lang === 'sk' ? `${d}. ${m}. ${y}` : new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }); };
+  const fmtDate = iso => { const [y, m, d] = iso.split('-').map(Number); return save.lang === 'sk' ? `${d}. ${m}. ${y}` : save.lang === 'es' ? new Date(y, m - 1, d).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }); };
   function dipData(id) {
     const g = GAMES.find(x => x.id === id), d = save.diplomas[id];
     return { g, name: childName(), title: g.title[save.lang], date: fmtDate(d.date), stars: d.stars };
@@ -457,6 +472,7 @@
   function giveHint(lang, inBasket, n) {
     const W = window.ZS_GAMES.nutsW, more = inBasket < n;
     const inB = lang === 'sk' ? (inBasket >= 2 && inBasket <= 4 ? `V košíku sú ${W('sk', inBasket)}.` : `V košíku je ${W('sk', inBasket)}.`) : `There ${inBasket === 1 ? 'is' : 'are'} ${W('en', inBasket)} in the basket.`;
+    if (lang === 'es') return [inBasket === 1 ? 'En la canasta hay una bellota.' : `En la canasta hay ${W('es', inBasket)}.`, `Necesitamos ${W('es', n)}.`, more ? 'Pon algunas más.' : 'Quita algunas.'];
     return lang === 'sk' ? [inB, `Potrebujeme ${W('sk', n)}.`, more ? 'Pridaj ešte.' : 'Niektoré vráť späť.'] : [inB, `We need ${W('en', n)}.`, more ? 'Add some more.' : 'Take some back.'];
   }
   function renderDress(t, stage, opts) {
@@ -512,7 +528,7 @@
   soundBtn('#btnMusic', () => { audioUnlocked = true; setSound(!save.music, save.voice); });
   soundBtn('#btnVoice', () => setSound(save.music, !save.voice));
   $('#btnLang').onclick = () => {
-    save.lang = save.lang === 'sk' ? 'en' : 'sk'; persist();
+    save.lang = LANGS[(LANGS.indexOf(save.lang) + 1) % LANGS.length]; persist(); loadVoiceMap(save.lang);
     const active = document.querySelector('.screen.active').id;
     if (active === 'scrGame' && cur) { setTopbar(cur.game.title[save.lang]); loadTask(); }
     else if (active === 'scrMenu') openMenu();
@@ -524,7 +540,7 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden) { music.pause(); stopSpeech(); } else startMusic(); });
   window.addEventListener('resize', () => { if (cur && cur.task && cur.task.kind === 'choose' && document.querySelector('#scrGame.active')) { const n = cur.task.options.length; if (!cur.task.houses && n === 4) $('#options').style.setProperty('--cols', 2); } });
 
-  loadVoiceMap('sk'); loadVoiceMap('en');
+  LANGS.forEach(loadVoiceMap);
   // every phrase the game can speak (used to pre-generate clips and to test coverage)
   function allPhrases(lang) {
     const U = UI[lang], G = {}; const add = (g, t) => { if (t) (G[g] = G[g] || new Set()).add(normT(t)); };
