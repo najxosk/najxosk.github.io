@@ -311,6 +311,7 @@ h2{font-family:Cinzel,Georgia,serif;font-weight:900;color:var(--gold);letter-spa
 .muted{font-family:system-ui,sans-serif}
 #rep .lvt{overflow:hidden}.af .grow{text-align:left}button.sm.rb{width:32px;height:32px;min-height:32px;font-size:14px}header .row{gap:4px}
 .mkrow{padding:5px 7px;margin-bottom:6px}.mkrow .ic{width:42px;height:42px}.mkrow .ic canvas{width:38px!important;height:38px!important}
+input.vol{accent-color:#ffc531;height:28px;min-width:0}
 @media (max-height:700px){body{line-height:1.2}.panel{margin-bottom:5px;padding:6px 8px}.cx{gap:1px;font-size:10px}.cx>div{line-height:1.1}.cx div.c{height:14px;line-height:15px}.cxr{height:14px;line-height:13px}.cxleg{line-height:1.1}.skc{padding:4px!important;margin-bottom:4px}.skc canvas{width:56px!important;height:56px!important}.skc .muted{font-size:10px;line-height:1.1}.skc button{min-height:34px}.mkrow{padding:3px 6px;margin-bottom:4px}.mkrow .ic{width:34px;height:34px}.mkrow .ic canvas{width:30px!important;height:30px!important}.card.big>.nm{font-size:17px}.art{height:56px}.card.big{padding-top:10px}.af{font-size:11.5px}}
 </style></head>
 <body>
@@ -369,7 +370,7 @@ const AORDER=['augment','reroll','preroll','sroll','annul','tannul','swap','esse
 const UPS=[{k:'stall',max:4,cost:l=>60*2**l,req:l=>l+1},{k:'stab',max:5,cost:l=>50*2**l,req:l=>l+1},{k:'haggle',max:5,cost:l=>40*2**l,req:l=>l+2},{k:'tongue',max:5,cost:l=>70*2**l,req:l=>l+2}];
 const QPOOL=['sell','t1','forge','bounty','salvage','rare','crafts','profit'];
 const I18N={
-sk:{ilvlL:'Úroveň predmetu',void:'Esencia prázdnoty',voidD:'Kúp v obchode, alebo vzácne nájdi pri predaji/rozobratí. Korupcia: veľké zlepšenie, zmena hodnôt alebo ZNIČENIE predmetu. Potom sa už nedá upravovať.',b_corrupt:'Korupcia',h_corrupt:'Jednorazová, nevratná akcia s Esenciou prázdnoty (🌑, obchod / vzácny nález). Výsledok: veľké zlepšenie, zmena alebo zničenie predmetu.',
+sk:{music:'Hudba',volume:'Hlasitosť',ilvlL:'Úroveň predmetu',void:'Esencia prázdnoty',voidD:'Kúp v obchode, alebo vzácne nájdi pri predaji/rozobratí. Korupcia: veľké zlepšenie, zmena hodnôt alebo ZNIČENIE predmetu. Potom sa už nedá upravovať.',b_corrupt:'Korupcia',h_corrupt:'Jednorazová, nevratná akcia s Esenciou prázdnoty (🌑, obchod / vzácny nález). Výsledok: veľké zlepšenie, zmena alebo zničenie predmetu.',
 corrupted:'KORUMPOVANÝ',corrShort:'🌑 Korumpovaný – už sa nedá upravovať. Predaj ho alebo odovzdaj na zákazku.',alreadyCorr:'Už je korumpovaný.',corrT:'VOID KORUPCIA',corrQ:'Jednorazová a <b>NEVRATNÁ</b> akcia. Potom sa predmet už <b>nedá upravovať</b>.',cGood:'Veľké zlepšenie (tier / afix navyše / implicit / cena ×2)',cNeu:'Zmena hodnôt afixov',cBad:'Predmet sa ZNIČÍ',corrYes:'🌑 Korumpovať',
 c_tier:'Afix prekročil hranice: +1 tier!',c_affix:'Prázdnota pridala afix navyše!',c_imp:'Získal implicitný afix!',c_price:'Prekliata krása: cena ×2!',c_neu:'Prázdnota prehodila hodnoty afixov.',c_bad:'Prázdnota pohltila predmet…',implicit:'Implicit',bd_imp:'🌑 Implicitný afix',bd_corr:'🌑 Korupcia ×2',
 prestige:'Prestíž',presD:'Zarob cieľové zlato, predaj obchod a začni odznova s Majstrovskými bodmi (MB) na trvalé vylepšenia.',mpBuy:'MB kupujú trvalé bonusy: stabilita, lacnejšie kamene, lepšie ceny, Legendárny potenciál…',mpEst:'Pri cieli: +{n} MB',mpNow:'Teraz by si dostal +{n} MB',page:'{a}/{b}',life:'Zarobené zlato',presBtn:'👑 Predať obchod',presLock:'Ešte {g}🪙',mp:'Majstrovské body',mpS:'MB',master:'⭐ Majstrovské vylepšenia',presQ:'Predať obchod a začať odznova?',presKeep:'✅ Ostáva: Majstrovské body a vylepšenia, kódex, vzhľady, Sieň slávy, štatistiky.',presLose:'❌ Stratíš: zlato, predmety, meny, úroveň a Rozvoj.',presYes:'👑 Áno, predať',presDone:'NOVÝ ZAČIATOK!',presGot:'Získal si {n} MB. Míňaj ich v Rozvoji → Majstrovské vylepšenia.',mpCost:'{n} MB',
@@ -415,7 +416,7 @@ affN:'afixy',settings:'Nastavenia',language:'Jazyk',sound:'Zvuk',on:'Zap.',off:'
 tut:[`<h2>⚒️ Ako hrať (1/3)</h2><p><b>Tvoje remeslo:</b> kupuj zbrane na <b>Trhu</b>, vylepšuj ich v <b>Dielni</b> a predávaj so ziskom alebo ich odovzdaj zákazníkom v <b>Zákazkách</b>.</p><p><b>Afixy:</b> max. <b>3 prefixy</b> (poškodenie) a <b>3 sufixy</b> (rýchlosť, kritické zásahy, odolnosti). Tiery <span class="t5">T5</span> → <span class="t4">T4</span> → <span class="t3">T3</span> → <span class="t2">T2</span> → <span class="t1">T1</span> (najlepší). <b>Úroveň predmetu (ilvl)</b> určuje najlepší možný tier.</p>`,
  `<h2>⚖ Stabilita a úpravy (2/3)</h2><p><b>Stabilita je rozpočet predmetu.</b> Každá úprava ju míňa (modré číslo na tlačidle). Na 0 je predmet <b>zapečatený</b>. Zvyšná stabilita zvyšuje predajnú cenu a niektorí zákazníci ju vyžadujú.</p><p>💠 pridá afix · 🎲 prehodí hodnoty · 🌀 zruší náhodný · 🧪 pridá zvolený afix · 🔆 obnoví stabilitu · 🔮 znamenia. Ťukni na afix na karte: 🔥 <b>Vyhňa</b> zvýši tier (riziko prasknutia), 🔁 výmena, ✂️ vystrihnutie, 🔒 zámok.</p><p><b>♻ Rozober</b> nepotrebné predmety na <b>🔆 uhlíky</b> – nedajú sa kúpiť.</p>`,
  `<h2>👑 Rast obchodu (3/3)</h2><p><b>⭐ Reputácia</b> odomyká nové zbrane a vyššie úrovne predmetov. <b>⬆️ Rozvoj</b> vylepšuje obchod.</p><p><b>📖 Kódex:</b> objav všetkých 5 tierov afixu a získaj trvalý bonus.</p><p><b>🌑 Korupcia:</b> riskantná jednorazová stávka – veľké zlepšenie alebo zničenie.</p><p><b>👑 Prestíž:</b> dosiahni cieľ, predaj obchod a získaj Majstrovské body na trvalé vylepšenia.</p><p class="muted">Podrž ľubovoľné tlačidlo = vysvetlenie.</p>`]},
-en:{ilvlL:'Item level',void:'Void Essence',voidD:'Corrupts an item: a big boost, a value shift – or the item is destroyed. A corrupted item can no longer be crafted. Sold in the shop; occasionally found when selling or salvaging.',b_corrupt:'Corrupt',h_corrupt:'A one-time, irreversible gamble using a Void Essence 🌑. Outcome: a big boost, rerolled values, or the item is destroyed. Corrupted items cannot be crafted.',
+en:{music:'Music',volume:'Volume',ilvlL:'Item level',void:'Void Essence',voidD:'Corrupts an item: a big boost, a value shift – or the item is destroyed. A corrupted item can no longer be crafted. Sold in the shop; occasionally found when selling or salvaging.',b_corrupt:'Corrupt',h_corrupt:'A one-time, irreversible gamble using a Void Essence 🌑. Outcome: a big boost, rerolled values, or the item is destroyed. Corrupted items cannot be crafted.',
 corrupted:'CORRUPTED',corrShort:'🌑 Corrupted – no further crafting. Sell it or deliver it to a bounty.',alreadyCorr:'Already corrupted.',corrT:'VOID CORRUPTION',corrQ:'A one-time, <b>IRREVERSIBLE</b> gamble. Afterwards the item <b>can never be crafted again</b>.',cGood:'Big boost (tier, extra affix, implicit or ×2 value)',cNeu:'Affix values are rerolled',cBad:'The item is DESTROYED',corrYes:'🌑 Corrupt',
 c_tier:'An affix broke its limits: +1 tier!',c_affix:'The Void granted an extra affix!',c_imp:'An implicit modifier awakened!',c_price:'Cursed beauty: value ×2!',c_neu:'The Void rerolled the affix values.',c_bad:'The Void devoured the item…',implicit:'Implicit',bd_imp:'🌑 Implicit modifier',bd_corr:'🌑 Corruption ×2',
 prestige:'Prestige',presD:'Reach the gold goal, sell your shop and start over with Master Points (MP) for permanent upgrades.',mpBuy:'MP buy permanent bonuses: stability, cheaper stones, better prices, Legendary Potential…',mpEst:'At the goal: +{n} MP',mpNow:'You would earn +{n} MP now',page:'{a}/{b}',life:'Gold earned',presBtn:'👑 Sell the shop',presLock:'{g}🪙 to go',mp:'Master Points',mpS:'MP',master:'⭐ Master upgrades',presQ:'Sell the shop and start over?',presKeep:'✅ You keep: Master Points & upgrades, Codex and its bonuses, skins, Hall of Fame, stats.',presLose:'❌ You lose: gold, items, currencies, reputation level and shop upgrades.',presYes:'👑 Yes, sell it',presDone:'A NEW BEGINNING!',presGot:'You earned {n} MP. Spend them under Upgrades → Master upgrades.',mpCost:'{n} MP',
@@ -468,19 +469,56 @@ const afText=a=>AT[S.lang][a.k][0].replace('{v}','<span class="v">'+a.v+'</span>
 const $=s=>document.querySelector(s),R=Math.random,ri=(a,b)=>a+Math.floor(R()*(b-a+1)),pick=a=>a[Math.floor(R()*a.length)];
 function wpick(o){let tot=0;for(const k in o)tot+=o[k];let r=R()*tot;for(const k in o){r-=o[k];if(r<=0)return k}return Object.keys(o)[0]}
 const fmt=s=>{s=Math.max(0,Math.ceil(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
-let AC;function ac(){try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){}return AC}
-function tone(f,d=.12,type='sine',v=.15,dl=0,f2){if(S&&S.snd===false)return;const a=ac();if(!a)return;const o=a.createOscillator(),g=a.createGain(),t0=a.currentTime+dl;o.type=type;o.frequency.setValueAtTime(f,t0);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t0+d);g.gain.setValueAtTime(v,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g).connect(a.destination);o.start(t0);o.stop(t0+d+.03)}
-function noise(d=.5,v=.3){if(S&&S.snd===false)return;const a=ac();if(!a)return;const b=a.createBuffer(1,a.sampleRate*d,a.sampleRate),c=b.getChannelData(0);for(let i=0;i<c.length;i++)c[i]=(R()*2-1)*(1-i/c.length);const s=a.createBufferSource(),g=a.createGain();g.gain.value=v;s.buffer=b;s.connect(g).connect(a.destination);s.start()}
-const SND={click:()=>tone(620,.05,'square',.03),tick:()=>tone(1200+R()*400,.03,'square',.025),
- coin:()=>{tone(988,.08,'square',.06);tone(1319,.18,'square',.06,.07)},
- coins:()=>{for(let i=0;i<6;i++)tone(900+R()*700,.09,'square',.045,i*.06)},
- craft:()=>{tone(260,.12,'triangle',.16,0,520);tone(780,.1,'sine',.07,.08)},
- tierup:()=>{tone(400,.35,'triangle',.13,0,1200);tone(1600,.2,'sine',.06,.25)},
- fail:()=>{tone(180,.5,'sawtooth',.12,0,70);noise(.3,.15)},
- jackpot:()=>[523,659,784,1047,1319,1568].forEach((f,i)=>tone(f,.3,'square',.07,i*.08)),
- shatter:()=>{noise(.8,.35);tone(90,.8,'sawtooth',.13,0,40)},salvage:()=>{noise(.25,.2);tone(300,.3,'triangle',.12,.05,900)},
- void:()=>{tone(220,1.3,'sawtooth',.1,0,40);tone(55,1.6,'sine',.25,0,30);tone(880,.6,'triangle',.05,.2,110);noise(1,.18)},
- lvl:()=>[392,523,659,784,1047].forEach((f,i)=>{tone(f,.35,'triangle',.12,i*.11);tone(f*1.5,.3,'sine',.05,i*.11)})};
+let AC,MG,RV,AMB=null;
+function ac(){try{if(!AC){AC=window.__OFF||new(window.AudioContext||window.webkitAudioContext)();const cp=AC.createDynamicsCompressor();cp.threshold.value=-14;cp.ratio.value=4;cp.knee.value=10;MG=AC.createGain();MG.gain.value=vol();MG.connect(cp).connect(AC.destination);
+ const L=AC.sampleRate*2.4,ir=AC.createBuffer(2,L,AC.sampleRate);for(let ch=0;ch<2;ch++){const d=ir.getChannelData(ch);for(let i=0;i<L;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/L,3.2)}
+ const cv=AC.createConvolver();cv.buffer=ir;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=3200;RV=AC.createGain();RV.gain.value=.55;RV.connect(lp).connect(cv).connect(MG)}
+ if(AC.state==='suspended'&&!window.__OFF)AC.resume()}catch(e){}return AC}
+function vol(){return S&&S.vol!=null?S.vol:.8}
+function setVol(v){S.vol=v;if(MG)MG.gain.setTargetAtTime(v,AC.currentTime,.03);if(AMB)AMB.g.gain.setTargetAtTime(.32,AC.currentTime,.1)}
+function sOK(){return !(S&&S.snd===false)&&ac()}
+// oscillator voice: o={type,v,dl,f2,att,lp,lp2,q,rev,det}
+function osc(f,d,o={}){if(!sOK())return;const a=AC,t0=a.currentTime+(o.dl||0),x=a.createOscillator(),g=a.createGain();x.type=o.type||'sine';x.frequency.setValueAtTime(f,t0);if(o.det)x.detune.value=o.det;if(o.f2)x.frequency.exponentialRampToValueAtTime(o.f2,t0+d);
+ const at=o.att||.004;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(o.v||.1,t0+at);g.gain.exponentialRampToValueAtTime(.0005,t0+d);let n=x;
+ if(o.lp){const fl=a.createBiquadFilter();fl.type='lowpass';fl.Q.value=o.q||.7;fl.frequency.setValueAtTime(o.lp,t0);if(o.lp2){fl.frequency.linearRampToValueAtTime(o.lp2,t0+Math.min(d*.35,.4));fl.frequency.exponentialRampToValueAtTime(Math.max(120,o.lp*.6),t0+d)}n.connect(fl);n=fl}
+ n.connect(g);g.connect(MG);if(o.rev){const s=a.createGain();s.gain.value=o.rev;g.connect(s).connect(RV)}x.start(t0);x.stop(t0+d+.05)}
+let NB=null;function nbuf(){if(!NB){NB=AC.createBuffer(1,AC.sampleRate*2,AC.sampleRate);const c=NB.getChannelData(0);for(let i=0;i<c.length;i++)c[i]=Math.random()*2-1}return NB}
+// noise voice: o={v,dl,ft:'bandpass',f,f2,q,att,rev}
+function nz(d,o={}){if(!sOK())return;const a=AC,t0=a.currentTime+(o.dl||0),s=a.createBufferSource(),g=a.createGain(),fl=a.createBiquadFilter();s.buffer=nbuf();s.loop=true;fl.type=o.ft||'bandpass';fl.Q.value=o.q||1;fl.frequency.setValueAtTime(o.f||1000,t0);if(o.f2)fl.frequency.exponentialRampToValueAtTime(o.f2,t0+d);
+ const at=o.att||.002;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(o.v||.1,t0+at);g.gain.exponentialRampToValueAtTime(.0005,t0+d);s.connect(fl).connect(g).connect(MG);if(o.rev){const r=a.createGain();r.gain.value=o.rev;g.connect(r).connect(RV)}s.start(t0,Math.random());s.stop(t0+d+.05)}
+function clink(dl,f,v=.05){[1,2.76,5.4].forEach((r,i)=>osc(f*r,.12+.2/(i+1),{v:v/(i+1),dl,rev:.25}));nz(.03,{ft:'highpass',f:5000,v:v*.8,dl})}
+function brass(notes,d,v=.045,dl=0,rev=.45){notes.forEach((f,i)=>{[-7,7].forEach(dt=>osc(f,d,{type:'sawtooth',v,dl:dl+i*.015,det:dt,att:.06,lp:250,lp2:1700,q:1.2,rev}))})}
+function crackle(){if(!sOK())return}
+const SND={
+ click:()=>{nz(.035,{f:1800,q:1.4,v:.11});osc(160,.05,{v:.08})},
+ tick:()=>nz(.02,{ft:'highpass',f:3500,v:.022}),
+ anvil:()=>{nz(.06,{f:3200,q:.8,v:.32});osc(95,.18,{v:.32,f2:48});const b=440+Math.random()*60;[[1,.15,1.4],[2.76,.08,1],[5.4,.05,.7],[8.93,.025,.45],[1.48,.05,.9]].forEach(([r,v,d])=>osc(b*r,d,{v,rev:.35}))},
+ shimmer:()=>{nz(.6,{f:350,f2:4200,q:2.5,v:.12,att:.18,rev:.6});for(let i=0;i<5;i++)osc(900+Math.random()*1400,.5,{v:.012,dl:.08+i*.06,att:.05,rev:.8});osc(110,.6,{type:'triangle',v:.05,att:.15,f2:165})},
+ excise:()=>{nz(.42,{f:6500,f2:1200,q:5,v:.16,att:.02,rev:.2});nz(.3,{ft:'lowpass',f:500,v:.12,att:.03});osc(70,.25,{v:.12,f2:45})},
+ lock:()=>{nz(.09,{ft:'lowpass',f:900,v:.4});osc(120,.28,{v:.35,f2:60});osc(330,.35,{type:'triangle',v:.04,lp:900,rev:.3});osc(760,.25,{v:.02,dl:.01,rev:.3});nz(.05,{f:2500,v:.08,dl:.11})},
+ ember:()=>{nz(.7,{ft:'lowpass',f:300,f2:1400,v:.14,att:.15,rev:.3});for(let i=0;i<6;i++)nz(.015,{ft:'highpass',f:3000,v:.05,dl:.1+Math.random()*.5})},
+ thud:()=>{osc(68,.55,{v:.5,f2:36});nz(.3,{ft:'lowpass',f:220,v:.25})},
+ sealed:()=>{brass([98,116.5,146.8],1.8,.035,.05,.6);osc(49,1.8,{v:.12,att:.2})},
+ coin:()=>{clink(0,2400+Math.random()*500);clink(.07,2900+Math.random()*400,.04)},
+ coins:()=>{osc(140,.12,{v:.12,f2:80});for(let i=0;i<8;i++)clink(i*.045+Math.random()*.03,2000+Math.random()*1600,.05);nz(.35,{ft:'highpass',f:4000,v:.025,att:.05})},
+ tierup:()=>{brass([146.8,220,293.7,370],1.1,.03)},
+ jackpot:()=>{osc(55,1.6,{v:.3,f2:40});nz(.5,{ft:'lowpass',f:200,v:.2});[146.8,220,293.7,329.6,440].forEach((f,i)=>[-9,0,9].forEach(dt=>osc(f,2.6,{type:'sawtooth',det:dt,v:.014,att:.7,lp:600,lp2:1300,q:4,rev:.9,dl:i*.04})));nz(2.4,{f:900,q:6,v:.03,att:.8,rev:.8})},
+ lvl:()=>{brass([110,164.8,220,277.2],.55,.03);brass([146.8,220,293.7,370],1.4,.034,.42)},
+ bell:()=>{const f=196;[[.56,.08,3.2],[.92,.06,2.6],[1.19,.05,2.2],[1.71,.035,1.6],[2,.04,1.8],[2.74,.02,1.2],[3,.02,1],[4.07,.012,.8]].forEach(([r,v,d])=>osc(f*r,d,{v,rev:.7}));osc(f*.5,3,{v:.05,att:.01,rev:.5})},
+ fail:()=>SND.thud(),
+ shatter:()=>{nz(.7,{ft:'highpass',f:2500,v:.25,rev:.4});osc(60,.5,{v:.4,f2:30});for(let i=0;i<14;i++)osc(2200+Math.random()*4500,.08+Math.random()*.25,{v:.02,dl:Math.random()*.45,rev:.4})},
+ salvage:()=>{nz(.4,{f:1200,f2:300,q:2,v:.15});SND.anvil()},
+ void:()=>{const D=2.6;[41,41.6,61.7].forEach(f=>osc(f,D,{type:'sawtooth',v:.09,att:.3,lp:260,lp2:520,q:3,rev:.5}));osc(30,D,{v:.22,att:.2});nz(D,{ft:'lowpass',f:140,q:3,v:.35,att:.3});osc(520,1.6,{type:'triangle',v:.02,f2:90,dl:.2,rev:.9})}
+};
+// ambient forge loop (crackle + low drone)
+function ambOn(){if(AMB||!sOK()||S.music===false)return;const a=AC,L=a.sampleRate*6,b=a.createBuffer(1,L,a.sampleRate),c=b.getChannelData(0);let k=0;for(let i=0;i<L;i++){if(Math.random()<.0004)k=1;c[i]=(Math.random()*2-1)*(.035+k*.6);k*=.993}
+ const g=a.createGain();g.gain.value=0;g.gain.setTargetAtTime(.32,a.currentTime,1.5);g.connect(MG);const s=a.createBufferSource();s.buffer=b;s.loop=true;const hp=a.createBiquadFilter();hp.type='bandpass';hp.frequency.value=1600;hp.Q.value=.6;const sg=a.createGain();sg.gain.value=.12;s.connect(hp).connect(sg).connect(g);s.start();
+ const lp=a.createBiquadFilter();lp.type='lowpass';lp.frequency.value=180;lp.Q.value=2;const dg=a.createGain();dg.gain.value=.06;const os=[55,82.4,55.3].map(f=>{const o=a.createOscillator();o.type='sawtooth';o.frequency.value=f;o.connect(lp);o.start();return o});lp.connect(dg).connect(g);
+ const lfo=a.createOscillator(),lg=a.createGain();lfo.frequency.value=.07;lg.gain.value=70;lfo.connect(lg).connect(lp.frequency);lfo.start();AMB={g,stop:()=>{g.gain.setTargetAtTime(0,a.currentTime,.3);setTimeout(()=>{try{s.stop();os.forEach(o=>o.stop());lfo.stop()}catch(e){}},1500)}}}
+function ambOff(){if(AMB){AMB.stop();AMB=null}}
+function ambSync(){if(S.snd!==false&&S.music!==false&&!document.hidden)ambOn();else ambOff()}
+document.addEventListener('visibilitychange',()=>{if(AC)ambSync()});
+document.addEventListener('input',e=>{if(e.target.id==='volR'){const v=e.target.value/100;setVol(v);const l=$('#volV');if(l)l.textContent=e.target.value+'%'}});document.addEventListener('change',e=>{if(e.target.id==='volR'){save();SND.coin()}});
 const cv=$('#fx'),cx=cv.getContext('2d');let parts=[],fxOn=false;
 function resize(){cv.width=innerWidth;cv.height=innerHeight}addEventListener('resize',resize);resize();
 function sparks(el,color,n=30,up){const r=el?el.getBoundingClientRect():{left:innerWidth/2,top:innerHeight/2,width:0,height:0};const x=r.left+r.width/2,y=r.top+r.height/2;
@@ -505,7 +543,7 @@ function icon(b){const P={
  wand:'<path d="M13 53 L37 29" stroke="#d8cbb0" stroke-width="4" stroke-linecap="round"/><path d="M13 53 L20 46" stroke="url(#gd)" stroke-width="5" stroke-linecap="round"/><path d="M44 9 L47.5 19 L57 22 L47.5 25 L44 35 L40.5 25 L31 22 L40.5 19Z" fill="url(#gd)"/><circle cx="44" cy="22" r="2.5" fill="#fff"/>'};
  return `<svg viewBox="0 0 64 64">${GR}${P[b]}</svg>`}
 let S;
-function fresh(){return{v:7,lang:'en',langSet:false,snd:true,tab:'market',mkPage:0,gold:CONFIG.startGold,cur:{...CONFIG.startCur},items:[],sel:-1,selAff:null,market:[],marketAt:0,play:0,hot:null,trendAt:0,demand:{},bounties:[],quests:[],xp:0,lvl:1,up:{stall:0,stab:0,haggle:0,tongue:0},codex:{},hof:[],stats:{sold:0,profit:0,t1:0,crafts:0,salvaged:0,quests:0},login:{last:'',streak:0},tut:false,nid:1,helpAt:0,guide:0,skin:'default',skins:{default:1},omen:null,life:0,pres:0,mp:0,mup:{mstab:0,mcheap:0,mbuy:0,msell:0,mlp:0,mgold:0,mvoid:0}}}
+function fresh(){return{v:7,lang:'en',langSet:false,snd:true,music:true,vol:.8,tab:'market',mkPage:0,gold:CONFIG.startGold,cur:{...CONFIG.startCur},items:[],sel:-1,selAff:null,market:[],marketAt:0,play:0,hot:null,trendAt:0,demand:{},bounties:[],quests:[],xp:0,lvl:1,up:{stall:0,stab:0,haggle:0,tongue:0},codex:{},hof:[],stats:{sold:0,profit:0,t1:0,crafts:0,salvaged:0,quests:0},login:{last:'',streak:0},tut:false,nid:1,helpAt:0,guide:0,skin:'default',skins:{default:1},omen:null,life:0,pres:0,mp:0,mup:{mstab:0,mcheap:0,mbuy:0,msell:0,mlp:0,mgold:0,mvoid:0}}}
 function save(){try{localStorage.setItem(CONFIG.saveKey,JSON.stringify(S))}catch(e){}}
 function load(){try{const d=JSON.parse(localStorage.getItem(CONFIG.saveKey));if(d&&(d.v>=1&&d.v<=7)){S=Object.assign(fresh(),d);
   for(const k in CONFIG.startCur)if(S.cur[k]==null)S.cur[k]=CONFIG.startCur[k];
@@ -566,7 +604,7 @@ const presPct=()=>Math.min(1,S.life/presGoal());
 function corrOdds(){const m=S.mup.mvoid*.04,c=CONFIG.corrupt;return{g:c.good+m,n:c.neutral,b:Math.max(0,c.brick-m)}}
 function qp(k,v,max){S.quests.forEach(q=>{if(!q||q.k!==k||q.p>=q.n)return;if(max){if(k==='sell'){if(v>=q.n)q.p=q.n}else q.p=Math.max(q.p,Math.min(v,q.n))}else q.p+=v;if(q.p>=q.n){q.p=q.n;toast('🎯 '+t('qDone'));SND.tierup()}})}
 function discover(a){if(!a)return;const key=a.k+a.t;if(S.codex[key])return;const rb=rowDone(a.k),pp=pageDone('p'),ps=pageDone('s');S.codex[key]=1;toast('📖 '+t('newCx')+': <span class="t'+a.t+'">'+afShort(a.k)+' T'+a.t+'</span>');
- if(!rb&&rowDone(a.k)){toast('✨ '+t('rowB'));setTimeout(()=>{SND.lvl();anim('#flash','go');sparks(null,['#ffd76a','#6be36b','#6fd0ff','#fff'],140,true);modal(`<div class="lvl">📖</div><div class="big">${t('cxDone')}</div><p style="text-align:center;font-size:17px"><b>${afShort(a.k)}</b><br>🎁 <span class="good">${cxLong(a.k)}</span></p><p class="muted" style="text-align:center">${t('cxPerm')}</p>`)},700)}if(!pp&&pageDone('p'))toast('✨ '+t('pageP'));if(!ps&&pageDone('s'))toast('✨ '+t('pageS'))}
+ if(!rb&&rowDone(a.k)){toast('✨ '+t('rowB'));setTimeout(()=>{SND.bell();anim('#flash','go');sparks(null,['#ffd76a','#6be36b','#6fd0ff','#fff'],140,true);modal(`<div class="lvl">📖</div><div class="big">${t('cxDone')}</div><p style="text-align:center;font-size:17px"><b>${afShort(a.k)}</b><br>🎁 <span class="good">${cxLong(a.k)}</span></p><p class="muted" style="text-align:center">${t('cxPerm')}</p>`)},700)}if(!pp&&pageDone('p'))toast('✨ '+t('pageP'));if(!ps&&pageDone('s'))toast('✨ '+t('pageS'))}
 function addXp(n){S.xp+=n;while(S.xp>=needXp(S.lvl)){S.xp-=needXp(S.lvl);S.lvl++;celebrate()}}
 function celebrate(){SND.lvl();anim('#flash','go');setTimeout(()=>{sparks(null,['#ffd76a','#ff8c1a','#6fd0ff','#c86bff','#fff'],160,true)},100);
  modal(`<div class="lvl">⭐</div><div class="big">${t('lvlUp')}</div><p style="text-align:center;font-size:18px">${t('level')} <b>${S.lvl}</b></p><p style="text-align:center">${S.lvl<=4?'🔓 '+t('u'+S.lvl)+'<br>':''}${t('uI')} (${marketMax()})</p>`)}
@@ -822,8 +860,8 @@ function doCraft(a){const it=cur(),A=all(it),sa=getSelAff(it),sc=CONFIG.stabCost
   case'ember':it.stab=Math.min(it.stab0,it.stab+CONFIG.emberRestore);break;
  }
  if(d.cur)S.cur[d.cur]--;it.stab=Math.max(0,it.stab-sc);S.stats.crafts++;if(S.guide===1)S.guide=2;qp('crafts',1);qp('rare',all(it).length,1);
- render();const card=$('#wcard');anim(card,'shake');sparks(card,a==='annul'||a==='tannul'?'#9be':a==='ember'?'#ffb84a':'#ffd76a',25);SND.craft();
- slotAnim(slot);if(it.stab!==from)fxStab(it,from);if(jack)setTimeout(jackpot,650);if(it.stab<=0&&from>0)toast('🔒 '+t('sealedShort'));checkPerfect(it);save()}
+ render();const card=$('#wcard');anim(card,'shake');sparks(card,a==='annul'||a==='tannul'?'#9be':a==='ember'?'#ffb84a':'#ffd76a',25);({lock:SND.lock,tannul:SND.excise,ember:SND.ember,reroll:SND.shimmer,preroll:SND.shimmer,sroll:SND.shimmer,swap:SND.shimmer,annul:SND.shimmer}[a]||SND.anvil)();
+ slotAnim(slot);if(it.stab!==from)fxStab(it,from);if(jack)setTimeout(jackpot,650);if(it.stab<=0&&from>0){toast('🔒 '+t('sealedShort'));setTimeout(SND.sealed,500)}checkPerfect(it);save()}
 function slotAnim(ids){const els=ids.filter(Boolean).map(id=>document.querySelector(`#wcard .af[data-arg="${id}"]`)).filter(Boolean);if(!els.length)return;
  els.forEach(e=>{e.classList.add('slot');e._fin=e.querySelector('.v').textContent});let n=0;const iv=setInterval(()=>{n++;els.forEach(e=>{const v=e.querySelector('.v');if(v)v.textContent=Math.max(1,Math.round(+e._fin*(0.3+R()*1.4)))});SND.tick();
   if(n>=10){clearInterval(iv);els.forEach(e=>{const v=e.querySelector('.v');if(v)v.textContent=e._fin;e.classList.remove('slot');anim(e,'settle')})}},55)}
@@ -832,9 +870,9 @@ function fxStab(it,from){document.querySelectorAll('#wcard .sb i').forEach(i=>{i
 function finishItem(){S.items.splice(S.sel,1);S.sel=S.items.length?S.items.length-1:-1;S.selAff=null}
 const ACT={
  tab:a=>{S.tab=a;sheet=null},lang:()=>{S.lang=S.lang==='sk'?'en':'sk'},help:()=>{showTut(0);return'noR'},tutNext:i=>{mq[0]=tutHtml(+i);showM();return'noR'},
- setLang:l=>{S.lang=l;S.langSet=true;renderTitle();if(window._daily&&mq.length&&String(mq[0]).includes('🎁'))showDaily();render()},snd:()=>{S.snd=!S.snd;renderTitle();if(S.snd)SND.coin()},
+ setLang:l=>{S.lang=l;S.langSet=true;renderTitle();if(window._daily&&mq.length&&String(mq[0]).includes('🎁'))showDaily();render()},snd:()=>{S.snd=!S.snd;renderTitle();ambSync();if(S.snd)SND.coin()},music:()=>{S.music=S.music===false;ambSync();SND.click()},
  toTitle:()=>{sheet=null;renderTitle();$('#title').classList.remove('out','hidden')},
- play:()=>{ac();SND.coin();$('#title').classList.add('out');setTimeout(()=>{if($('#title').classList.contains('out'))$('#title').classList.add('hidden');if(window._daily)showDaily()},500)},
+ play:()=>{ac();SND.coin();ambSync();$('#title').classList.add('out');setTimeout(()=>{if($('#title').classList.contains('out'))$('#title').classList.add('hidden');if(window._daily)showDaily()},500)},
  tilt:()=>{const c=$('#wcard');if(c){c.classList.remove('flip');void c.offsetWidth;c.classList.add('flip');SND.click&&SND.click()}return'noR'},
  mkInfo:i=>{const it=S.market[+i];if(!it)return;modal(itemCard(it,false,{foot:`<div class="muted" style="margin-top:3px">${t('value')} ~${itemValue(it)}🪙</div>`},'m'+i)+`<div class="flex" style="margin-top:8px"><button class="gold grow" id="mkBuy" data-act="mkBuy" data-arg="${i}">${t('buy')} ${buyPrice(it)}🪙</button><button class="grow" data-act="closeModal">${t('close')}</button></div>`);setTimeout(paintAll,0);return'noR'},
  mkBuy:i=>{closeM();return ACT.buy(i)},
@@ -854,7 +892,7 @@ const ACT={
   if(a==='essence'){sheet='essence';return}if(a==='forge')return ACT.forgeAsk();if(a==='corrupt')return ACT.corrAsk();if(ACTS[a].sel)sheet=null;doCraft(a);return'noR'},
  essence:k=>{const it=cur(),d=AFM[k];sheet=null;if(why('essence'))return;if(it[d.s].length>=sideCap(it)||all(it).some(a=>a.k===k))return;const from=it.stab;
   S.gold-=essCost();if(S.guide===1)S.guide=2;const tr=rollTier(it.ilvl),q=R(),af={k,t:tr,q,v:rollVal(d,tr,q),lock:false};it[d.s].push(af);discover(af);it.stab=Math.max(0,it.stab-CONFIG.stabCost.essence);S.stats.crafts++;qp('crafts',1);qp('rare',all(it).length,1);
-  render();anim('#wcard','shake');sparks($('#wcard'),'#7fe3ff',35);SND.craft();slotAnim([idOf(it,af)]);fxStab(it,from);if(tr===1)setTimeout(jackpot,650);checkPerfect(it);save();return'noR'},
+  render();anim('#wcard','shake');sparks($('#wcard'),'#7fe3ff',35);SND.anvil();slotAnim([idOf(it,af)]);fxStab(it,from);if(tr===1)setTimeout(jackpot,650);checkPerfect(it);save();return'noR'},
  salvage:i=>{const btn=i!=null?$('#sv-'+i):$('#salvageBtn');if(i!=null)S.sel=+i;const it=cur();if(!it||it.unid)return;const n=salvageN(it)+(R()<cxB('ember')/100?1:0),r=btn?btn.getBoundingClientRect():null;S.cur.embers+=n;qp('salvage',1);S.stats.salvaged=(S.stats.salvaged||0)+1;if(n>salvageN(it))setTimeout(()=>toast(t('emberX')),400);voidDrop();finishItem();SND.salvage();render();
   const ph={getBoundingClientRect:()=>r||{left:innerWidth/2,top:innerHeight/2,width:0,height:0}};sparks(ph,['#ffb84a','#ff6a00','#ffd76a'],45,true);floatAt(ph,t('salvaged').replace('{n}',n),'#ffb84a');save();return'noR'},
  charity:()=>{if(S.play<S.helpAt)return;const it=makeItem(ri(10,20),1);it.cost=0;all(it).forEach(discover);S.items.push(it);S.sel=S.items.length-1;S.selAff=null;S.helpAt=S.play+CONFIG.charityCooldown;S.tab='workshop';SND.coin()},
@@ -883,7 +921,7 @@ const ACT={
   render();anim('#vflash','go');anim('#wcard','vsw');SND.void();sparks($('#wcard'),['#b040ff','#7a1aff','#e0a0ff','#2a0040'],70);
   setTimeout(()=>{const k=S.items.findIndex(x=>x.id===id);if(k<0)return;const x=S.items[k];let msg,cls,ic;
    if(r<o.b){S.sel=k;finishItem();msg=t('c_bad');cls='bad';ic='💀';SND.shatter();sparks(null,['#b040ff','#2a0040','#555','#e0a0ff'],160)}
-   else if(r<o.b+o.n){all(x).forEach(a=>{a.q=R();a.v=rollVal(AFM[a.k],a.t,a.q);a.lock=false});msg=t('c_neu');cls='warn';ic='🔀';SND.craft()}
+   else if(r<o.b+o.n){all(x).forEach(a=>{a.q=R();a.v=rollVal(AFM[a.k],a.t,a.q);a.lock=false});msg=t('c_neu');cls='warn';ic='🔀';SND.shimmer()}
    else{const A=all(x),up=A.filter(a=>a.t>1),used=new Set(A.map(a=>a.k)),free=AFF.filter(a=>!used.has(a.k)),opts=['price'];if(up.length)opts.push('tier');if(free.length)opts.push('affix');if(!x.imp)opts.push('imp');const c=pick(opts);
     if(c==='tier'){const a=pick(up);a.t--;a.v=rollVal(AFM[a.k],a.t,a.q);discover(a);if(a.t===1)setTimeout(jackpot,500)}
     else if(c==='affix'){const d=pick(free),tr=rollTier(x.ilvl,true),q=R(),af={k:d.k,t:tr,q,v:rollVal(d,tr,q),lock:false};x[d.s].push(af);discover(af)}
@@ -892,7 +930,7 @@ const ACT={
    render();if(cls!=='bad'){anim('#wcard','reveal');sparks($('#wcard'),cls==='good'?['#e0a0ff','#ffd76a','#fff','#b040ff']:['#b040ff','#7a1aff'],cls==='good'?90:40,true)}
    modal(`<div class="lvl" style="filter:drop-shadow(0 0 16px #b040ff)">${ic}</div><div class="big ${cls}" style="text-shadow:0 0 12px #8a2cff">${msg}</div>${cls!=='bad'?`<p style="text-align:center">${nameOf(x)} · ${sellPrice(x)}🪙</p>`:''}`);save()},900);save();return'noR'},
  presAsk:()=>{const g=mpGain();if(!g)return;modal(`<div class="lvl">👑</div><div class="big">${t('presQ')}</div><p style="text-align:center;font-size:18px">+${g} ${t('mpS')}</p><p>${t('presKeep')}<br>${t('presLose')}</p><div class="flex"><button class="gold grow" id="presYes" data-act="presYes">${t('presYes')}</button><button class="grow" data-act="closeModal">${t('cancel')}</button></div>`);return'noR'},
- presYes:()=>{closeM();const g=mpGain();if(!g)return;const st=Object.assign({},S.stats,{prestiges:(S.stats.prestiges||0)+1}),keep={lang:S.lang,langSet:S.langSet,snd:S.snd,tut:true,guide:3,codex:S.codex,hof:S.hof,skins:S.skins,skin:S.skin,stats:st,login:S.login,nid:S.nid,mp:S.mp+g,mup:S.mup,pres:S.pres+1,best:Math.max(S.best||0,S.life)};
+ presYes:()=>{closeM();const g=mpGain();if(!g)return;const st=Object.assign({},S.stats,{prestiges:(S.stats.prestiges||0)+1}),keep={lang:S.lang,langSet:S.langSet,snd:S.snd,music:S.music,vol:S.vol,tut:true,guide:3,codex:S.codex,hof:S.hof,skins:S.skins,skin:S.skin,stats:st,login:S.login,nid:S.nid,mp:S.mp+g,mup:S.mup,pres:S.pres+1,best:Math.max(S.best||0,S.life)};
   S=Object.assign(fresh(),keep);S.gold=CONFIG.startGold+200*S.mup.mgold;S.tab='upgrades';sheet='master';ensure();SND.lvl();anim('#flash','go');setTimeout(()=>sparks(null,['#ffd76a','#b040ff','#fff'],160,true),100);modal(`<div class="lvl">👑</div><div class="big">${t('presDone')}</div><p style="text-align:center">${t('presGot').replace('{n}',g)}</p>`)},
  mup:k=>{const u=MUPS.find(x=>x.k===k),l=S.mup[k];if(!u||l>=u.max||S.mp<l+1)return;S.mp-=l+1;S.mup[k]++;SND.lvl();sparks($('#mu-'+k),['#ffd76a','#b040ff'],30);sheet='master'},
  equip:k=>{if(!S.skins[k])return;S.skin=k;SND.tierup();toast('🎨 '+t('sk_'+k))},
@@ -962,7 +1000,7 @@ const SH={
  shop:()=>`<div class="flex"><h2 class="grow" style="margin:2px 0">🛒 ${t('shopT')}</h2><span>🪙 ${S.gold}</span></div><div class="shg">`+CURS.map(c=>{const lk=CURLV[c]&&S.lvl<CONFIG[CURLV[c]],p=curCost(c),e=c==='lock'?CONFIG.lockEmbers:0,no=lk||S.gold<p||S.cur.embers<e;
   return `<div class="shc" data-help="${c}"><div class="shi">${CICO[c]}${CTAG[c]?`<sub>${CTAG[c]}</sub>`:''} <b id="own-${c}">×${S.cur[c]}</b>${CONFIG.stabCost[c]?` <span style="color:#7fd0ff;font-size:10px">⚖${CONFIG.stabCost[c]}</span>`:''}</div><div class="shn">${t(c)}</div>${lk?`<div class="warn" style="font-size:11px">🔒 ${t('unlockAt')} ${CONFIG[CURLV[c]]}</div>`:`<div class="shb"><button class="gold" id="shop-${c}-1" data-act="buyCur" data-arg="${c}:1" ${no?'disabled':''}>${p}🪙${e?'+'+e+'🔆':''}</button><button id="shop-${c}-5" data-act="buyCur" data-arg="${c}:5" ${lk||S.gold<p*5||S.cur.embers<e*5?'disabled':''}>×5</button></div>`}</div>`}).join('')+
   `</div><div class="muted" style="margin:5px 0">🔆 ${t('embers')}: <b>${S.cur.embers}</b> – ${t('srcE')}<br>${t('shopHold')}</div><button style="width:100%" id="closeSheet" data-act="closeSheet">✖ ${t('close')}</button>`,
- settings:()=>`<h2>⚙ ${t('settings')}</h2><div class="setrow"><b>🌐 ${t('language')}</b><div class="seg grow"><button class="${S.lang==='en'?'on':''}" id="setEn" data-act="setLang" data-arg="en">English</button><button class="${S.lang==='sk'?'on':''}" id="setSk" data-act="setLang" data-arg="sk">Slovenčina</button></div></div><div class="setrow"><b>${S.snd?'🔊':'🔇'} ${t('sound')}</b><div class="seg grow"><button class="${S.snd?'on':''}" id="sndOn" data-act="${S.snd?'':'snd'}">${t('on')}</button><button class="${S.snd?'':'on'}" id="sndOff" data-act="${S.snd?'snd':''}">${t('off')}</button></div></div><div class="flex" style="margin:8px 0"><button class="grow" data-act="help">📖 ${t('howTo')}</button><button class="grow" id="toTitle" data-act="toTitle">🏠 ${t('toTitle')}</button></div><button class="red" style="width:100%" id="resetBtn" data-act="reset">🗑 ${t('reset')}</button><p class="muted" style="text-align:center">${t('saveInfo')}</p><button style="width:100%" id="closeSheet" data-act="closeSheet">✖ ${t('close')}</button>`,
+ settings:()=>`<h2>⚙ ${t('settings')}</h2><div class="setrow"><b>🌐 ${t('language')}</b><div class="seg grow"><button class="${S.lang==='en'?'on':''}" id="setEn" data-act="setLang" data-arg="en">English</button><button class="${S.lang==='sk'?'on':''}" id="setSk" data-act="setLang" data-arg="sk">Slovenčina</button></div></div><div class="setrow"><b>${S.snd?'🔊':'🔇'} ${t('sound')}</b><div class="seg grow"><button class="${S.snd?'on':''}" id="sndOn" data-act="${S.snd?'':'snd'}">${t('on')}</button><button class="${S.snd?'':'on'}" id="sndOff" data-act="${S.snd?'snd':''}">${t('off')}</button></div></div><div class="setrow"><b>🎵 ${t('music')}</b><div class="seg grow"><button class="${S.music!==false?'on':''}" id="musOn" data-act="${S.music!==false?'':'music'}">${t('on')}</button><button class="${S.music!==false?'':'on'}" id="musOff" data-act="${S.music!==false?'music':''}">${t('off')}</button></div></div><div class="setrow"><b>🔉 ${t('volume')}</b><input type="range" id="volR" class="grow vol" min="0" max="100" value="${Math.round((S.vol??.8)*100)}"><span style="min-width:34px;text-align:right" id="volV">${Math.round((S.vol??.8)*100)}%</span></div><div class="flex" style="margin:8px 0"><button class="grow" data-act="help">📖 ${t('howTo')}</button><button class="grow" id="toTitle" data-act="toTitle">🏠 ${t('toTitle')}</button></div><button class="red" style="width:100%" id="resetBtn" data-act="reset">🗑 ${t('reset')}</button><p class="muted" style="text-align:center">${t('saveInfo')}</p><button style="width:100%" id="closeSheet" data-act="closeSheet">✖ ${t('close')}</button>`,
  stash:()=>`<h2>📦 ${t('stash')} ${S.items.length}/${stallSize()}</h2>${S.items.length?S.items.map((x,i)=>`<div class="si" style="--rc:${RAR[rarity(x)][1]}"><div class="ic">${wcv('i'+i,40)}</div><div class="grow" data-act="selItem" data-arg="${i}"><b style="color:var(--rc)">${nameOf(x)}</b>${x.frac?' <span class="tagx">💔</span>':''}${x.lp?' <span class="lpb">✦</span>':''}<div class="muted">ilvl ${x.ilvl} · ${x.unid?'?':all(x).length+' '+t('affN')+' · ⚖'+x.stab+'/'+x.stab0}</div></div>
   <button class="sm" data-act="selItem" data-arg="${i}">⚒️</button>${x.unid?'':`<button class="sm ${isJunk(x)?'':'gold'}" id="sl-${i}" data-act="sell" data-arg="${i}">${sellPrice(x)}🪙</button><button class="sm ${isJunk(x)?'gold':''}" id="sv-${i}" data-act="salvage" data-arg="${i}">♻${salvageN(x)}🔆</button>`}</div>`).join(''):`<div class="muted">${t('noItem')}</div>`}<button style="width:100%" id="closeSheet" data-act="closeSheet">✖ ${t('close')}</button>`,
  essence:()=>{const it=cur();return `<h2>${t('essenceT')}</h2><div class="muted">${t('essenceD2')} · ${essCost()}🪙 · ⚖${CONFIG.stabCost.essence}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin:8px 0">${it?AFF.filter(a=>it[a.s].length<sideCap(it)&&!all(it).some(x=>x.k===a.k)).map(a=>`<button class="ess" data-act="essence" data-arg="${a.k}">${t(a.s==='p'?'prefixes':'suffixes').slice(0,4)}. · ${afShort(a.k)}${S.hot===a.k?' 🔥':''}</button>`).join(''):''}</div><button style="width:100%" id="closeSheet" data-act="closeSheet">✖ ${t('close')}</button>`},
@@ -987,7 +1025,7 @@ function tick(){if(document.hidden)return;S.play++;checkSkins();let rr=false;
  if(S.play>=S.trendAt){rotateTrend();toast('🔥 '+t('hot')+': '+afShort(S.hot));rr=true}
  S.bounties.forEach((b,i)=>{if(S.play>=b.until){S.bounties[i]=genBounty();if(S.tab==='bounties')rr=true}});
  if(rr&&!document.querySelector('.slot')&&!sheet)render();else{renderTop();updCd()}if(S.play%5===0)save()}
-function ensure(){if(!S.hot)rotateTrend();if(!S.market.length)genMarket();while(S.bounties.length<3)S.bounties.push(genBounty());S.quests=S.quests.filter(Boolean);while(S.quests.length<3)S.quests.push(genQuest());}
+function ensure(){if(S.vol==null)S.vol=.8;if(S.music==null)S.music=true;if(!S.hot)rotateTrend();if(!S.market.length)genMarket();while(S.bounties.length<3)S.bounties.push(genBounty());S.quests=S.quests.filter(Boolean);while(S.quests.length<3)S.quests.push(genQuest());}
 function init(){load();ensure();
  window._daily=null;
  const today=new Date().toDateString(),y=new Date(Date.now()-864e5).toDateString(),first=!S.login.last;
@@ -995,7 +1033,7 @@ function init(){load();ensure();
   if(!first){const g=CONFIG.daily.gold*Math.min(S.login.streak,7);S.gold+=g;S.cur.augment+=CONFIG.daily.aug;S.cur.reroll+=1;S.cur.embers+=CONFIG.daily.embers;window._daily={streak:S.login.streak,g,aug:CONFIG.daily.aug,embers:CONFIG.daily.embers}}}
  if(!S.tut){S.tut=true;showTut(0)}
  renderTitle();render();save();setInterval(tick,1000)}
-window.G={BUYERS,drawBuyer,get S(){return S},set S(v){S=v},cxB,CXR,mpGain,presGoal,FR,ACT,render,itemValue,makeItem,save,why};
+window.G={SND,__setAC:c=>{window.__OFF=c;AC=null;NB=null;AMB=null},BUYERS,drawBuyer,get S(){return S},set S(v){S=v},cxB,CXR,mpGain,presGoal,FR,ACT,render,itemValue,makeItem,save,why};
 init();
 </script>
 </body></html>
