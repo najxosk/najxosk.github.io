@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   const { GAMES, TASKS_PER_GAME, getTask, bunnySVG, itemSVG, num } = window.ZS_GAMES;
-  const VERSION = 'g2v3';
+  const VERSION = 'g2v4';
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   const $ = s => document.querySelector(s);
   const KEY = 'zvieratkovaSkolka2.v1'; // separate progress & name from game 1
@@ -113,15 +113,20 @@
     if (!missing && urls.length) return playChain(urls, my, done);
     webSpeak(plain.join(' '), opt, my, done);
   }
+  // plays clips one after another; can never hang: every clip has a watchdog, a blocked/failed play ends the whole chain
   function playChain(urls, my, done) {
-    let k = 0;
+    let k = 0, wd = null, finished = false;
+    const end = () => { if (finished) return; finished = true; clearTimeout(wd); duck(false); if (done && my === speechSeq) done(); };
     const next = () => {
-      if (my !== speechSeq) return;
-      if (k >= urls.length) { duck(false); if (done) done(); return; }
-      const u = urls[k++]; clipLog.push(u);
-      voiceEl.onended = next; voiceEl.onerror = next;
+      clearTimeout(wd);
+      if (my !== speechSeq || finished) return;
+      if (k >= urls.length) return end();
+      const u = urls[k++]; clipLog.push(u); let moved = false;
+      const step = () => { if (moved) return; moved = true; next(); };
+      voiceEl.onended = step; voiceEl.onerror = step;
       voiceEl.src = u; duck(true);
-      const pr = voiceEl.play(); if (pr && pr.catch) pr.catch(() => { if (my === speechSeq) next(); });
+      wd = setTimeout(step, 7000); // slow network / stalled clip: skip it
+      try { const pr = voiceEl.play(); if (pr && pr.catch) pr.catch(() => { if (my === speechSeq) { moved = true; end(); } }); } catch (e) { moved = true; end(); } // autoplay blocked: skip the rest
     };
     next();
   }
@@ -326,7 +331,7 @@
   function choose(btn, o) {
     if (cur.locked) return;
     if (o.ok) { btn.classList.add('good'); success(btn); }
-    else { btn.classList.remove('wrong'); void btn.offsetWidth; btn.classList.add('wrong'); wrongAnswer(null, o.say ? thisIsText(save.lang, o.say) : ''); }
+    else { btn.classList.remove('wrong'); void btn.offsetWidth; btn.classList.add('wrong'); wrongAnswer(null, o.say && !cur.task.quietWrong ? thisIsText(save.lang, o.say) : ''); }
   }
   const EN_NUMS = new Set(window.ZS_GAMES ? Array.from({ length: 21 }, (_, n) => num('en', n)) : []);
   function thisIsText(lang, x) {
@@ -364,8 +369,8 @@
       if (cur.index >= TASKS_PER_GAME - 1) { cur.index = firstUnsolved(g.id); return loadTask(); }
       cur.index++; loadTask();
     };
-    say(cur.task.answerParts || ans, { done: () => setTimeout(go, Math.max(250, 1400 - (Date.now() - t0))) });
-    setTimeout(go, save.voice ? 6000 : 1400);
+    setTimeout(go, save.voice ? 6000 : 1400); // hard fallback: progress never depends on audio
+    try { say(cur.task.answerParts || ans, { done: () => setTimeout(go, Math.max(250, 1400 - (Date.now() - t0))) }); } catch (e) { setTimeout(go, 1400); }
   }
   function finish() {
     const g = cur.game; gs(g.id).next = 0;
@@ -572,7 +577,7 @@
         if (cur.locked) return; const it = t.items[k];
         if (bn.id === it.bin) {
           b.querySelector('.binin').insertAdjacentHTML('beforeend', it.html.replace('huge', 'mini')); tone([660], 0.12, 'sine', 0.07); k++;
-          if (k >= t.items.length) { stage.innerHTML = '<div class="sortitem"><span class="emo huge">🧺</span></div>'; success(b); } else { sayKeep(it.say); show(); }
+          if (k >= t.items.length) { stage.innerHTML = '<div class="sortitem"><span class="emo huge">🧺</span></div>'; success(b); } else { stopSpeech(); show(); }
         } else { shake(b); wrongAnswer(it.hint); glowNext(opts.querySelector(`.bin[data-id="${it.bin}"]`)); }
       };
       opts.appendChild(b);
@@ -634,7 +639,7 @@
     const pal = document.createElement('div'); pal.className = 'palette';
     t.palette.forEach(p => {
       const b = mk('opt swatch', ''); b.style.setProperty('--sw', p.hex); b.dataset.c = p.id; b.setAttribute('aria-label', p.say);
-      b.onclick = () => { if (cur.locked) return; col = p.id; pal.querySelectorAll('.swatch').forEach(x => x.classList.toggle('sel', x === b)); sayKeep(p.say); };
+      b.onclick = () => { if (cur.locked) return; col = p.id; pal.querySelectorAll('.swatch').forEach(x => x.classList.toggle('sel', x === b)); tone([620 + 40 * t.palette.indexOf(p)], 0.12, 'sine', 0.07); };
       pal.appendChild(b);
     });
     opts.appendChild(pal);

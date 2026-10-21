@@ -283,3 +283,9 @@ body.s-welcome #btnHome,body.s-welcome #tbStars,body.s-menu #btnHome,body.s-name
 @keyframes pop{0%{transform:scale(.7)}70%{transform:scale(1.1)}100%{transform:scale(1)}}
 @keyframes pulse{50%{transform:scale(1.2)}}
 @media (orientation:landscape) and (max-height:500px){.slot{min-height:46px;min-width:42px}.tile,.ptile,.hcell,.pant{min-height:48px}.bin{min-height:84px}.swatch{width:46px;height:46px;min-height:46px}.pairs{gap:8px}.bowlic{font-size:48px}.recipe{font-size:20px}.rline{font-size:20px}.pshape .shape{max-height:26vh}}
+/* never let a control fall off a small phone screen */
+#scrGame{overflow-y:auto;-webkit-overflow-scrolling:touch}
+#options[data-kind="paint"] .pshape .shape,.pshape .shape{width:min(20vw,96px);max-height:15vh}
+.swatch{width:54px;height:54px;min-height:54px}
+@media (max-height:700px){#options .opt{min-height:60px}.bin{min-height:96px}.sortitem .emo.huge{font-size:72px}#stage{min-height:84px;padding:6px}.donebtn{height:60px;font-size:34px}}
+@media (orientation:landscape) and (max-height:500px){.pshape .shape{width:min(12vw,80px);max-height:22vh}.swatch{width:42px;height:42px;min-height:42px}.sortitem .emo.huge{font-size:54px}.bin{min-height:70px}.basket2{font-size:34px}}

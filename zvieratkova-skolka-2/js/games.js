@@ -1103,28 +1103,39 @@
 
   // ---------------- 1) COLORS: sort into baskets / paint by spoken rules / shadow match ----------------
   const SORTABLE = OBJ.filter(o => !o[5]);
-  const SORT_COLS = ['yellow', 'red', 'green', 'orange', 'pink', 'brown'];
   const oName = (lang, o) => T(lang, o[1], 'the ' + o[2], o[3]);
   const oBare = (lang, o) => T(lang, o[1], o[2], o[3]);
+  // colour sorting: mostly animals (+ a few fruits), each colour pool rotates so pictures don't keep coming back
+  const SORT2 = [...SORTABLE.filter(o => !['🐷', '🐻', '🐸', '🐥', '🦩'].includes(o[0])),
+    ['🐥', 'kuriatko', 'chick', 'el pollito', 'yellow'], ['🐝', 'včielka', 'bee', 'la abeja', 'yellow'], ['🦒', 'žirafa', 'giraffe', 'la jirafa', 'yellow'],
+    ['🐞', 'lienka', 'ladybug', 'la mariquita', 'red'], ['🦀', 'krab', 'crab', 'el cangrejo', 'red'], ['🦞', 'homár', 'lobster', 'la langosta', 'red'],
+    ['🐸', 'žaba', 'frog', 'la rana', 'green'], ['🐊', 'krokodíl', 'crocodile', 'el cocodrilo', 'green'], ['🐢', 'korytnačka', 'turtle', 'la tortuga', 'green'], ['🦎', 'jašterica', 'lizard', 'la lagartija', 'green'], ['🐍', 'had', 'snake', 'la serpiente', 'green'],
+    ['🦊', 'líška', 'fox', 'el zorro', 'orange'], ['🐯', 'tiger', 'tiger', 'el tigre', 'orange'],
+    ['🐷', 'prasiatko', 'piglet', 'el cerdito', 'pink'], ['🦩', 'plameniak', 'flamingo', 'el flamenco', 'pink'],
+    ['🐻', 'medveď', 'bear', 'el oso', 'brown'], ['🐴', 'koník', 'horse', 'el caballo', 'brown'], ['🐒', 'opica', 'monkey', 'el mono', 'brown'], ['🦔', 'ježko', 'hedgehog', 'el erizo', 'brown'], ['🐿️', 'veverička', 'squirrel', 'la ardilla', 'brown'],
+    ['🐳', 'veľryba', 'whale', 'la ballena', 'blue'], ['🐦', 'vtáčik', 'bird', 'el pájaro', 'blue'], ['🦋', 'motýľ', 'butterfly', 'la mariposa', 'blue']]
+    .filter((o, k, A) => A.findIndex(x => x[0] === o[0]) === k);
+  const SORT_COLS = ['yellow', 'red', 'green', 'orange', 'pink', 'brown', 'blue'];
+  const sortPool = id => shuffle(rng(hash('sortpool' + id)), SORT2.filter(o => o[4] === id));
   function genSort(i, lang, r) {
     const nc = i < 8 ? 2 : 3;
     const cols = sample(r, SORT_COLS, nc).map(byId);
     const per = i < 10 ? 2 : 3; let items = [];
-    cols.forEach(c => { const pool = SORTABLE.filter(o => o[4] === c.id); sample(r, pool, Math.min(per, pool.length)).forEach(o => items.push({ o, c })); });
-    items = shuffle(r, items);
+    cols.forEach((c, ci) => { const pool = sortPool(c.id), m = Math.min(per, pool.length); for (let j = 0; j < m; j++) items.push({ o: pool[(i * 2 + ci + j) % pool.length], c }); });
+    items = shuffle(r, items.filter((x, k, A) => A.findIndex(y => y.o === x.o) === k));
     const its = items.map(({ o, c }) => ({ html: emo(o[0], 'huge'), bin: c.id, say: cap(oBare(lang, o)) + '.',
-      hint: T(lang, `Akú farbu má ${o[1]}? Daj to do košíka s rovnakou farbou.`, `What color is the ${o[2]}? Put it in the basket with the same color.`, `¿De qué color es ${o[3]}? Ponlo en la canasta del mismo color.`) }));
+      hint: T(lang, 'Akú farbu to má? Daj to do košíka s rovnakou farbou.', 'What color is it? Put it in the basket with the same color.', '¿De qué color es? Ponlo en la canasta del mismo color.') }));
     const bins = cols.map(c => ({ id: c.id, html: `<span class="basket2" style="--bc:${c.hex}">🧺</span>`, say: T(lang, `${c.sk}ý košík`, `the ${c.en} basket`, `la canasta ${c.es.f}`) }));
-    const parts = cols.map(c => { const names = items.filter(x => x.c === c).map(x => oBare(lang, x.o));
-      return T(lang, `Do ${c.sk}ého košíka: ${joinAnd(lang, names)}.`, `Into the ${c.en} basket: ${joinAnd(lang, names)}.`, `En la canasta ${c.es.f}: ${joinAnd(lang, names)}.`); });
+    // short spoken answer: just the colours (no list of every animal)
+    const ans = T(lang, `Roztriedené: ${joinAnd(lang, cols.map(c => c.sk + 'é'))}.`, `Sorted: ${joinAnd(lang, cols.map(c => c.en))}.`, `Ordenado: ${joinAnd(lang, cols.map(c => c.es.m))}.`);
     return { kind: 'sort', prompt: T(lang, 'Roztrieď veci do košíkov podľa farby.', 'Sort the things into the baskets by color.', 'Ordena las cosas en las canastas por color.'),
-      hint: its[0].hint, items: its, bins, answer: parts.join(' '), answerParts: parts, phrases: [...its.map(x => x.say), ...its.map(x => x.hint)] };
+      hint: its[0].hint, items: its, bins, answer: ans, phrases: [its[0].hint] };
   }
   const PAINT_SHAPES = ['circle', 'square', 'triangle', 'star', 'heart', 'diamond', 'oval'];
   const PAINT_COLS = ['red', 'blue', 'yellow', 'green', 'purple', 'orange', 'pink', 'brown'];
   const paintRule = (lang, s, c) => T(lang, `Vyfarbi ${s.skAcc} na ${c.sk}o.`, `Color the ${s.en} ${c.en}.`, `Pinta ${ART[s.eg]} ${s.es} de ${c.es.m}.`);
   function genPaint(i, lang, r) {
-    const ns = i < 25 ? 2 : i < 30 ? 3 : 4;
+    const ns = i < 27 ? 2 : 3; // max 3 shapes: everything fits on a small phone screen
     const shapes = sample(r, PAINT_SHAPES, ns).map(shapeById), cols = sample(r, PAINT_COLS, Math.min(8, ns + (i < 25 ? 1 : 2))).map(byId);
     const tgt = shapes.map((s, k) => ({ s, c: cols[k] }));
     const rules = tgt.map(x => paintRule(lang, x.s, x.c));
@@ -1133,14 +1144,24 @@
       palette: shuffle(r, cols).map(c => ({ id: c.id, hex: c.hex, say: cap(colorName(lang, c)) + '.' })),
       answer: cap(joinAnd(lang, tgt.map(x => colShape(lang, x.c, x.s)))) + '.', phrases: [...rules, ...cols.map(c => cap(colorName(lang, c)) + '.')] };
   }
-  const SIL = [...ROW.map(x => [x[0], x[1], x[3], x[4]]), ['🐘', 'slon', 'elephant', 'el elefante'], ['🦒', 'žirafa', 'giraffe', 'la jirafa'], ['🐢', 'korytnačka', 'turtle', 'la tortuga'],
+  const SIL = [...ROW.map(x => [x[0], x[1], x[3], x[4]]), ...[['🐘', 'slon', 'elephant', 'el elefante'], ['🦒', 'žirafa', 'giraffe', 'la jirafa'], ['🐢', 'korytnačka', 'turtle', 'la tortuga'],
     ['🦋', 'motýľ', 'butterfly', 'la mariposa'], ['🐌', 'slimák', 'snail', 'el caracol'], ['🐧', 'tučniak', 'penguin', 'el pingüino'], ['🦀', 'krab', 'crab', 'el cangrejo'], ['🐙', 'chobotnica', 'octopus', 'el pulpo'],
-    ['🦉', 'sova', 'owl', 'el búho'], ['🐴', 'koník', 'horse', 'el caballo'], ['🦆', 'kačka', 'duck', 'el pato'], ['🐿️', 'veverička', 'squirrel', 'la ardilla']];
+    ['🦉', 'sova', 'owl', 'el búho'], ['🐴', 'koník', 'horse', 'el caballo'], ['🦆', 'kačka', 'duck', 'el pato'], ['🐿️', 'veverička', 'squirrel', 'la ardilla'],
+    ['🦓', 'zebra', 'zebra', 'la cebra'], ['🦘', 'klokan', 'kangaroo', 'el canguro'], ['🐪', 'ťava', 'camel', 'el camello'], ['🦏', 'nosorožec', 'rhino', 'el rinoceronte'], ['🦛', 'hroch', 'hippo', 'el hipopótamo'],
+    ['🐊', 'krokodíl', 'crocodile', 'el cocodrilo'], ['🦩', 'plameniak', 'flamingo', 'el flamenco'], ['🦚', 'páv', 'peacock', 'el pavo real'], ['🦜', 'papagáj', 'parrot', 'el loro'], ['🦢', 'labuť', 'swan', 'el cisne'],
+    ['🦅', 'orol', 'eagle', 'el águila'], ['🐒', 'opica', 'monkey', 'el mono'], ['🦍', 'gorila', 'gorilla', 'el gorila'], ['🦥', 'leňochod', 'sloth', 'el perezoso'], ['🦦', 'vydra', 'otter', 'la nutria'],
+    ['🦔', 'ježko', 'hedgehog', 'el erizo'], ['🦇', 'netopier', 'bat', 'el murciélago'], ['🐝', 'včela', 'bee', 'la abeja'], ['🐞', 'lienka', 'ladybug', 'la mariquita'], ['🐜', 'mravec', 'ant', 'la hormiga'],
+    ['🕷️', 'pavúk', 'spider', 'la araña'], ['🐍', 'had', 'snake', 'la serpiente'], ['🦎', 'jašterica', 'lizard', 'la lagartija'], ['🐬', 'delfín', 'dolphin', 'el delfín'], ['🐳', 'veľryba', 'whale', 'la ballena'],
+    ['🦈', 'žralok', 'shark', 'el tiburón'], ['🐠', 'rybka', 'fish', 'el pez'], ['🦞', 'homár', 'lobster', 'la langosta'], ['🦭', 'tuleň', 'seal', 'la foca'], ['🐑', 'ovečka', 'sheep', 'la oveja'],
+    ['🐐', 'koza', 'goat', 'la cabra'], ['🦌', 'jeleň', 'deer', 'el venado'], ['🐓', 'kohút', 'rooster', 'el gallo'], ['🦃', 'morka', 'turkey', 'el pavo'], ['🐺', 'vlk', 'wolf', 'el lobo'],
+    ['🦝', 'medvedík čistotný', 'raccoon', 'el mapache'], ['🐨', 'koala', 'koala', 'el koala'], ['🐼', 'panda', 'panda', 'el panda'], ['🐯', 'tiger', 'tiger', 'el tigre'], ['🦁', 'lev', 'lion', 'el león'], ['🦕', 'dinosaurus', 'dinosaur', 'el dinosaurio']]];
+  const SIL_ORDER = shuffle(rng(hash('silorder2')), SIL);
   const silName = (lang, a) => T(lang, a[1], 'the ' + a[2], a[3]);
+  // each shadow task takes the next 4 animals of a fixed shuffled order: no animal comes back within the 15 shadow tasks
   function genSil(i, lang, r) {
-    const a = nth('sil', SIL, i - 35), n = i < 40 ? 3 : 4;
-    const opts = shuffle(r, [a, ...sample(r, SIL.filter(x => x !== a), n - 1)]);
-    return { kind: 'choose', prompt: T(lang, 'Čí je to tieň? Ťukni na zvieratko.', 'Whose shadow is this? Tap the animal.', '¿De quién es esta sombra? Toca el animal.'),
+    const k = i - 35, n = i < 40 ? 3 : 4, grp = [0, 1, 2, 3].slice(0, n).map(j => SIL_ORDER[(k * 4 + j) % SIL_ORDER.length]);
+    const a = grp[k % n], opts = shuffle(r, grp);
+    return { kind: 'choose', quietWrong: true, prompt: T(lang, 'Čí je to tieň? Ťukni na zvieratko.', 'Whose shadow is this? Tap the animal.', '¿De quién es esta sombra? Toca el animal.'),
       hint: T(lang, 'Pozri sa na tvar: uši, nohy, chvost.', 'Look at the shape: ears, legs, tail.', 'Mira la forma: orejas, patas, cola.'),
       display: `<span class="emo huge sil">${a[0]}</span>`, answer: T(lang, `Je to ${a[1]}.`, `It is the ${a[2]}.`, `Es ${a[3]}.`),
       options: opts.map(x => ({ html: emo(x[0]), ok: x === a, say: silName(lang, x) })) };
