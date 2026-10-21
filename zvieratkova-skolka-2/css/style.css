@@ -301,3 +301,5 @@ body.s-welcome #btnHome,body.s-welcome #tbStars,body.s-menu #btnHome,body.s-name
  .dipcard{padding:8px 12px;min-width:0}.diptitle{font-size:34px}.dipname{font-size:28px}.dipsub{font-size:18px}.dipgame{font-size:16px;margin-top:2px}.dipmeta{font-size:15px;margin-top:2px}
  .diploma .row{justify-self:center;gap:16px}.diploma .okbtn.sm{height:64px}.diploma .bigbtn.sm{width:64px;height:64px;font-size:32px}
 }
+/* QA fix: 360px top bar - language button overflowed right edge */
+@media (max-width:400px){#topbar{gap:4px;padding:8px 6px}.tb.snd.mini{width:38px;height:38px}.tb.lang{min-width:0;padding:0 8px;gap:4px}}
