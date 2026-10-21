@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   const { GAMES, TASKS_PER_GAME, getTask, bunnySVG, itemSVG, num } = window.ZS_GAMES;
-  const VERSION = 'v7';
+  const VERSION = 'v8';
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   const $ = s => document.querySelector(s);
   const KEY = 'zvieratkovaSkolka.v1';
@@ -76,13 +76,13 @@
   function loadVoiceMap(lang) {
     if (lang in voiceMaps || location.protocol === 'file:' || window.__ASSETS) { if (!(lang in voiceMaps)) voiceMaps[lang] = {}; return; }
     voiceMaps[lang] = null;
-    fetch(VOICE_BASE + lang + '/manifest.json').then(r => r.ok ? r.json() : {}).then(j => { voiceMaps[lang] = j || {}; }).catch(() => { voiceMaps[lang] = {}; });
+    fetch(VOICE_BASE + lang + '/manifest.json?' + VERSION).then(r => r.ok ? r.json() : {}).then(j => { voiceMaps[lang] = j || {}; }).catch(() => { voiceMaps[lang] = {}; });
   }
   function clipFor(t) {
     const m = voiceMaps[save.lang]; if (!m) return null;
     let f = m[normT(t)];
     if (!f && t[0] === '@') f = m[stripD(normT(t))]; // names typed without diacritics
-    return f ? VOICE_BASE + save.lang + '/' + f : null;
+    return f ? VOICE_BASE + save.lang + '/' + f + '?' + VERSION : null; // version query: re-recorded clips are never served from an old cache
   }
   const nameClipKey = (kind, n) => '@' + kind + ':' + nameKey(n);
   function stopSpeech() {
