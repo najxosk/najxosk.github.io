@@ -1401,7 +1401,7 @@
     { id: 'riddles', img: 'liska', color: '#fde6c6', gen: genRiddles3,
       title: { sk: 'Hlavolamy', en: 'Brain Teasers', es: 'Rompecabezas' }, helper: { sk: 'Líška Lili', en: 'Lili the Fox', es: 'Lili la zorrita' },
       intro: { sk: 'Ahoj, líška Lili tu má hlavolamy! Budeme hádať, čo príde ďalej, a dobre počúvať.', en: 'Hi, Lili the Fox has brain teasers! We will guess what comes next and listen carefully.', es: '¡Hola, Lili la zorrita tiene rompecabezas! Vamos a adivinar qué viene después y a escuchar con atención.' } },
-    { id: 'cook', img: 'zajacik', color: '#d8e9f7', gen: genCook,
+    { id: 'cook', img: 'zajko-kuchar', color: '#d8e9f7', gen: genCook,
       title: { sk: 'Varíme so Zajkom', en: 'Cooking with Zack', es: 'Cocinamos con Coco' }, helper: { sk: 'Zajačik Zajko', en: 'Zack the Bunny', es: 'Coco el conejito' },
       intro: { sk: 'Ahoj, zajačik Zajko dnes varí! Pomôžeš mi pripraviť šalát, polievku a tortu?', en: 'Hi, Zack the Bunny is cooking today! Will you help me make a salad, a soup and a cake?', es: '¡Hola, Coco el conejito cocina hoy! ¿Me ayudas a preparar una ensalada, una sopa y un pastel?' } }
   ];

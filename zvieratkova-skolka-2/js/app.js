@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   const { GAMES, TASKS_PER_GAME, getTask, bunnySVG, itemSVG, num } = window.ZS_GAMES;
-  const VERSION = 'g2v2';
+  const VERSION = 'g2v3';
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   const $ = s => document.querySelector(s);
   const KEY = 'zvieratkovaSkolka2.v1'; // separate progress & name from game 1
@@ -69,6 +69,7 @@
   // ---- pre-generated neural voice clips (Lili SK / Ana EN), loaded lazily per language ----
   const VOICE_BASE = 'assets/voice/';
   const voiceMaps = {}; // lang -> {text: relative file} | null while loading
+  const mapReady = {}; // lang -> promise resolved when the manifest is in
   const voiceEl = new Audio(); voiceEl.preload = 'auto';
   const normT = t => String(t).trim().replace(/\s+/g, ' ');
   const nameKey = n => normT(n).toLowerCase();
@@ -76,7 +77,7 @@
   function loadVoiceMap(lang) {
     if (lang in voiceMaps || location.protocol === 'file:' || window.__ASSETS) { if (!(lang in voiceMaps)) voiceMaps[lang] = {}; return; }
     voiceMaps[lang] = null;
-    fetch(VOICE_BASE + lang + '/manifest.json?' + VERSION).then(r => r.ok ? r.json() : {}).then(j => { voiceMaps[lang] = j || {}; }).catch(() => { voiceMaps[lang] = {}; });
+    mapReady[lang] = fetch(VOICE_BASE + lang + '/manifest.json?' + VERSION).then(r => r.ok ? r.json() : {}).then(j => { voiceMaps[lang] = j || {}; }).catch(() => { voiceMaps[lang] = {}; });
   }
   function clipFor(t) {
     const m = voiceMaps[save.lang]; if (!m) return null;
@@ -99,6 +100,11 @@
     if (!save.voice || !parts.length) { if (done) done(); return; }
     stopSpeech();
     const my = speechSeq;
+    // clip list still loading (first page load): wait for it (not for the device voice list), then play the recorded clip
+    if (voiceMaps[save.lang] === null && mapReady[save.lang] && !(opt && opt.noWait)) {
+      const go = () => { if (my === speechSeq) say(text, Object.assign({}, opt, { noWait: true, keep: true })); };
+      Promise.race([mapReady[save.lang], new Promise(r => setTimeout(r, 3000))]).then(go); return;
+    }
     const urls = []; let missing = false; const plain = [];
     for (const p of parts) {
       if (typeof p === 'object') { const u = clipFor(p.key); if (u) urls.push(u); else if (p.alt) { const a = clipFor(p.alt); if (a) urls.push(a); else missing = true; plain.push(p.alt); } continue; }
