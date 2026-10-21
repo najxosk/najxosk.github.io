@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   const { GAMES, TASKS_PER_GAME, getTask, bunnySVG, itemSVG, num } = window.ZS_GAMES;
-  const VERSION = 'v8';
+  const VERSION = 'v9';
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   const $ = s => document.querySelector(s);
   const KEY = 'zvieratkovaSkolka.v1';
@@ -27,7 +27,7 @@
       dipSay: (n, t, d, k) => `Diplom! ${n}, šikovný žiak, za hru ${t}. ${d}. Máš ${k} hviezdičiek.`,
       dipVoice: (t, k) => [`Šikovný žiak, za hru ${t}.`, `Máš ${k} hviezdičiek.`], dipHead: 'Diplom!', hiPlain: 'Ahoj!', soundOn: 'Zvuk je zapnutý.',
       retry: 'Skús to ešte raz.', done: 'Hurá! Všetkých 50 úloh je hotových! Si úžasný kamarát. Môžeš hrať znova alebo si vybrať inú hru.',
-      home: 'Domov', speak: 'Zopakuj', music: 'Hudba', voice: 'Hlas', sound: 'Zvuk zapnúť / vypnúť', lang: 'Jazyk'
+      home: 'Domov', speak: 'Zopakuj', music: 'Hudba', voice: 'Hlas', sound: 'Zvuk zapnúť / vypnúť', scPrint: 'Tlačené', scCursive: 'Písané', lang: 'Jazyk'
     },
     en: {
       welcome: 'Hello! I am Mrs. Bear, the teacher of the forest school. Today we will play and learn together. Tap the green button!',
@@ -39,7 +39,7 @@
       dipSay: (n, t, d, k) => `Diploma! ${n}, smart student, for the game ${t}. ${d}. You earned ${k} stars.`,
       dipVoice: (t, k) => [`Smart student, for the game ${t}.`, `You earned ${k} stars.`], dipHead: 'Diploma!', hiPlain: 'Hello!', soundOn: 'Sound is on.',
       retry: 'Try again.', done: 'Hooray! All 50 tasks are done! You are amazing. You can play again or choose another game.',
-      home: 'Home', speak: 'Repeat', music: 'Music', voice: 'Voice', sound: 'Sound on / off', lang: 'Language'
+      home: 'Home', speak: 'Repeat', music: 'Music', voice: 'Voice', sound: 'Sound on / off', scPrint: 'Print', scCursive: 'Cursive', lang: 'Language'
     },
     es: {
       welcome: '¡Hola! Soy la maestra Osa, de la escuela del bosque. Hoy vamos a jugar y aprender juntos. ¡Toca el botón verde!',
@@ -51,7 +51,7 @@
       dipSay: (n, t, d, k) => `¡Diploma! ${n}, estudiante estrella, por el juego ${t}. ${d}. Ganaste ${k} estrellas.`,
       dipVoice: (t, k) => [`Estudiante estrella, por el juego ${t}.`, `Ganaste ${k} estrellas.`], dipHead: '¡Diploma!', hiPlain: '¡Hola!', soundOn: 'El sonido está encendido.',
       retry: 'Inténtalo otra vez.', done: '¡Listo! Las 50 tareas están hechas. Puedes jugar otra vez o elegir otro juego.',
-      home: 'Inicio', speak: 'Repetir', music: 'Música', voice: 'Voz', sound: 'Sonido sí / no', lang: 'Idioma'
+      home: 'Inicio', speak: 'Repetir', music: 'Música', voice: 'Voz', sound: 'Sonido sí / no', scPrint: 'Imprenta', scCursive: 'Cursiva', lang: 'Idioma'
     }
   };
   const LANGS = ['sk', 'en', 'es'], FLAG = { sk: '🇸🇰', en: '🇬🇧', es: '🇪🇸' };
@@ -252,8 +252,20 @@
     cur = { game: g, index: idx, intro: true };
     show('scrGame'); setTopbar(g.title[save.lang]);
     $('#helperImg').src = `assets/animals/${g.img}.webp`;
+    applyScript();
     loadTask();
   }
+  // printed vs cursive (Slovak school handwriting) letters in the letters & words games
+  function applyScript() {
+    const on = cur && (cur.game.id === 'letters' || cur.game.id === 'words');
+    const bar = $('#scriptBar'); bar.hidden = !on;
+    const curv = on && save.script === 'cursive';
+    $('#scrGame').classList.toggle('cursive', curv);
+    $('#btnPrint').classList.toggle('sel', !curv); $('#btnCursive').classList.toggle('sel', curv);
+    $('#btnPrint').setAttribute('aria-pressed', String(!curv)); $('#btnCursive').setAttribute('aria-pressed', String(curv));
+    $('#btnPrint b').textContent = ui().scPrint; $('#btnCursive b').textContent = ui().scCursive;
+  }
+  ['#btnPrint', '#btnCursive'].forEach(sel => { $(sel).onclick = e => { save.script = e.currentTarget.dataset.s; persist(); applyScript(); tone([660], 0.12, 'sine', 0.06); }; });
   function firstUnsolved(id) { const d = new Set(gs(id).done); for (let k = 0; k < TASKS_PER_GAME; k++) if (!d.has(k)) return k; return 0; }
 
   function bubble(text, hint, extra) {
@@ -535,7 +547,7 @@
   $('#btnLang').onclick = () => {
     save.lang = LANGS[(LANGS.indexOf(save.lang) + 1) % LANGS.length]; persist(); loadVoiceMap(save.lang);
     const active = document.querySelector('.screen.active').id;
-    if (active === 'scrGame' && cur) { setTopbar(cur.game.title[save.lang]); loadTask(); }
+    if (active === 'scrGame' && cur) { setTopbar(cur.game.title[save.lang]); applyScript(); loadTask(); }
     else if (active === 'scrMenu') openMenu();
     else if (active === 'scrDone' && cur) { setTopbar(cur.game.title[save.lang]); $('#doneText').textContent = ui().done; say(ui().done); }
     else if (active === 'scrDiploma' && dipGame) openDiploma(dipGame);

@@ -1,5 +1,6 @@
-/* Zvieratková škôlka v8 – kawaii pastel theme */
+/* Zvieratková škôlka v9 – kawaii pastel theme */
 @font-face{font-family:"ZSRound";src:url("../assets/fonts/nunito.woff2") format("woff2");font-weight:200 1000;font-display:swap}
+@font-face{font-family:"ZSScript";src:url("../assets/fonts/playwrite-sk.woff2") format("woff2");font-weight:100 400;font-display:swap}
 :root{--ink:#6b4a5e;--pink:#ffd6e8;--pink2:#ffb3d1;--mint:#c9f2e0;--mint2:#8fdcbc;--lav:#e5d9ff;--lav2:#c4b0f5;--sky:#d4ecff;--sun:#fff1b8;--sun2:#ffd86b;--card:#fffafc;--shadow:#f3cfe0}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden}
@@ -219,3 +220,16 @@ body.s-welcome #btnHome,body.s-welcome #tbStars,body.s-menu #btnHome,body.s-name
 @media (orientation:landscape) and (max-height:500px){.diploma{flex-direction:row;flex-wrap:wrap;justify-content:center;width:96vw}.dipimg{width:min(40vh,200px)}.dipcard{width:auto;flex:1;min-width:260px}}
 #scrName{overflow:auto}
 @media (max-height:560px){.namebox{gap:8px;padding:4px}.teacher.sm2{display:none}#nameInput{font-size:26px;padding:8px 14px}.okbtn{height:62px;font-size:28px}.namebox .bubble.big{font-size:18px}}
+
+/* v9: printed / cursive toggle (letters & words games) */
+.scriptbar{display:flex;gap:10px;justify-content:center;margin:2px 0 6px}
+.scriptbar[hidden]{display:none}
+.scbtn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;min-height:52px;border-radius:999px;background:#fff;border:3px solid #eadcf7;box-shadow:0 4px 0 #e2d2f3;font-weight:900;font-size:17px;color:#8a68c0;transition:transform .12s}
+.scbtn .aa{font-size:26px;line-height:1;font-family:"ZSRound",sans-serif}
+.scbtn .aa.cur{font-family:"ZSScript",cursive;font-weight:400;font-size:22px}
+.scbtn.sel{background:linear-gradient(180deg,#fff,#e9dcfb);border-color:#b892ea;box-shadow:0 4px 0 #b892ea;color:#6d45b0}
+.scbtn.sel::before{content:"✔";font-size:15px}
+.scbtn:active{transform:translateY(3px) scale(.96)}
+#scrGame.cursive .bigtxt.let,#scrGame.cursive .word:not(.picword),#scrGame.cursive .bigtxt.wordopt{font-family:"ZSScript",cursive;font-weight:400;letter-spacing:0;line-height:1.5}
+#scrGame.cursive .word:not(.picword),#scrGame.cursive .bigtxt.wordopt{text-transform:lowercase}
+#scrGame.cursive .bigtxt.let.huge{font-size:clamp(56px,16vw,100px)}
