@@ -1,4 +1,4 @@
-/* Zvieratková škôlka v3 – kawaii pastel theme */
+/* Zvieratková škôlka v4 – kawaii pastel theme */
 @font-face{font-family:"ZSRound";src:url("../assets/fonts/nunito.woff2") format("woff2");font-weight:200 1000;font-display:swap}
 :root{--ink:#6b4a5e;--pink:#ffd6e8;--pink2:#ffb3d1;--mint:#c9f2e0;--mint2:#8fdcbc;--lav:#e5d9ff;--lav2:#c4b0f5;--sky:#d4ecff;--sun:#fff1b8;--sun2:#ffd86b;--card:#fffafc;--shadow:#f3cfe0}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -40,7 +40,7 @@ button{font-family:inherit;color:inherit;cursor:pointer;border:none}
 .screen{display:none;flex:1;min-height:0}
 .screen.active{display:flex;animation:fadeup .35s ease-out}
 @keyframes fadeup{from{opacity:0;transform:translateY(12px)}}
-body.s-welcome #btnHome,body.s-welcome #tbStars,body.s-menu #btnHome{visibility:hidden}
+body.s-welcome #btnHome,body.s-welcome #tbStars,body.s-menu #btnHome,body.s-name #btnHome,body.s-name #tbStars{visibility:hidden}
 /* speech bubble (tap to repeat) */
 .bubble{background:#fff;border-radius:28px;padding:12px 44px 12px 18px;font-size:clamp(18px,4.6vw,26px);font-weight:800;line-height:1.3;box-shadow:0 5px 0 var(--shadow),0 8px 20px rgba(255,150,190,.18);position:relative;border:3px solid #ffe1ee;cursor:pointer}
 .bubble::after{content:"🔁";position:absolute;right:10px;top:50%;translate:0 -50%;font-size:20px;opacity:.6}
@@ -172,3 +172,48 @@ body.s-welcome #btnHome,body.s-welcome #tbStars,body.s-menu #btnHome{visibility:
  #stage{min-height:0}.helperrow .bubble{font-size:15px}
 }
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important}}
+
+/* v4: name screen */
+.namebox{gap:16px;width:min(560px,94vw)}
+.teacher.sm2{width:min(34vw,22vh,170px)}
+#nameInput{width:100%;font:inherit;font-weight:900;font-size:clamp(28px,8vw,44px);text-align:center;padding:14px 18px;border-radius:999px;border:4px solid #ffc2dc;background:#fff;color:var(--ink);outline:none;box-shadow:0 6px 0 var(--shadow);user-select:text;-webkit-user-select:text}
+#nameInput:focus{border-color:#ff8fbf}
+.okbtn{min-width:180px;height:84px;padding:0 28px;border-radius:999px;font-size:36px;font-weight:900;color:#fff;background:radial-gradient(circle at 35% 30%,#bff5d9,#7fd8ae);box-shadow:0 7px 0 #5fbf92,0 0 0 5px #fff}
+.okbtn.sm{font-size:24px;height:84px;min-width:0}
+.okbtn:active{transform:translateY(4px)}
+/* menu extras */
+.namerow{display:flex;align-items:center;justify-content:center;gap:8px}
+.namechip{background:#fff;border-radius:999px;padding:6px 16px;font-weight:900;font-size:22px;box-shadow:0 4px 0 var(--shadow);border:3px solid #ffe1ee;max-width:70vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.editname{width:46px;height:46px;border-radius:50%;background:var(--lav);font-size:22px;box-shadow:0 4px 0 var(--lav2)}
+.cardwrap{position:relative;display:flex}
+.cardwrap .card{flex:1}
+.cardreset,.cardgrad{position:absolute;top:-6px;width:50px;height:50px;border-radius:50%;font-size:24px;background:#fff;box-shadow:0 4px 0 var(--shadow),0 0 0 3px #ffe1ee;z-index:2}
+.cardreset{left:-6px}.cardgrad{right:-6px;background:var(--sun);animation:pulse 2s infinite}
+.menufoot{display:flex;justify-content:center;padding:10px 0 18px}
+.resetall{font-weight:900;font-size:18px;padding:12px 20px;border-radius:999px;background:#fff;color:#c2627f;box-shadow:0 4px 0 var(--shadow);border:3px dashed #ffc2dc}
+/* confirm dialog */
+.dlg{position:fixed;inset:0;z-index:100;background:rgba(255,214,232,.6);backdrop-filter:blur(4px);display:grid;place-items:center;padding:18px}
+.dlg[hidden]{display:none}
+.dlgbox{background:#fff;border-radius:36px;padding:22px 20px;max-width:520px;width:100%;text-align:center;box-shadow:0 8px 0 var(--shadow),0 0 0 6px #ffe1ee;animation:jelly .5s}
+.dlgface{font-size:56px}
+.dlgtext{font-weight:900;font-size:clamp(20px,5vw,26px);line-height:1.3;margin:8px 0 14px}
+.dlgname{font-weight:900;font-size:18px;padding:10px 16px;border-radius:999px;background:#f4f0ff;margin-bottom:14px;border:3px solid #e5d9ff;opacity:.75}
+.dlgname.on{background:var(--lav2);color:#fff;opacity:1}
+.dlgname.on::before{content:"✔ "}
+.dlgrow{display:flex;gap:14px;justify-content:center}
+.dlgyes,.dlgno{flex:1;max-width:200px;height:86px;border-radius:30px;font-size:30px;font-weight:900;color:#fff}
+.dlgyes{background:radial-gradient(circle at 35% 30%,#ffc9dc,#ff8fb6);box-shadow:0 7px 0 #e06c95}
+.dlgno{background:radial-gradient(circle at 35% 30%,#bff5d9,#7fd8ae);box-shadow:0 7px 0 #5fbf92}
+/* diploma */
+#scrDiploma{overflow:auto}
+.diploma{margin:auto;display:flex;flex-direction:column;align-items:center;gap:12px;padding:8px 12px 16px;width:min(560px,96vw)}
+.dipimg{width:min(62vw,34vh,300px);border-radius:50%;box-shadow:0 0 0 8px #fff,0 0 0 14px var(--pink),0 12px 24px rgba(255,140,180,.3);animation:breathe 3.2s ease-in-out infinite}
+.dipcard{width:100%;background:#fff;border-radius:32px;padding:14px 16px;text-align:center;border:5px dashed #ffb3d1;box-shadow:0 6px 0 var(--shadow)}
+.diptitle{font-weight:1000;font-size:clamp(36px,10vw,56px);color:#d1618f;letter-spacing:3px;text-shadow:0 3px 0 #ffe1ee}
+.dipname{font-weight:900;font-size:clamp(30px,8.5vw,46px);overflow-wrap:anywhere}
+.dipsub{font-weight:800;font-size:clamp(20px,5.5vw,28px);color:#9a6fd6}
+.dipgame{font-weight:800;font-size:clamp(18px,5vw,24px);margin-top:6px}
+.dipmeta{font-weight:800;font-size:18px;opacity:.85;margin-top:4px}
+@media (orientation:landscape) and (max-height:500px){.diploma{flex-direction:row;flex-wrap:wrap;justify-content:center;width:96vw}.dipimg{width:min(40vh,200px)}.dipcard{width:auto;flex:1;min-width:260px}}
+#scrName{overflow:auto}
+@media (max-height:560px){.namebox{gap:8px;padding:4px}.teacher.sm2{display:none}#nameInput{font-size:26px;padding:8px 14px}.okbtn{height:62px;font-size:28px}.namebox .bubble.big{font-size:18px}}

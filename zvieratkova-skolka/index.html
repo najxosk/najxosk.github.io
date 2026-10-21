@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#ffe9f3">
-<meta name="zs-version" content="v3">
+<meta name="zs-version" content="v4">
 <title>Zvieratková škôlka</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -29,9 +29,34 @@
     </div>
   </section>
 
+  <section id="scrName" class="screen">
+    <div class="welcome namebox">
+      <img class="teacher sm2" src="assets/animals/ucitelka-a.webp" alt="">
+      <div class="bubble big" id="nameText"></div>
+      <input id="nameInput" type="text" maxlength="24" autocomplete="off" autocapitalize="words" spellcheck="false" enterkeyhint="done">
+      <button id="btnNameOk" class="okbtn" aria-label="OK">OK 💖</button>
+    </div>
+  </section>
+
   <section id="scrMenu" class="screen">
     <div class="menuhead"><img class="teacher sm" src="assets/animals/ucitelka-a.webp" alt=""><div class="bubble" id="menuText"></div></div>
+    <div class="namerow"><span class="namechip">🌟 <span id="menuName"></span></span><button id="btnEditName" class="editname" aria-label="Zmeniť meno">✏️</button></div>
     <div id="cards"></div>
+    <div class="menufoot"><button id="btnResetAll" class="resetall"></button></div>
+  </section>
+
+  <section id="scrDiploma" class="screen">
+    <div class="diploma">
+      <img id="dipImg" class="dipimg" src="" alt="">
+      <div id="dipCard" class="dipcard">
+        <div id="dipTitle" class="diptitle"></div>
+        <div id="dipName" class="dipname"></div>
+        <div id="dipSub" class="dipsub"></div>
+        <div id="dipGame" class="dipgame"></div>
+        <div class="dipmeta"><span id="dipDate"></span> · <span id="dipStars"></span></div>
+      </div>
+      <div class="row"><button id="btnSaveDip" class="okbtn sm"></button><button id="btnDipMenu" class="bigbtn sm" aria-label="Menu">🏠</button></div>
+    </div>
   </section>
 
   <section id="scrGame" class="screen">
@@ -54,6 +79,9 @@
     </div>
   </section>
 </div>
+<div id="dlg" class="dlg" hidden><div class="dlgbox"><div class="dlgface">🐻</div><div id="dlgText" class="dlgtext"></div>
+  <button id="dlgName" class="dlgname" hidden></button>
+  <div class="dlgrow"><button id="dlgYes" class="dlgyes"></button><button id="dlgNo" class="dlgno"></button></div></div></div>
 <audio id="music" loop preload="auto"><source src="assets/audio/music.ogg" type="audio/ogg"><source src="assets/audio/music.mp3" type="audio/mpeg"></audio>
 <script src="js/games.js"></script>
 <script src="js/app.js"></script>

@@ -1,16 +1,17 @@
 (function () {
   'use strict';
   const { GAMES, TASKS_PER_GAME, getTask, bunnySVG, itemSVG, num } = window.ZS_GAMES;
-  const VERSION = 'v3';
+  const VERSION = 'v4';
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   const $ = s => document.querySelector(s);
   const KEY = 'zvieratkovaSkolka.v1';
 
   // ---------- state & storage ----------
-  let save = { lang: 'sk', music: true, voice: true, games: {} };
+  let save = { lang: 'sk', music: true, voice: true, name: null, diplomas: {}, games: {} };
   try { Object.assign(save, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* ignore */ }
   if (save.muted === true) { save.music = false; save.voice = false; } // migrate v1 setting
   delete save.muted;
+  save.diplomas = save.diplomas || {};
   const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { /* private mode */ } };
   const gs = id => (save.games[id] = save.games[id] || { done: [], next: 0 });
   const starsOf = id => gs(id).done.length;
@@ -19,14 +20,22 @@
     sk: {
       welcome: 'Ahoj! Ja som pani učiteľka Medvedica z lesnej školy. Dnes sa budeme spolu hrať a učiť. Ťukni na zelené tlačidlo!',
       menu: 'Vyber si hru! Ťukni na obrázok.',
-      praise: ['Áno!', 'Správne!', 'Výborne!', 'Super!', 'Bravo!', 'Paráda!'], thisIs: 'To je',
+      thisIs: 'To je', defName: 'Šikovný žiak', askName: 'Ako sa voláš? Napíš svoje meno a ťukni na OK.', hello: n => `Ahoj, ${n}! Vyber si hru! Ťukni na obrázok.`,
+      again: 'Hrať znova', resetAll: 'Vynulovať všetko', yes: 'Áno', no: 'Nie', alsoName: 'Zmeniť aj meno',
+      confirmGame: t => `Naozaj chceš hru ${t} hrať odznova? Hviezdičky z tejto hry zmiznú.`, confirmAll: 'Naozaj chceš vynulovať všetko? Zmiznú všetky hviezdičky, diplomy aj meno.',
+      dipTitle: 'DIPLOM', dipSub: 'šikovný žiak', dipSave: 'Uložiť diplom', dipFor: 'za hru',
+      dipSay: (n, t, d, k) => `Diplom! ${n}, šikovný žiak, za hru ${t}. ${d}. Máš ${k} hviezdičiek.`,
       retry: 'Skús to ešte raz.', done: 'Hurá! Všetkých 50 úloh je hotových! Si úžasný kamarát. Môžeš hrať znova alebo si vybrať inú hru.',
       home: 'Domov', speak: 'Zopakuj', music: 'Hudba', voice: 'Hlas', sound: 'Zvuk zapnúť / vypnúť', lang: 'Jazyk'
     },
     en: {
       welcome: 'Hello! I am Mrs. Bear, the teacher of the forest school. Today we will play and learn together. Tap the green button!',
       menu: 'Choose a game! Tap a picture.',
-      praise: ['Yes!', 'Correct!', 'Well done!', 'Great!', 'Bravo!', 'Super!'], thisIs: 'That is',
+      thisIs: 'That is', defName: 'Smart student', askName: 'What is your name? Type your name and tap OK.', hello: n => `Hello, ${n}! Choose a game! Tap a picture.`,
+      again: 'Play again', resetAll: 'Reset everything', yes: 'Yes', no: 'No', alsoName: 'Change my name too',
+      confirmGame: t => `Do you really want to play ${t} from the start? The stars from this game will disappear.`, confirmAll: 'Do you really want to reset everything? All stars, diplomas and the name will disappear.',
+      dipTitle: 'Diploma', dipSub: 'smart student', dipSave: 'Save diploma', dipFor: 'for the game',
+      dipSay: (n, t, d, k) => `Diploma! ${n}, smart student, for the game ${t}. ${d}. You earned ${k} stars.`,
       retry: 'Try again.', done: 'Hooray! All 50 tasks are done! You are amazing. You can play again or choose another game.',
       home: 'Home', speak: 'Repeat', music: 'Music', voice: 'Voice', sound: 'Sound on / off', lang: 'Language'
     }
@@ -130,19 +139,46 @@
   function updStars(n) { $('#tbStars span').textContent = n; }
 
   function openWelcome() { show('scrWelcome'); setTopbar(); $('#welcomeText').textContent = ui().welcome; say(ui().welcome); }
+  const childName = () => (save.name && save.name.trim()) || ui().defName;
+  function openName(prefill) {
+    show('scrName'); setTopbar();
+    $('#nameText').textContent = ui().askName;
+    const inp = $('#nameInput'); inp.value = prefill != null ? prefill : (save.name || ''); inp.placeholder = ui().defName;
+    setTimeout(() => { try { inp.focus(); } catch (e) {} }, 50);
+    say(ui().askName);
+  }
+  function saveName() {
+    save.name = $('#nameInput').value.trim().slice(0, 24); persist();
+    try { $('#nameInput').blur(); } catch (e) {}
+    openMenu();
+  }
   function openMenu() {
     cur = null; show('scrMenu'); setTopbar(); updStars(totalStars());
-    $('#menuText').textContent = ui().menu;
+    $('#menuText').textContent = ui().hello(childName());
+    $('#menuName').textContent = childName();
+    $('#btnResetAll').textContent = '🧹 ' + ui().resetAll;
     const c = $('#cards'); c.innerHTML = '';
     GAMES.forEach(g => {
+      const w = document.createElement('div'); w.className = 'cardwrap';
       const b = document.createElement('button');
       b.className = 'card'; b.style.background = g.color; b.dataset.game = g.id;
       b.setAttribute('aria-label', g.title[save.lang]);
       b.innerHTML = `<img src="assets/animals/${g.img}.webp" alt=""><span class="ct">${g.title[save.lang]}</span><span class="cs">⭐ ${starsOf(g.id)} / ${TASKS_PER_GAME}</span>`;
       b.onclick = () => openGame(g.id);
-      c.appendChild(b);
+      w.appendChild(b);
+      if (starsOf(g.id) > 0 || save.diplomas[g.id]) {
+        const rb = document.createElement('button'); rb.className = 'cardreset'; rb.dataset.game = g.id;
+        rb.textContent = '🔄'; rb.setAttribute('aria-label', ui().again); rb.title = ui().again;
+        rb.onclick = () => confirmResetGame(g); w.appendChild(rb);
+      }
+      if (save.diplomas[g.id]) {
+        const db = document.createElement('button'); db.className = 'cardgrad'; db.dataset.game = g.id;
+        db.textContent = '🎓'; db.setAttribute('aria-label', ui().dipTitle);
+        db.onclick = () => openDiploma(g.id); w.appendChild(db);
+      }
+      c.appendChild(w);
     });
-    say(ui().menu);
+    say(ui().hello(childName()));
   }
 
   // ---------- game ----------
@@ -220,9 +256,8 @@
     const g = cur.game, st = gs(g.id);
     if (!st.done.includes(cur.index)) st.done.push(cur.index);
     persist();
-    const p = ui().praise[Math.floor(Math.random() * ui().praise.length)];
     const ans = cur.task.answer ? cap(cur.task.answer) : '';
-    bubble(p + ' ' + ans + ' ⭐');
+    bubble(ans + ' ⭐'); // no praise words: just the content, so the child learns
     flyStar(fromEl); burst(fromEl);
     updStars(starsOf(g.id));
     $('#progFill').style.width = (100 * starsOf(g.id) / TASKS_PER_GAME) + '%';
@@ -231,17 +266,88 @@
     const go = () => {
       if (went) return; went = true;
       if (!cur || cur.game !== g || cur.index !== idx0) return;
-      if (cur.index >= TASKS_PER_GAME - 1) return finish();
+      if (starsOf(g.id) >= TASKS_PER_GAME) return finish();
+      if (cur.index >= TASKS_PER_GAME - 1) { cur.index = firstUnsolved(g.id); return loadTask(); }
       cur.index++; loadTask();
     };
-    say(p + ' ' + ans, { done: () => setTimeout(go, Math.max(250, 1400 - (Date.now() - t0))) });
+    say(ans, { done: () => setTimeout(go, Math.max(250, 1400 - (Date.now() - t0))) });
     setTimeout(go, save.voice ? 6000 : 1400);
   }
   function finish() {
-    const g = cur.game; gs(g.id).next = 0; persist();
-    show('scrDone'); setTopbar(g.title[save.lang]);
-    $('#doneImg').src = `assets/animals/${g.img}.webp`;
-    $('#doneText').textContent = ui().done; say(ui().done);
+    const g = cur.game; gs(g.id).next = 0;
+    if (!save.diplomas[g.id]) save.diplomas[g.id] = { date: new Date().toISOString().slice(0, 10), stars: starsOf(g.id) };
+    persist();
+    openDiploma(g.id);
+  }
+  // ---------- diploma ----------
+  let dipGame = null;
+  const fmtDate = iso => { const [y, m, d] = iso.split('-').map(Number); return save.lang === 'sk' ? `${d}. ${m}. ${y}` : new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }); };
+  function dipData(id) {
+    const g = GAMES.find(x => x.id === id), d = save.diplomas[id];
+    return { g, name: childName(), title: g.title[save.lang], date: fmtDate(d.date), stars: d.stars };
+  }
+  function openDiploma(id) {
+    dipGame = id; const D = dipData(id);
+    show('scrDiploma'); setTopbar(D.title);
+    $('#dipImg').src = `assets/diplomy/${D.g.img}.webp`;
+    $('#dipTitle').textContent = ui().dipTitle; $('#dipName').textContent = D.name; $('#dipSub').textContent = ui().dipSub;
+    $('#dipGame').textContent = `${ui().dipFor}: ${D.title}`; $('#dipDate').textContent = D.date; $('#dipStars').textContent = `⭐ ${D.stars} / ${TASKS_PER_GAME}`;
+    $('#btnSaveDip').textContent = '💾 ' + ui().dipSave;
+    burst($('#dipCard'));
+    say(ui().dipSay(D.name, D.title, D.date, D.stars));
+  }
+  function roundRect(x, c, X, Y, W, H, R) { x.beginPath(); x.moveTo(X + R, Y); x.arcTo(X + W, Y, X + W, Y + H, R); x.arcTo(X + W, Y + H, X, Y + H, R); x.arcTo(X, Y + H, X, Y, R); x.arcTo(X, Y, X + W, Y, R); x.closePath(); }
+  async function renderDiplomaPNG(id) {
+    const D = dipData(id);
+    try { await document.fonts.load('900 40px ZSRound'); } catch (e) {}
+    const img = new Image(); img.src = $('#dipImg').src;
+    await (img.decode ? img.decode().catch(() => {}) : new Promise(r => { img.onload = img.onerror = r; }));
+    const cv = document.createElement('canvas'); cv.width = 1080; cv.height = 1500; const x = cv.getContext('2d');
+    const gr = x.createLinearGradient(0, 0, 1080, 1500); gr.addColorStop(0, '#ffe3f1'); gr.addColorStop(.5, '#fff4dc'); gr.addColorStop(1, '#e3e6ff');
+    x.fillStyle = gr; x.fillRect(0, 0, 1080, 1500);
+    x.fillStyle = '#fff'; roundRect(x, 0, 50, 50, 980, 1400, 60); x.fill();
+    x.lineWidth = 10; x.strokeStyle = '#ffb3d1'; x.setLineDash([26, 18]); roundRect(x, 0, 80, 80, 920, 1340, 46); x.stroke(); x.setLineDash([]);
+    x.save(); x.beginPath(); x.arc(540, 450, 300, 0, Math.PI * 2); x.clip(); try { x.drawImage(img, 240, 150, 600, 600); } catch (e) {} x.restore();
+    x.lineWidth = 14; x.strokeStyle = '#ffd6e8'; x.beginPath(); x.arc(540, 450, 304, 0, Math.PI * 2); x.stroke();
+    const F = (w, s) => `${w} ${s}px ZSRound, Nunito, "Arial Rounded MT Bold", sans-serif`;
+    x.textAlign = 'center'; x.fillStyle = '#d1618f'; x.font = F(900, 110); x.fillText(ui().dipTitle, 540, 885);
+    x.fillStyle = '#6b4a5e'; let fs = 92; x.font = F(900, fs); while (x.measureText(D.name).width > 860 && fs > 40) { fs -= 4; x.font = F(900, fs); } x.fillText(D.name, 540, 1010);
+    x.fillStyle = '#9a6fd6'; x.font = F(800, 58); x.fillText(ui().dipSub, 540, 1090);
+    x.fillStyle = '#6b4a5e'; x.font = F(800, 52); x.fillText(`${ui().dipFor}: ${D.title}`, 540, 1185);
+    x.font = F(800, 46); x.fillText(D.date, 540, 1265);
+    x.font = F(900, 60); x.fillText(`⭐ ${D.stars} / ${TASKS_PER_GAME}`, 540, 1360);
+    ['💖', '✨', '🌸', '✨'].forEach((e, k) => { x.font = '60px sans-serif'; x.fillText(e, [150, 930, 150, 930][k], [170, 170, 1370, 1370][k]); });
+    return cv;
+  }
+  async function saveDiploma() {
+    const id = dipGame; if (!id) return;
+    const cv = await renderDiplomaPNG(id);
+    const fname = `diplom-${childName().replace(/[^\p{L}\p{N}]+/gu, '-')}-${id}.png`;
+    const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+    const a = document.createElement('a'); a.download = fname; a.href = URL.createObjectURL(blob);
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  }
+  // ---------- confirm dialog & resets ----------
+  function confirmDlg(text, opts, onYes) {
+    const d = $('#dlg'); $('#dlgText').textContent = text;
+    $('#dlgYes').textContent = '✔ ' + ui().yes; $('#dlgNo').textContent = '✖ ' + ui().no;
+    const t = $('#dlgName'); t.hidden = !opts.nameToggle; t.classList.remove('on'); t.textContent = '✏️ ' + ui().alsoName;
+    t.onclick = () => t.classList.toggle('on');
+    d.hidden = false; say(text, { keep: true });
+    $('#dlgNo').onclick = () => { d.hidden = true; stopSpeech(); };
+    $('#dlgYes').onclick = () => { d.hidden = true; stopSpeech(); onYes(t.classList.contains('on')); };
+  }
+  function confirmResetGame(g) {
+    confirmDlg(ui().confirmGame(g.title[save.lang]), { nameToggle: true }, alsoName => {
+      delete save.games[g.id]; delete save.diplomas[g.id]; persist();
+      if (alsoName) openName(); else openMenu();
+    });
+  }
+  function confirmResetAll() {
+    confirmDlg(ui().confirmAll, {}, () => {
+      const old = save.name; save.games = {}; save.diplomas = {}; save.name = null; persist();
+      openName(old || '');
+    });
   }
   function flyStar(el) {
     const s = document.createElement('div'); s.className = 'flystar'; s.textContent = '⭐';
@@ -332,7 +438,13 @@
   }
 
   // ---------- buttons ----------
-  $('#btnStart').onclick = () => { unlock(); openMenu(); };
+  $('#btnStart').onclick = () => { unlock(); if (save.name == null) openName(); else openMenu(); };
+  $('#btnNameOk').onclick = saveName;
+  $('#nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') saveName(); });
+  $('#btnEditName').onclick = () => openName();
+  $('#btnResetAll').onclick = confirmResetAll;
+  $('#btnSaveDip').onclick = saveDiploma;
+  $('#btnDipMenu').onclick = () => openMenu();
   $('#btnHome').onclick = () => openMenu();
   $('#btnMenu2').onclick = () => openMenu();
   $('#btnAgain').onclick = () => { const id = cur.game.id; openGame(id, 0); };
@@ -346,11 +458,13 @@
     if (active === 'scrGame' && cur) { setTopbar(cur.game.title[save.lang]); loadTask(); }
     else if (active === 'scrMenu') openMenu();
     else if (active === 'scrDone' && cur) { setTopbar(cur.game.title[save.lang]); $('#doneText').textContent = ui().done; say(ui().done); }
+    else if (active === 'scrDiploma' && dipGame) openDiploma(dipGame);
+    else if (active === 'scrName') openName($('#nameInput').value);
     else openWelcome();
   };
   document.addEventListener('visibilitychange', () => { if (document.hidden) { music.pause(); stopSpeech(); } else startMusic(); });
   window.addEventListener('resize', () => { if (cur && cur.task && cur.task.kind === 'choose' && document.querySelector('#scrGame.active')) { const n = cur.task.options.length; if (!cur.task.houses && n === 4) $('#options').style.setProperty('--cols', 2); } });
 
-  window.ZS = { version: VERSION, GAMES, TASKS_PER_GAME, getTask, sayLog, get state() { return { save, cur }; } };
+  window.ZS = { version: VERSION, renderDiplomaPNG, openDiploma, GAMES, TASKS_PER_GAME, getTask, sayLog, get state() { return { save, cur }; } };
   openWelcome();
 })();
