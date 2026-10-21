@@ -1,12 +1,16 @@
 (function () {
   'use strict';
-  const { GAMES, TASKS_PER_GAME, getTask, bunnySVG, itemSVG } = window.ZS_GAMES;
+  const { GAMES, TASKS_PER_GAME, getTask, bunnySVG, itemSVG, num } = window.ZS_GAMES;
+  const VERSION = 'v2';
+  const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   const $ = s => document.querySelector(s);
   const KEY = 'zvieratkovaSkolka.v1';
 
   // ---------- state & storage ----------
-  let save = { lang: 'sk', muted: false, games: {} };
+  let save = { lang: 'sk', music: true, voice: true, games: {} };
   try { Object.assign(save, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* ignore */ }
+  if (save.muted === true) { save.music = false; save.voice = false; } // migrate v1 setting
+  delete save.muted;
   const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) { /* private mode */ } };
   const gs = id => (save.games[id] = save.games[id] || { done: [], next: 0 });
   const starsOf = id => gs(id).done.length;
@@ -15,16 +19,16 @@
     sk: {
       welcome: 'Ahoj! Ja som pani učiteľka Medvedica z lesnej školy. Dnes sa budeme spolu hrať a učiť. Ťukni na zelené tlačidlo!',
       menu: 'Vyber si hru! Ťukni na obrázok.',
-      praise: ['Výborne!', 'Super!', 'Šikovné!', 'Bravo!', 'Paráda!', 'To je ono!'],
+      praise: ['Áno!', 'Správne!', 'Výborne!', 'Super!', 'Bravo!', 'Paráda!'], thisIs: 'To je',
       retry: 'Skús to ešte raz.', done: 'Hurá! Všetkých 50 úloh je hotových! Si úžasný kamarát. Môžeš hrať znova alebo si vybrať inú hru.',
-      home: 'Domov', speak: 'Zopakuj', music: 'Hudba', lang: 'Jazyk'
+      home: 'Domov', speak: 'Zopakuj', music: 'Hudba', voice: 'Hlas', sound: 'Zvuk zapnúť / vypnúť', lang: 'Jazyk'
     },
     en: {
       welcome: 'Hello! I am Mrs. Bear, the teacher of the forest school. Today we will play and learn together. Tap the green button!',
       menu: 'Choose a game! Tap a picture.',
-      praise: ['Well done!', 'Great!', 'Clever!', 'Bravo!', 'Super!', 'That is it!'],
+      praise: ['Yes!', 'Correct!', 'Well done!', 'Great!', 'Bravo!', 'Super!'], thisIs: 'That is',
       retry: 'Try again.', done: 'Hooray! All 50 tasks are done! You are amazing. You can play again or choose another game.',
-      home: 'Home', speak: 'Repeat', music: 'Music', lang: 'Language'
+      home: 'Home', speak: 'Repeat', music: 'Music', voice: 'Voice', sound: 'Sound on / off', lang: 'Language'
     }
   };
   const ui = () => UI[save.lang];
@@ -34,20 +38,32 @@
   const loadVoices = () => { try { voices = speechSynthesis.getVoices() || []; } catch (e) { voices = []; } };
   if ('speechSynthesis' in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
   let lastSpoken = '';
+  const sayLog = []; // texts actually handed to speechSynthesis (for tests)
+  let speechSeq = 0;
+  function stopSpeech() {
+    speechSeq++;
+    if (!('speechSynthesis' in window)) return;
+    try { speechSynthesis.cancel(); } catch (e) { /* ignore */ }
+    duck(false);
+  }
   function say(text, opt) {
+    const done = opt && opt.done;
     lastSpoken = (opt && opt.keep) ? lastSpoken : text;
-    if (!('speechSynthesis' in window) || !text) return;
+    if (!save.voice || !('speechSynthesis' in window) || !text) { if (done) done(); return; }
     try {
       speechSynthesis.cancel();
+      const my = ++speechSeq;
       const u = new SpeechSynthesisUtterance(text);
       const code = save.lang === 'sk' ? 'sk' : 'en';
       u.lang = code === 'sk' ? 'sk-SK' : 'en-GB';
       const v = voices.find(v => v.lang && v.lang.toLowerCase().replace('_', '-').startsWith(code + '-')) || voices.find(v => v.lang && v.lang.toLowerCase().startsWith(code));
       if (v) u.voice = v;
       u.rate = (opt && opt.rate) || 0.88; u.pitch = 1.1;
-      u.onstart = () => duck(true); u.onend = u.onerror = () => duck(false);
+      u.onstart = () => { if (!save.voice) { try { speechSynthesis.cancel(); } catch (e) {} return; } duck(true); };
+      u.onend = u.onerror = () => { duck(false); if (done && my === speechSeq) done(); };
+      sayLog.push(text);
       speechSynthesis.speak(u);
-    } catch (e) { /* speech unavailable */ }
+    } catch (e) { if (done) done(); }
   }
 
   // ---------- music & sfx ----------
@@ -55,14 +71,16 @@
   music.volume = 0.3;
   let audioUnlocked = false, actx = null;
   function duck(on) { music.volume = on ? 0.1 : 0.3; }
-  function startMusic() { if (!save.muted && audioUnlocked) { const p = music.play(); if (p && p.catch) p.catch(() => {}); } }
-  function unlock() {
-    if (audioUnlocked) return; audioUnlocked = true;
+  function startMusic() { if (save.music && audioUnlocked) { const p = music.play(); if (p && p.catch) p.catch(() => {}); } }
+  function unlock(ev) {
+    if (audioUnlocked) return;
+    if (ev && ev.target && ev.target.closest && ev.target.closest('.snd')) return; // tapping a sound button must never start music
+    audioUnlocked = true;
     try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; }
     startMusic();
   }
   function tone(freqs, dur, type, vol) {
-    if (!actx || save.muted) return;
+    if (!actx || !(save.music || save.voice)) return;
     const t0 = actx.currentTime;
     freqs.forEach((f, k) => {
       const o = actx.createOscillator(), g = actx.createGain();
@@ -76,6 +94,25 @@
   const sfxSoft = () => tone([392, 330], 0.35, 'triangle', 0.08);
   document.addEventListener('pointerdown', unlock, { capture: true });
 
+  // ---------- sound controls (persisted) ----------
+  function applySound() {
+    if (!save.music) { try { music.pause(); } catch (e) {} } else startMusic();
+    if (!save.voice) stopSpeech();
+    const on = save.music || save.voice;
+    const bs = $('#btnSound');
+    bs.textContent = on ? '🔊' : '🔇'; bs.classList.toggle('off', !on); bs.setAttribute('aria-pressed', on ? 'true' : 'false');
+    $('#btnMusic').classList.toggle('off', !save.music); $('#btnMusic').setAttribute('aria-pressed', save.music ? 'true' : 'false');
+    $('#btnVoice').classList.toggle('off', !save.voice); $('#btnVoice').setAttribute('aria-pressed', save.voice ? 'true' : 'false');
+  }
+  function setSound(m, v) { save.music = m; save.voice = v; persist(); applySound(); }
+  function soundBtn(sel, fn) {
+    const b = $(sel);
+    // act on pointerdown for an instant response on touch (works even mid-speech); ignore the follow-up click
+    let viaPointer = false;
+    b.addEventListener('pointerdown', e => { e.preventDefault(); viaPointer = true; fn(); });
+    b.addEventListener('click', e => { if (viaPointer) { viaPointer = false; return; } fn(); });
+  }
+
   // ---------- screens ----------
   function show(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
@@ -84,8 +121,9 @@
   function setTopbar(title) {
     $('#tbTitle').textContent = title || 'Zvieratková škôlka';
     $('#btnLang').textContent = save.lang.toUpperCase();
-    $('#btnMusic').classList.toggle('off', save.muted);
-    $('#btnHome').setAttribute('aria-label', ui().home); $('#btnSpeak').setAttribute('aria-label', ui().speak);
+    $('#btnHome').setAttribute('aria-label', ui().home);
+    $('#btnSound').setAttribute('aria-label', ui().sound); $('#btnMusic').setAttribute('aria-label', ui().music); $('#btnVoice').setAttribute('aria-label', ui().voice);
+    applySound();
     document.documentElement.lang = save.lang;
   }
   function totalStars() { return GAMES.reduce((a, g) => a + starsOf(g.id), 0); }
@@ -147,6 +185,7 @@
     else say(speech);
   }
 
+  function sayOpt(o, prefix) { say(cap((prefix ? prefix + ' ' : '') + o.say) + '.', { rate: 0.85, keep: true }); }
   function renderChoose(t, stage, opts) {
     stage.innerHTML = t.display;
     const n = t.options.length;
@@ -158,21 +197,22 @@
     t.options.forEach((o, k) => {
       const b = document.createElement('button');
       b.className = 'opt' + (t.houses ? ' housebtn' : ''); b.innerHTML = o.html; b.dataset.ok = o.ok ? '1' : '0'; b.dataset.k = k;
-      b.onclick = () => choose(b, o.ok);
+      b.onclick = () => choose(b, o);
+      if (o.say) b.setAttribute('aria-label', o.say); b.dataset.say = o.say || '';
       opts.appendChild(b);
     });
   }
-  function choose(btn, ok) {
+  function choose(btn, o) {
     if (cur.locked) return;
-    if (ok) { btn.classList.add('good'); success(btn); }
-    else { btn.classList.remove('wrong'); void btn.offsetWidth; btn.classList.add('wrong'); wrongAnswer(); }
+    if (o.ok) { btn.classList.add('good'); success(btn); }
+    else { btn.classList.remove('wrong'); void btn.offsetWidth; btn.classList.add('wrong'); wrongAnswer(null, o.say ? `${ui().thisIs} ${o.say}.` : ''); }
   }
-  function wrongAnswer(customHint) {
+  function wrongAnswer(customHint, prefix) {
     cur.wrong++; sfxSoft();
     const t = cur.task;
     const hint = customHint || t.hint || ui().retry;
     bubble(hint, true, t.hintShow);
-    say(hint);
+    say((prefix ? prefix + ' ' : '') + hint, { keep: true });
     if (cur.wrong >= 2 && t.kind === 'choose') { const g = $('#options .opt[data-ok="1"]'); if (g) g.classList.add('glow'); }
   }
   function success(fromEl) {
@@ -181,15 +221,21 @@
     if (!st.done.includes(cur.index)) st.done.push(cur.index);
     persist();
     const p = ui().praise[Math.floor(Math.random() * ui().praise.length)];
-    bubble(p + ' ⭐'); say(p);
-    flyStar(fromEl);
+    const ans = cur.task.answer ? cap(cur.task.answer) : '';
+    bubble(p + ' ' + ans + ' ⭐');
+    flyStar(fromEl); burst(fromEl);
     updStars(starsOf(g.id));
     $('#progFill').style.width = (100 * starsOf(g.id) / TASKS_PER_GAME) + '%';
-    setTimeout(() => {
-      if (!cur || cur.game !== g) return;
+    // advance after the praise has been spoken (min 1.4 s, max 6 s), so the child hears the content
+    const idx0 = cur.index, t0 = Date.now(); let went = false;
+    const go = () => {
+      if (went) return; went = true;
+      if (!cur || cur.game !== g || cur.index !== idx0) return;
       if (cur.index >= TASKS_PER_GAME - 1) return finish();
       cur.index++; loadTask();
-    }, 1500);
+    };
+    say(p + ' ' + ans, { done: () => setTimeout(go, Math.max(250, 1400 - (Date.now() - t0))) });
+    setTimeout(go, save.voice ? 6000 : 1400);
   }
   function finish() {
     const g = cur.game; gs(g.id).next = 0; persist();
@@ -205,6 +251,18 @@
     requestAnimationFrame(() => requestAnimationFrame(() => { s.style.left = (tr.left) + 'px'; s.style.top = (tr.top - 10) + 'px'; s.style.transform = 'scale(.5) rotate(360deg)'; s.style.opacity = '.4'; }));
     setTimeout(() => s.remove(), 1000);
   }
+  function burst(el) {
+    const r = (el || $('#stage')).getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const bits = ['💖', '✨', '🌸', '💛', '✨', '💜', '⭐', '🩷'];
+    for (let k = 0; k < 10; k++) {
+      const d = document.createElement('div'); d.className = 'burst'; d.textContent = bits[k % bits.length];
+      const a = (k / 10) * Math.PI * 2, dist = 70 + Math.random() * 60;
+      d.style.left = cx + 'px'; d.style.top = cy + 'px';
+      d.style.setProperty('--dx', Math.cos(a) * dist + 'px'); d.style.setProperty('--dy', Math.sin(a) * dist + 'px');
+      document.body.appendChild(d); setTimeout(() => d.remove(), 1100);
+    }
+  }
 
   function renderGive(t, stage, opts) {
     stage.innerHTML = t.display + '<span class="emo">🐿️</span>';
@@ -215,7 +273,7 @@
     let inBasket = 0;
     for (let k = 0; k < 10; k++) {
       const n = document.createElement('button'); n.className = 'nutbtn'; n.textContent = '🌰'; n.setAttribute('aria-label', 'nut');
-      n.onclick = () => { if (cur.locked) return; if (n.parentNode === pile) { basket.appendChild(n); inBasket++; } else { pile.appendChild(n); inBasket--; } tone([523 + inBasket * 40], 0.15, 'sine', 0.07); };
+      n.onclick = () => { if (cur.locked) return; if (n.parentNode === pile) { basket.appendChild(n); inBasket++; } else { pile.appendChild(n); inBasket--; } tone([523 + inBasket * 40], 0.15, 'sine', 0.07); say(cap(num(save.lang, inBasket)), { rate: 1, keep: true }); };
       pile.appendChild(n);
     }
     wrap.append(pile, basket); opts.appendChild(wrap);
@@ -226,8 +284,10 @@
       else {
         basket.classList.remove('wrong'); void basket.offsetWidth; basket.classList.add('wrong');
         const more = inBasket < t.n;
-        const h = save.lang === 'sk' ? `V košíku je ${inBasket}. Potrebujeme ${t.n}. ${more ? 'Pridaj ešte.' : 'Niektoré vráť späť.'}`
-          : `There are ${inBasket} in the basket. We need ${t.n}. ${more ? 'Add some more.' : 'Take some back.'}`;
+        const W = window.ZS_GAMES.nutsW;
+        const inB = save.lang === 'sk' ? (inBasket >= 2 && inBasket <= 4 ? `V košíku sú ${W('sk', inBasket)}` : `V košíku je ${W('sk', inBasket)}`) : `There ${inBasket === 1 ? 'is' : 'are'} ${W('en', inBasket)} in the basket`;
+        const h = save.lang === 'sk' ? `${inB}. Potrebujeme ${W('sk', t.n)}. ${more ? 'Pridaj ešte.' : 'Niektoré vráť späť.'}`
+          : `${inB}. We need ${W('en', t.n)}. ${more ? 'Add some more.' : 'Take some back.'}`;
         wrongAnswer(h);
       }
     };
@@ -236,7 +296,7 @@
 
   function renderDress(t, stage, opts) {
     const mine = {};
-    stage.innerHTML = `<div class="dresswrap"><div class="order">📋${bunnySVG(t.target, 'bunny')}</div><div class="mybunny"></div></div>`;
+    stage.innerHTML = `<div class="dresswrap"><div class="order${t.byEar ? ' byear' : ''}" data-say="${t.byEar ? t.prompt : ''}">${t.byEar ? '<div class="listen">👂</div>' : '📋' + bunnySVG(t.target, 'bunny')}</div><div class="mybunny"></div></div>`;
     const myb = stage.querySelector('.mybunny');
     const redraw = () => { myb.innerHTML = bunnySVG(mine, 'bunny'); };
     redraw();
@@ -246,12 +306,13 @@
       const row = document.createElement('div'); row.className = 'wrow'; row.dataset.slot = slot;
       t.choices[slot].forEach(val => {
         const b = document.createElement('button'); b.className = 'opt'; b.innerHTML = itemSVG(slot, val);
-        b.dataset.val = val; b.dataset.ok = val === t.target[slot] ? '1' : '0';
+        b.dataset.val = val; b.dataset.ok = val === t.target[slot] ? '1' : '0'; b.dataset.say = t.itemSay[slot][val]; b.setAttribute('aria-label', t.itemSay[slot][val]);
         b.onclick = () => {
           if (cur.locked) return;
           mine[slot] = mine[slot] === val ? undefined : val;
           row.querySelectorAll('.opt').forEach(x => x.classList.toggle('sel', x.dataset.val === mine[slot]));
           redraw(); tone([660], 0.12, 'sine', 0.06);
+          say(cap(t.itemSay[slot][val]) + '.', { rate: 0.85, keep: true });
         };
         row.appendChild(b);
       });
@@ -264,7 +325,7 @@
       const bad = t.slots.find(s => mine[s] !== t.target[s]);
       if (!bad) return success(myb);
       myb.classList.remove('wrong'); void myb.offsetWidth; myb.classList.add('wrong');
-      wrongAnswer(t.slotHints[bad]);
+      wrongAnswer(cur.wrong >= 1 || t.byEar ? t.slotNames[bad] : t.slotHints[bad]);
       if (cur.wrong >= 2) { const g = wr.querySelector(`.wrow[data-slot="${bad}"] .opt[data-ok="1"]`); if (g) g.classList.add('glow'); }
     };
     opts.appendChild(done);
@@ -275,8 +336,10 @@
   $('#btnHome').onclick = () => openMenu();
   $('#btnMenu2').onclick = () => openMenu();
   $('#btnAgain').onclick = () => { const id = cur.game.id; openGame(id, 0); };
-  $('#btnSpeak').onclick = () => say(lastSpoken || ui().menu);
-  $('#btnMusic').onclick = () => { save.muted = !save.muted; persist(); setTopbar($('#tbTitle').textContent); if (save.muted) music.pause(); else startMusic(); };
+  document.querySelectorAll('.bubble').forEach(b => b.addEventListener('click', () => say(lastSpoken || ui().menu, { keep: true })));
+  soundBtn('#btnSound', () => { const on = save.music || save.voice; setSound(!on, !on); if (!on) { audioUnlocked = true; say(save.lang === 'sk' ? 'Zvuk je zapnutý.' : 'Sound is on.', { keep: true }); } });
+  soundBtn('#btnMusic', () => { audioUnlocked = true; setSound(!save.music, save.voice); });
+  soundBtn('#btnVoice', () => setSound(save.music, !save.voice));
   $('#btnLang').onclick = () => {
     save.lang = save.lang === 'sk' ? 'en' : 'sk'; persist();
     const active = document.querySelector('.screen.active').id;
@@ -285,9 +348,9 @@
     else if (active === 'scrDone' && cur) { setTopbar(cur.game.title[save.lang]); $('#doneText').textContent = ui().done; say(ui().done); }
     else openWelcome();
   };
-  document.addEventListener('visibilitychange', () => { if (document.hidden) { music.pause(); try { speechSynthesis.cancel(); } catch (e) {} } else startMusic(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { music.pause(); stopSpeech(); } else startMusic(); });
   window.addEventListener('resize', () => { if (cur && cur.task && cur.task.kind === 'choose' && document.querySelector('#scrGame.active')) { const n = cur.task.options.length; if (!cur.task.houses && n === 4) $('#options').style.setProperty('--cols', 2); } });
 
-  window.ZS = { GAMES, TASKS_PER_GAME, getTask, get state() { return { save, cur }; } };
+  window.ZS = { version: VERSION, GAMES, TASKS_PER_GAME, getTask, sayLog, get state() { return { save, cur }; } };
   openWelcome();
 })();
