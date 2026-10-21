@@ -1094,55 +1094,345 @@
     };
   }
 
+  // =================== Zvieratková škôlka 2 — NEW MECHANICS ===================
+  // deterministic "k-th distinct item" picker: a different item each task of a stage
+  const nth = (key, list, k) => shuffle(rng(hash(key)), list)[k % list.length];
+  const skBe = n => (n >= 2 && n <= 4 ? 'sú' : 'je');
+  const letterSay = (lang, L) => cap(letterName(lang, L)) + '.';
+  const tile = (html, say, ord, extra) => Object.assign({ html, say, ord }, extra || {});
+
+  // ---------------- 1) COLORS: sort into baskets / paint by spoken rules / shadow match ----------------
+  const SORTABLE = OBJ.filter(o => !o[5]);
+  const SORT_COLS = ['yellow', 'red', 'green', 'orange', 'pink', 'brown'];
+  const oName = (lang, o) => T(lang, o[1], 'the ' + o[2], o[3]);
+  const oBare = (lang, o) => T(lang, o[1], o[2], o[3]);
+  function genSort(i, lang, r) {
+    const nc = i < 8 ? 2 : 3;
+    const cols = sample(r, SORT_COLS, nc).map(byId);
+    const per = i < 10 ? 2 : 3; let items = [];
+    cols.forEach(c => { const pool = SORTABLE.filter(o => o[4] === c.id); sample(r, pool, Math.min(per, pool.length)).forEach(o => items.push({ o, c })); });
+    items = shuffle(r, items);
+    const its = items.map(({ o, c }) => ({ html: emo(o[0], 'huge'), bin: c.id, say: cap(oBare(lang, o)) + '.',
+      hint: T(lang, `Akú farbu má ${o[1]}? Daj to do košíka s rovnakou farbou.`, `What color is the ${o[2]}? Put it in the basket with the same color.`, `¿De qué color es ${o[3]}? Ponlo en la canasta del mismo color.`) }));
+    const bins = cols.map(c => ({ id: c.id, html: `<span class="basket2" style="--bc:${c.hex}">🧺</span>`, say: T(lang, `${c.sk}ý košík`, `the ${c.en} basket`, `la canasta ${c.es.f}`) }));
+    const parts = cols.map(c => { const names = items.filter(x => x.c === c).map(x => oBare(lang, x.o));
+      return T(lang, `Do ${c.sk}ého košíka: ${joinAnd(lang, names)}.`, `Into the ${c.en} basket: ${joinAnd(lang, names)}.`, `En la canasta ${c.es.f}: ${joinAnd(lang, names)}.`); });
+    return { kind: 'sort', prompt: T(lang, 'Roztrieď veci do košíkov podľa farby.', 'Sort the things into the baskets by color.', 'Ordena las cosas en las canastas por color.'),
+      hint: its[0].hint, items: its, bins, answer: parts.join(' '), answerParts: parts, phrases: [...its.map(x => x.say), ...its.map(x => x.hint)] };
+  }
+  const PAINT_SHAPES = ['circle', 'square', 'triangle', 'star', 'heart', 'diamond', 'oval'];
+  const PAINT_COLS = ['red', 'blue', 'yellow', 'green', 'purple', 'orange', 'pink', 'brown'];
+  const paintRule = (lang, s, c) => T(lang, `Vyfarbi ${s.skAcc} na ${c.sk}o.`, `Color the ${s.en} ${c.en}.`, `Pinta ${ART[s.eg]} ${s.es} de ${c.es.m}.`);
+  function genPaint(i, lang, r) {
+    const ns = i < 25 ? 2 : i < 30 ? 3 : 4;
+    const shapes = sample(r, PAINT_SHAPES, ns).map(shapeById), cols = sample(r, PAINT_COLS, Math.min(8, ns + (i < 25 ? 1 : 2))).map(byId);
+    const tgt = shapes.map((s, k) => ({ s, c: cols[k] }));
+    const rules = tgt.map(x => paintRule(lang, x.s, x.c));
+    return { kind: 'paint', prompt: rules.join(' '), hint: T(lang, 'Najprv ťukni na farbu, potom na tvar.', 'First tap a color, then tap a shape.', 'Primero toca un color y luego una forma.'),
+      shapes: tgt.map(x => ({ id: x.s.id, rule: paintRule(lang, x.s, x.c) })), target: Object.fromEntries(tgt.map(x => [x.s.id, x.c.id])),
+      palette: shuffle(r, cols).map(c => ({ id: c.id, hex: c.hex, say: cap(colorName(lang, c)) + '.' })),
+      answer: cap(joinAnd(lang, tgt.map(x => colShape(lang, x.c, x.s)))) + '.', phrases: [...rules, ...cols.map(c => cap(colorName(lang, c)) + '.')] };
+  }
+  const SIL = [...ROW.map(x => [x[0], x[1], x[3], x[4]]), ['🐘', 'slon', 'elephant', 'el elefante'], ['🦒', 'žirafa', 'giraffe', 'la jirafa'], ['🐢', 'korytnačka', 'turtle', 'la tortuga'],
+    ['🦋', 'motýľ', 'butterfly', 'la mariposa'], ['🐌', 'slimák', 'snail', 'el caracol'], ['🐧', 'tučniak', 'penguin', 'el pingüino'], ['🦀', 'krab', 'crab', 'el cangrejo'], ['🐙', 'chobotnica', 'octopus', 'el pulpo'],
+    ['🦉', 'sova', 'owl', 'el búho'], ['🐴', 'koník', 'horse', 'el caballo'], ['🦆', 'kačka', 'duck', 'el pato'], ['🐿️', 'veverička', 'squirrel', 'la ardilla']];
+  const silName = (lang, a) => T(lang, a[1], 'the ' + a[2], a[3]);
+  function genSil(i, lang, r) {
+    const a = nth('sil', SIL, i - 35), n = i < 40 ? 3 : 4;
+    const opts = shuffle(r, [a, ...sample(r, SIL.filter(x => x !== a), n - 1)]);
+    return { kind: 'choose', prompt: T(lang, 'Čí je to tieň? Ťukni na zvieratko.', 'Whose shadow is this? Tap the animal.', '¿De quién es esta sombra? Toca el animal.'),
+      hint: T(lang, 'Pozri sa na tvar: uši, nohy, chvost.', 'Look at the shape: ears, legs, tail.', 'Mira la forma: orejas, patas, cola.'),
+      display: `<span class="emo huge sil">${a[0]}</span>`, answer: T(lang, `Je to ${a[1]}.`, `It is the ${a[2]}.`, `Es ${a[3]}.`),
+      options: opts.map(x => ({ html: emo(x[0]), ok: x === a, say: silName(lang, x) })) };
+  }
+  function genColors3(i, lang, r) { return i < 20 ? genSort(i, lang, r) : i < 35 ? genPaint(i, lang, r) : genSil(i, lang, r); }
+
+  // ---------------- 2) COUNTING ANIMALS: count / more / fewer / add / order groups ----------------
+  const AN = (e, sk, g, en, es, eg) => ({ e, sk, g, en, es, eg });
+  const ANIM = [AN('🐄', ['krava', 'kravy', 'kráv'], 'f', ['cow', 'cows'], ['vaca', 'vacas'], 'f'), AN('🦆', ['kačka', 'kačky', 'kačiek'], 'f', ['duck', 'ducks'], ['pato', 'patos'], 'm'),
+    AN('🐟', ['rybka', 'rybky', 'rybiek'], 'f', ['fish', 'fish'], ['pez', 'peces'], 'm'), AN('🐑', ['ovečka', 'ovečky', 'ovečiek'], 'f', ['sheep', 'sheep'], ['oveja', 'ovejas'], 'f'),
+    AN('🐷', ['prasiatko', 'prasiatka', 'prasiatok'], 'n', ['pig', 'pigs'], ['cerdito', 'cerditos'], 'm'), AN('🐔', ['sliepka', 'sliepky', 'sliepok'], 'f', ['hen', 'hens'], ['gallina', 'gallinas'], 'f'),
+    AN('🐝', ['včielka', 'včielky', 'včielok'], 'f', ['bee', 'bees'], ['abeja', 'abejas'], 'f'), AN('🐌', ['slimák', 'slimáky', 'slimákov'], 'm', ['snail', 'snails'], ['caracol', 'caracoles'], 'm'),
+    AN('🐢', ['korytnačka', 'korytnačky', 'korytnačiek'], 'f', ['turtle', 'turtles'], ['tortuga', 'tortugas'], 'f'), AN('🐭', ['myška', 'myšky', 'myšiek'], 'f', ['mouse', 'mice'], ['ratón', 'ratones'], 'm'),
+    AN('🐧', ['tučniak', 'tučniaky', 'tučniakov'], 'm', ['penguin', 'penguins'], ['pingüino', 'pingüinos'], 'm'), AN('🦋', ['motýľ', 'motýle', 'motýľov'], 'm', ['butterfly', 'butterflies'], ['mariposa', 'mariposas'], 'f'),
+    AN('🐞', ['lienka', 'lienky', 'lienok'], 'f', ['ladybug', 'ladybugs'], ['mariquita', 'mariquitas'], 'f'), AN('🐱', ['mačička', 'mačičky', 'mačičiek'], 'f', ['cat', 'cats'], ['gato', 'gatos'], 'm'),
+    AN('🐶', ['psík', 'psíky', 'psíkov'], 'm', ['dog', 'dogs'], ['perro', 'perros'], 'm'), AN('🐴', ['koník', 'koníky', 'koníkov'], 'm', ['horse', 'horses'], ['caballo', 'caballos'], 'm'),
+    AN('🐤', ['kuriatko', 'kuriatka', 'kuriatok'], 'n', ['chick', 'chicks'], ['pollito', 'pollitos'], 'm'), AN('🐸', ['žabka', 'žabky', 'žabiek'], 'f', ['frog', 'frogs'], ['rana', 'ranas'], 'f')];
+  const cuant = a => (a.eg === 'f' ? 'Cuántas' : 'Cuántos');
+  function numOptsP(r, lang, ans) { const st = new Set([ans]); let g = 0; while (st.size < 4 && g++ < 200) { const v = ans + ri(r, -3, 3); if (v >= 1 && v <= 10) st.add(v); }
+    return shuffle(r, [...st]).map(v => ({ html: big(v, 'num'), ok: v === ans, say: num(lang, v) })); }
+  function genCountA(i, lang, r) {
+    const a = nth('cnt', ANIM, i), n = i < 5 ? ri(r, 2, 5) : i < 10 ? ri(r, 4, 8) : ri(r, 6, 10);
+    return { kind: 'choose', prompt: T(lang, `Koľko je tu ${a.sk[2]}?`, `How many ${a.en[1]} are there?`, `¿${cuant(a)} ${a.es[1]} hay?`),
+      hint: T(lang, 'Ukazuj prstom a počítaj nahlas.', 'Point with your finger and count out loud.', 'Señala con el dedo y cuenta en voz alta.'),
+      display: grid(a.e, n), answer: cap(cnt(lang, a, n)) + '.', options: numOptsP(r, lang, n) };
+  }
+  function genCompare(i, lang, r, more) {
+    const k = more ? i - 15 : i - 22, a = nth(more ? 'more' : 'less', ANIM, k), b = nth(more ? 'more2' : 'less2', ANIM.filter(x => x !== a), k);
+    const d = i < 19 ? ri(r, 3, 5) : i < 25 ? ri(r, 2, 3) : 1; const lo = ri(r, 1, 9 - d), hi = lo + d;
+    const [x, nx, y, ny] = more ? [a, hi, b, lo] : [a, lo, b, hi];
+    const word = more ? T(lang, 'viac ako', 'more than', 'más que') : T(lang, 'menej ako', 'fewer than', 'menos que');
+    const verb = T(lang, skBe(nx), nx === 1 ? 'is' : 'are', nx === 1 ? 'es' : 'son');
+    const opts = shuffle(r, [[x, nx], [y, ny]]);
+    return { kind: 'choose', wide: true, prompt: more ? T(lang, 'Kde je viac zvieratiek?', 'Where are there more animals?', '¿Dónde hay más animales?') : T(lang, 'Kde je menej zvieratiek?', 'Where are there fewer animals?', '¿Dónde hay menos animales?'),
+      hint: T(lang, 'Spočítaj zvieratká v každej skupinke.', 'Count the animals in each group.', 'Cuenta los animales de cada grupo.'), display: emo('⚖️'),
+      answer: `${cap(cnt(lang, x, nx))} ${verb} ${word} ${cnt(lang, y, ny)}.`, options: opts.map(([z, n]) => ({ html: grid(z.e, n), ok: z === x, say: cnt(lang, z, n) })) };
+  }
+  function genAdd(i, lang, r) {
+    const a = nth('add', ANIM, i - 30), s = i < 35 ? ri(r, 3, 5) : i < 40 ? ri(r, 5, 8) : ri(r, 7, 10), x = ri(r, 1, s - 1), y = s - x;
+    const skAdd = y >= 5 ? 'Pribudlo' : y === 1 ? (a.g === 'f' ? 'Pribudla' : a.g === 'n' ? 'Pribudlo' : 'Pribudol') : 'Pribudli';
+    const say = T(lang, `Na obrázku ${skBe(x)} ${cnt('sk', a, x)}. ${skAdd} ešte ${skNum(y, a.g)}. Koľko ${a.sk[2]} je spolu?`,
+      `There ${x === 1 ? 'is' : 'are'} ${cnt('en', a, x)}. ${cap(num('en', y))} more ${y === 1 ? 'comes' : 'come'}. How many ${a.en[1]} are there now?`,
+      `Hay ${cnt('es', a, x)}. ${y === 1 ? 'Llega' : 'Llegan'} ${y === 1 ? (a.eg === 'f' ? 'una' : 'uno') : num('es', y)} más. ¿${cuant(a)} ${a.es[1]} hay ahora?`);
+    return { kind: 'choose', prompt: say, hint: T(lang, 'Spočítaj všetky zvieratká spolu.', 'Count all the animals together.', 'Cuenta todos los animales juntos.'),
+      display: `<div class="sum">${grid(a.e, x)}<span class="plus">+</span>${grid(a.e, y)}</div>`,
+      answer: T(lang, `Spolu ${skBe(s)} ${cnt('sk', a, s)}.`, `Now there ${s === 1 ? 'is' : 'are'} ${cnt('en', a, s)}.`, `Ahora hay ${cnt('es', a, s)}.`), options: numOptsP(r, lang, s) };
+  }
+  function genOrderGroups(i, lang, r) {
+    const n = i < 47 ? 3 : 4, ans = sample(r, ANIM, n), counts = sample(r, [1, 2, 3, 4, 5, 6, 7, 8, 9], n).sort((p, q) => p - q);
+    const tiles = ans.map((a, k) => tile(grid(a.e, counts[k]), cap(cnt(lang, a, counts[k])) + '.', k));
+    return { kind: 'seq', tilesOnly: true, prompt: T(lang, 'Ťukaj na skupinky od najmenšej po najväčšiu.', 'Tap the groups from the smallest to the biggest.', 'Toca los grupos del más pequeño al más grande.'),
+      hint: T(lang, 'Najprv nájdi skupinku, kde je najmenej zvieratiek.', 'First find the group with the fewest animals.', 'Primero busca el grupo con menos animales.'),
+      tiles: shuffle(r, tiles), slots: n, display: '', answer: cap(joinAnd(lang, ans.map((a, k) => cnt(lang, a, counts[k])))) + '.', phrases: tiles.map(t => t.say) };
+  }
+  function genCount3(i, lang, r) { return i < 15 ? genCountA(i, lang, r) : i < 22 ? genCompare(i, lang, r, true) : i < 30 ? genCompare(i, lang, r, false) : i < 45 ? genAdd(i, lang, r) : genOrderGroups(i, lang, r); }
+
+  // ---------------- 3) LETTERS: pair big/small / hunt a letter / alphabet order / pictures by first letter ----------------
+  const ABC = { sk: 'A B C D E F G H I J K L M N O P R S T U V Y Z'.split(' '), en: 'A B C D E F G H I J K L M N O P R S T U V W Y Z'.split(' '), es: 'A B C D E F G H I J L M N O P R S T U V Y Z'.split(' ') };
+  const LOOK = { M: 'NWH', N: 'MHU', E: 'FBL', F: 'EPT', B: 'PRD', P: 'BRF', R: 'PBK', O: 'QCD', C: 'OGU', G: 'COQ', D: 'OBP', K: 'RXH', H: 'NMK', L: 'IJT', T: 'IFL', S: 'ZCG', Z: 'SNX', U: 'VNO', V: 'UYW', A: 'HVR', I: 'LTJ', J: 'IUL', Y: 'VTX', W: 'MVN',
+    b: 'dph', d: 'bpq', p: 'qbd', n: 'mhu', m: 'nw', h: 'nbk', a: 'oed', e: 'cao', u: 'nvo', l: 'ijt', t: 'fil', s: 'zc', o: 'ace', r: 'nv', v: 'uyw', k: 'hx', i: 'jl', j: 'ig', g: 'qpy', c: 'oe', f: 'tl', z: 's', y: 'vg' };
+  const TIMES = { sk: { 2: 'dvakrát', 3: 'trikrát', 4: 'štyrikrát' }, en: { 2: 'two times', 3: 'three times', 4: 'four times' }, es: { 2: 'dos veces', 3: 'tres veces', 4: 'cuatro veces' } };
+  function genPair(i, lang, r) {
+    const n = i < 5 ? 3 : i < 10 ? 4 : 5, Ls = sample(r, ABC[lang], n);
+    return { kind: 'pair', prompt: T(lang, 'Spoj veľké písmeno s malým. Ťukni na veľké a potom na malé.', 'Match each big letter with its small letter. Tap the big one, then the small one.', 'Une cada mayúscula con su minúscula. Toca la mayúscula y luego la minúscula.'),
+      hint: T(lang, 'Hľadaj rovnaké písmeno, len malé.', 'Find the same letter, just small.', 'Busca la misma letra, pero minúscula.'),
+      left: Ls.map(L => ({ id: L, html: big(L, 'let'), say: letterSay(lang, L) })), right: shuffle(r, Ls).map(L => ({ id: L, html: big(L.toLowerCase(), 'let') })),
+      answer: T(lang, `Písmená ${joinAnd(lang, Ls)}.`, `The letters ${joinAnd(lang, Ls)}.`, `Las letras ${joinAnd(lang, Ls)}.`), phrases: Ls.map(L => letterSay(lang, L)) };
+  }
+  function genHunt(i, lang, r) {
+    const lower = i >= 24, L0 = nth('hunt', ABC[lang].filter(x => LOOK[x] && LOOK[x.toLowerCase()]), i - 15), L = lower ? L0.toLowerCase() : L0;
+    const size = i < 20 ? 9 : i < 24 ? 12 : 15, k = i < 20 ? ri(r, 2, 3) : ri(r, 3, 4);
+    const sim = LOOK[L].split(''), cells = [];
+    for (let c = 0; c < size - k; c++) cells.push({ html: big(r() < 0.7 ? pick(r, sim) : (lower ? pick(r, ABC[lang]).toLowerCase() : pick(r, ABC[lang])).replace(L, sim[0]), 'let'), ok: false });
+    for (let c = 0; c < k; c++) cells.push({ html: big(L, 'let'), ok: true });
+    const tw = TIMES[lang][k];
+    return { kind: 'hunt', prompt: lower ? T(lang, `Nájdi všetky malé ${L}.`, `Find all the small ${L}.`, `Busca todas las ${L} minúsculas.`) : T(lang, `Nájdi všetky písmená ${L}.`, `Find all the letters ${L}.`, `Busca todas las letras ${L}.`),
+      hint: lower ? T(lang, `Hľadaj iba malé ${L}.`, `Look only for the small ${L}.`, `Busca solo la ${L} minúscula.`) : T(lang, `Hľadaj iba písmeno ${L}.`, `Look only for the letter ${L}.`, `Busca solo la letra ${L}.`),
+      display: big(L, 'let huge'), cells: shuffle(r, cells),
+      answer: lower ? T(lang, `Malé ${L} je tu ${tw}.`, `The small ${L} is here ${tw}.`, `La ${L} minúscula está ${tw}.`) : T(lang, `Písmeno ${L} je tu ${tw}.`, `The letter ${L} is here ${tw}.`, `La letra ${L} está ${tw}.`) };
+  }
+  function genAlpha(i, lang, r) {
+    const A = ABC[lang]; let Ls;
+    if (i < 36) { const n = i < 32 ? 3 : 4, s = nth('alpha' + n, [...Array(A.length - n + 1).keys()], i); Ls = A.slice(s, s + n); }
+    else Ls = sample(r, A, 5).sort((p, q) => A.indexOf(p) - A.indexOf(q));
+    const tiles = Ls.map((L, k) => tile(big(L, 'let'), letterSay(lang, L), k));
+    return { kind: 'seq', prompt: T(lang, 'Zoraď písmená podľa abecedy. Ťukaj od prvého.', 'Put the letters in alphabet order. Tap the first one first.', 'Ordena las letras como en el abecedario. Toca primero la primera.'),
+      hint: T(lang, 'Zaspievaj si abecedu od A.', 'Sing the alphabet from A.', 'Canta el abecedario desde la A.'), display: '', tiles: shuffle(r, tiles), slots: Ls.length,
+      answer: T(lang, 'Po poriadku: ', 'In order: ', 'En orden: ') + Ls.join(', ') + '.', phrases: tiles.map(t => t.say) };
+  }
+  const SND = { sk: [['I', 'Y'], ['Í', 'Ý']], en: [['C', 'K'], ['C', 'S']], es: SAME_ES };
+  const sameSnd = (lang, a, b) => a === b || SND[lang].some(g => g.includes(a) && g.includes(b));
+  const PICS = {}; ['sk', 'en', 'es'].forEach(L => { const m = new Map(); [...WORDS[L], ...WORDS2[L], ...FIRST2[L]].forEach(([e, w]) => { if (!m.has(w) && !(L === 'sk' && /^CH/.test(w))) m.set(w, e); }); PICS[L] = [...m].map(([w, e]) => [e, w]); });
+  function genPicHunt(i, lang, r) {
+    const P = PICS[lang], letters = [...new Set(P.map(x => x[1][0]))].filter(l => P.filter(x => x[1][0] === l).length >= 3);
+    const L = nth('pich', letters, i - 40), k = i < 45 ? 2 : 3, size = i < 45 ? 6 : 8;
+    const yes = sample(r, P.filter(x => x[1][0] === L), k), no = sample(r, P.filter(x => !sameSnd(lang, x[1][0], L)), size - k);
+    const cells = shuffle(r, [...yes.map(x => ({ html: emo(x[0]), ok: true, say: x[1].toLowerCase() })), ...no.map(x => ({ html: emo(x[0]), ok: false, say: x[1].toLowerCase() }))]);
+    const ws = yes.map(x => x[1].toLowerCase());
+    return { kind: 'hunt', pics: true, prompt: T(lang, `Ťukni na všetky obrázky, ktoré sa začínajú na ${L}.`, `Tap all the pictures that begin with ${L}.`, `Toca todos los dibujos que empiezan por ${L}.`),
+      hint: T(lang, `Povedz si slová nahlas. Počuješ na začiatku ${L}?`, `Say the words out loud. Do you hear ${L} at the start?`, `Di las palabras en voz alta. ¿Oyes la ${L} al principio?`),
+      display: big(L, 'let huge'), cells, answer: T(lang, `Na ${L} sa začína: ${joinAnd(lang, ws)}.`, `Beginning with ${L}: ${joinAnd(lang, ws)}.`, `Empiezan por ${L}: ${joinAnd(lang, ws)}.`), phrases: cells.map(c => cap(c.say) + '.') };
+  }
+  function genLetters3(i, lang, r) { return i < 15 ? genPair(i, lang, r) : i < 28 ? genHunt(i, lang, r) : i < 40 ? genAlpha(i, lang, r) : genPicHunt(i, lang, r); }
+
+  // ---------------- 4) WORDS: build the word from letter tiles / from syllable tiles ----------------
+  const WPOOL = {}; ['sk', 'en', 'es'].forEach(L => { const m = new Map(); [...WORDS[L], ...WORDS2[L]].forEach(([e, w]) => { if (!m.has(w)) m.set(w, e); }); WPOOL[L] = [...m].map(([w, e]) => [e, w]); });
+  function genBuildLetters(i, lang, r) {
+    const len = i < 10 ? 3 : i < 20 ? 4 : 5;
+    const pool = WPOOL[lang].filter(x => [...x[1]].length === len && !(lang === 'sk' && /CH/.test(x[1])));
+    const [e, w] = nth('bl' + len, pool, i), letters = [...w];
+    const extra = i < 15 ? 0 : i < 20 ? 1 : 2;
+    const dis = sample(r, CONS[lang].filter(c => !letters.includes(c)), extra);
+    const tiles = [...letters.map((L, k) => tile(big(L, 'let'), letterSay(lang, L), k, { v: L })), ...dis.map(L => tile(big(L, 'let'), letterSay(lang, L), -1, { v: L }))];
+    const wl = w.toLowerCase(), as = sylSay(lang, w);
+    return { kind: 'seq', prompt: T(lang, 'Poskladaj slovo z písmen. Ťukaj na písmená po poradí.', 'Build the word from the letters. Tap them in order.', 'Forma la palabra con las letras. Tócalas en orden.'),
+      hint: T(lang, `Počúvaj: ${wl}.`, `Listen: ${wl}.`, `Escucha: ${wl}.`), display: `<button class="word picword" data-say="${wl}">${e}</button>`, tiles: shuffle(r, tiles), slots: letters.length, byValue: true,
+      answer: as.text, answerParts: as.parts, phrases: tiles.map(t => t.say) };
+  }
+  function genBuildSyl(i, lang, r) {
+    const three = i >= 37, pool = WPOOL[lang].filter(x => three ? sylOf(lang, x[1]).length >= 3 : sylOf(lang, x[1]).length === 2);
+    const [e, w] = nth('bs' + three, pool, i), sy = sylOf(lang, w);
+    const extra = i < 31 ? 0 : i < 44 ? 1 : 2;
+    const others = [...new Set(WPOOL[lang].flatMap(x => sylOf(lang, x[1])))].filter(s => !sy.includes(s) && s.length <= 4);
+    const dis = sample(r, others, extra);
+    const tiles = [...sy.map((s, k) => tile(big(s, 'let syl'), sylClip(s), k, { v: s })), ...dis.map(s => tile(big(s, 'let syl'), sylClip(s), -1, { v: s }))];
+    const wl = w.toLowerCase(), as = sylSay(lang, w);
+    return { kind: 'seq', prompt: T(lang, 'Poskladaj slovo zo slabík.', 'Build the word from the syllables.', 'Forma la palabra con las sílabas.'),
+      hint: T(lang, `Počúvaj: ${wl}.`, `Listen: ${wl}.`, `Escucha: ${wl}.`), display: `<button class="word picword" data-say="${wl}">${e}</button>`, tiles: shuffle(r, tiles), slots: sy.length, byValue: true,
+      answer: as.text, answerParts: as.parts, phrases: tiles.map(t => t.say) };
+  }
+  function genWords3(i, lang, r) { return i < 25 ? genBuildLetters(i, lang, r) : genBuildSyl(i, lang, r); }
+
+  // ---------------- 5) RIDDLES & LOGIC: what comes next / who has the most / story order / think of a thing ----------------
+  const rowName = (lang, x) => T(lang, x[1], x[3], x[4]);
+  function genNext(i, lang, r) {
+    let row, ans, units, opts;
+    if (i < 10) {
+      const pat = i < 5 ? [0, 1] : [0, 1, 2], u = sample(r, ROW, pat.length), len = i < 5 ? 5 : ri(r, 5, 7);
+      row = [...Array(len + 1).keys()].map(k => u[pat[k % pat.length]]); ans = row[len]; units = u;
+    } else {
+      const pat = pick(r, [[0, 0, 1], [0, 1, 1]]), u = sample(r, ROW, 2), len = ri(r, 4, 7);
+      row = [...Array(len + 1).keys()].map(k => u[pat[k % 3]]); ans = row[len]; units = u;
+    }
+    opts = shuffle(r, [...units, ...sample(r, ROW.filter(x => !units.includes(x)), units.length === 2 ? 1 : 1)]);
+    const shown = row.slice(0, -1);
+    return { kind: 'choose', prompt: T(lang, 'Čo príde ďalej? Ťukni na obrázok, ktorý patrí na otáznik.', 'What comes next? Tap the picture for the question mark.', '¿Qué viene después? Toca el dibujo que va en el signo de interrogación.'),
+      hint: T(lang, 'Pozri sa, ako sa obrázky opakujú.', 'Look how the pictures repeat.', 'Mira cómo se repiten los dibujos.'),
+      display: `<div class="patrow">${shown.map(x => `<span class="emo">${x[0]}</span>`).join('')}<span class="emo q">❓</span></div>`, wide: false,
+      answer: cap(row.map(x => rowName(lang, x)).join(', ')) + '.', options: opts.map(x => ({ html: emo(x[0]), ok: x === ans, say: rowName(lang, x) })) };
+  }
+  const GOODS = [['🥕', 'mrkiev', 'carrots', 'zanahorias'], ['🍎', 'jabĺk', 'apples', 'manzanas'], ['🌰', 'orieškov', 'nuts', 'nueces'], ['🍄', 'hríbikov', 'mushrooms', 'hongos'],
+    ['🍬', 'cukríkov', 'candies', 'caramelos'], ['⭐', 'hviezdičiek', 'stars', 'estrellas'], ['🎈', 'balónov', 'balloons', 'globos'], ['🍓', 'jahôd', 'strawberries', 'fresas']];
+  const rowTheName = (lang, x) => T(lang, x[1], 'the ' + x[3], x[4]);
+  function genMost(i, lang, r) {
+    const n = i < 23 ? 3 : 4, ch = sample(r, ROW, n), gd = nth('goods', GOODS, i), most = i % 2 === 0;
+    const st = [];
+    for (let k = 0; k < n - 1; k++) {
+      const [a, b] = [ch[k], ch[k + 1]];
+      st.push(r() < 0.5 ? T(lang, `${cap(a[1])} má viac ${gd[1]} ako ${b[1]}.`, `${cap(rowTheName('en', a))} has more ${gd[2]} than ${rowTheName('en', b)}.`, `${cap(a[4])} tiene más ${gd[3]} que ${b[4]}.`)
+        : T(lang, `${cap(b[1])} má menej ${gd[1]} ako ${a[1]}.`, `${cap(rowTheName('en', b))} has fewer ${gd[2]} than ${rowTheName('en', a)}.`, `${cap(b[4])} tiene menos ${gd[3]} que ${a[4]}.`));
+    }
+    const stmts = i >= 26 ? shuffle(r, st) : st, ans = most ? ch[0] : ch[n - 1];
+    const q = most ? T(lang, `Kto má najviac ${gd[1]}?`, `Who has the most ${gd[2]}?`, `¿Quién tiene más ${gd[3]} de todos?`) : T(lang, `Kto má najmenej ${gd[1]}?`, `Who has the fewest ${gd[2]}?`, `¿Quién tiene menos ${gd[3]} de todos?`);
+    const say = [...stmts, q].join(' ');
+    return { kind: 'choose', prompt: say, hint: stmts.join(' '), display: `${listen()}${emo(gd[0])}`,
+      answer: most ? T(lang, `Najviac ${gd[1]} má ${ans[1]}.`, `${cap(rowTheName('en', ans))} has the most ${gd[2]}.`, `${cap(ans[4])} tiene más ${gd[3]} que todos.`)
+        : T(lang, `Najmenej ${gd[1]} má ${ans[1]}.`, `${cap(rowTheName('en', ans))} has the fewest ${gd[2]}.`, `${cap(ans[4])} tiene menos ${gd[3]} que todos.`),
+      options: shuffle(r, ch).map(x => ({ html: emo(x[0]), ok: x === ans, say: rowTheName(lang, x) })) };
+  }
+  const ST = (...s) => s;
+  const STORIES = [
+    ST(['🌰', 'semienko', 'a seed', 'una semilla'], ['🌱', 'klíček', 'a sprout', 'un brote'], ['🌻', 'slnečnica', 'a sunflower', 'un girasol']),
+    ST(['🥚', 'vajíčko', 'an egg', 'un huevo'], ['🐣', 'kuriatko v škrupinke', 'a chick in its shell', 'un pollito en el cascarón'], ['🐥', 'kuriatko', 'a little chick', 'un pollito']),
+    ST(['🌅', 'ráno', 'morning', 'la mañana'], ['☀️', 'poludnie', 'noon', 'el mediodía'], ['🌙', 'noc', 'night', 'la noche']),
+    ST(['👶', 'bábätko', 'a baby', 'un bebé'], ['🧒', 'dieťa', 'a child', 'un niño'], ['👴', 'starý otec', 'a grandpa', 'un abuelo']),
+    ST(['☁️', 'mrak', 'a cloud', 'una nube'], ['🌧️', 'dážď', 'rain', 'la lluvia'], ['🌈', 'dúha', 'a rainbow', 'un arcoíris']),
+    ST(['🌾', 'obilie', 'wheat', 'el trigo'], ['🍞', 'chlieb', 'bread', 'el pan'], ['🥪', 'sendvič', 'a sandwich', 'un sándwich']),
+    ST(['🥚', 'vajíčka', 'eggs', 'los huevos'], ['🥣', 'cesto', 'dough', 'la masa'], ['🎂', 'torta', 'a cake', 'un pastel']),
+    ST(['❄️', 'sneh', 'snow', 'la nieve'], ['⛄', 'snehuliak', 'a snowman', 'un muñeco de nieve'], ['💧', 'voda', 'water', 'el agua']),
+    ST(['🌸', 'kvet', 'a blossom', 'una flor'], ['🍏', 'zelené jabĺčko', 'a green apple', 'una manzana verde'], ['🍎', 'červené jablko', 'a red apple', 'una manzana roja']),
+    ST(['🧦', 'ponožky', 'socks', 'los calcetines'], ['👟', 'topánky', 'shoes', 'los zapatos'], ['🚶', 'prechádzka', 'a walk', 'un paseo'])];
+  function genStory(i, lang, r) {
+    const s = STORIES[nth('story', [...STORIES.keys()], i - 30)], nm2 = x => T(lang, x[1], x[2], x[3]);
+    const tiles = s.map((x, k) => tile(emo(x[0]), cap(nm2(x)) + '.', k));
+    return { kind: 'seq', tilesOnly: true, prompt: T(lang, 'Ako to išlo za sebou? Ťukaj na obrázky od prvého po posledný.', 'What happened first, next and last? Tap the pictures in order.', '¿Qué pasó primero, después y al final? Toca los dibujos en orden.'),
+      hint: T(lang, 'Čo bolo úplne na začiatku?', 'What was at the very beginning?', '¿Qué fue lo primero de todo?'), display: '', tiles: shuffle(r, tiles), slots: 3,
+      answer: T(lang, `Najprv ${nm2(s[0])}, potom ${nm2(s[1])} a nakoniec ${nm2(s[2])}.`, `First ${nm2(s[0])}, then ${nm2(s[1])}, and last ${nm2(s[2])}.`, `Primero ${nm2(s[0])}, después ${nm2(s[1])} y al final ${nm2(s[2])}.`), phrases: tiles.map(t => t.say) };
+  }
+  function genThink(i, lang, r) {
+    const n = i < 45 ? 3 : 4, cols = sample(r, [...new Set(SORTABLE.map(o => o[4]))], n);
+    const objs = cols.map(c => pick(r, SORTABLE.filter(o => o[4] === c))), ans = objs[0];
+    const clues = shuffle(r, objs.slice(1)).map(o => { const c = byId(o[4]); return T(lang, `Nemá ${adj(c, 'accF')} farbu.`, `It is not ${c.en}.`, `No es de color ${c.es.m}.`); });
+    const c = byId(ans[4]); const say = [T(lang, 'Myslím si na jednu vec.', 'I am thinking of one thing.', 'Estoy pensando en una cosa.'), ...clues, T(lang, 'Čo to je?', 'What is it?', '¿Qué es?')].join(' ');
+    return { kind: 'choose', prompt: say, hint: clues.join(' '), display: `${listen()}<span class="emo">🤔</span>`,
+      answer: T(lang, `Je to ${ans[1]}. Má ${adj(c, 'accF')} farbu.`, `It is the ${ans[2]}. It is ${c.en}.`, `Es ${ans[3]}. Es de color ${c.es.m}.`),
+      options: shuffle(r, objs).map(o => ({ html: emo(o[0]), ok: o === ans, say: oName(lang, o) })) };
+  }
+  function genRiddles3(i, lang, r) { return i < 15 ? genNext(i, lang, r) : i < 30 ? genMost(i, lang, r) : i < 40 ? genStory(i, lang, r) : genThink(i, lang, r); }
+
+  // ---------------- 6) KITCHEN: fruit salad by picture recipe / spoken recipe & soup / decorate the cake ----------------
+  const IN = (e, sk, g, en, es, eg) => ({ e, sk, g, en, es, eg });
+  const FRUIT = [IN('🍓', ['jahoda', 'jahodu', 'jahody', 'jahôd'], 'f', ['strawberry', 'strawberries'], ['fresa', 'fresas'], 'f'), IN('🍌', ['banán', 'banán', 'banány', 'banánov'], 'm', ['banana', 'bananas'], ['plátano', 'plátanos'], 'm'),
+    IN('🍎', ['jablko', 'jablko', 'jablká', 'jabĺk'], 'n', ['apple', 'apples'], ['manzana', 'manzanas'], 'f'), IN('🍐', ['hruška', 'hrušku', 'hrušky', 'hrušiek'], 'f', ['pear', 'pears'], ['pera', 'peras'], 'f'),
+    IN('🍒', ['čerešňa', 'čerešňu', 'čerešne', 'čerešní'], 'f', ['cherry', 'cherries'], ['cereza', 'cerezas'], 'f'), IN('🍊', ['pomaranč', 'pomaranč', 'pomaranče', 'pomarančov'], 'm', ['orange', 'oranges'], ['naranja', 'naranjas'], 'f'),
+    IN('🫐', ['čučoriedka', 'čučoriedku', 'čučoriedky', 'čučoriedok'], 'f', ['blueberry', 'blueberries'], ['arándano', 'arándanos'], 'm'), IN('🍑', ['broskyňa', 'broskyňu', 'broskyne', 'broskýň'], 'f', ['peach', 'peaches'], ['durazno', 'duraznos'], 'm')];
+  const VEG = [IN('🥕', ['mrkva', 'mrkvu', 'mrkvy', 'mrkiev'], 'f', ['carrot', 'carrots'], ['zanahoria', 'zanahorias'], 'f'), IN('🥔', ['zemiak', 'zemiak', 'zemiaky', 'zemiakov'], 'm', ['potato', 'potatoes'], ['papa', 'papas'], 'f'),
+    IN('🧅', ['cibuľa', 'cibuľu', 'cibule', 'cibúľ'], 'f', ['onion', 'onions'], ['cebolla', 'cebollas'], 'f'), IN('🍅', ['paradajka', 'paradajku', 'paradajky', 'paradajok'], 'f', ['tomato', 'tomatoes'], ['tomate', 'tomates'], 'm'),
+    IN('🌽', ['kukurica', 'kukuricu', 'kukurice', 'kukuríc'], 'f', ['corn cob', 'corn cobs'], ['elote', 'elotes'], 'm'), IN('🫑', ['paprika', 'papriku', 'papriky', 'paprík'], 'f', ['pepper', 'peppers'], ['pimiento', 'pimientos'], 'm'),
+    IN('🍄', ['hríbik', 'hríbik', 'hríbiky', 'hríbikov'], 'm', ['mushroom', 'mushrooms'], ['hongo', 'hongos'], 'm')];
+  const DECO = [IN('🕯️', ['sviečka', 'sviečku', 'sviečky', 'sviečok'], 'f', ['candle', 'candles'], ['vela', 'velas'], 'f'), FRUIT[0], FRUIT[4], FRUIT[6],
+    IN('🍬', ['cukrík', 'cukrík', 'cukríky', 'cukríkov'], 'm', ['candy', 'candies'], ['caramelo', 'caramelos'], 'm'), IN('⭐', ['hviezdička', 'hviezdičku', 'hviezdičky', 'hviezdičiek'], 'f', ['star', 'stars'], ['estrella', 'estrellas'], 'f'),
+    IN('🌸', ['kvietok', 'kvietok', 'kvietky', 'kvietkov'], 'm', ['flower', 'flowers'], ['flor', 'flores'], 'f')];
+  const skPl = (it, n) => (n === 1 ? null : n <= 4 ? it.sk[2] : it.sk[3]);
+  const inAcc = (lang, it, n) => T(lang, n === 1 ? `${({ f: 'jednu', m: 'jeden', n: 'jedno' })[it.g]} ${it.sk[1]}` : `${skNum(n, it.g)} ${skPl(it, n)}`,
+    `${num('en', n)} ${n === 1 ? it.en[0] : it.en[1]}`, `${esNum(n, it.eg)} ${n === 1 ? it.es[0] : it.es[1]}`);
+  const inNom = (lang, it, n) => T(lang, n === 1 ? `${skNum(1, it.g)} ${it.sk[0]}` : `${skNum(n, it.g)} ${skPl(it, n)}`,
+    `${num('en', n)} ${n === 1 ? it.en[0] : it.en[1]}`, `${esNum(n, it.eg)} ${n === 1 ? it.es[0] : it.es[1]}`);
+  const MAXIN = 6;
+  function genCook(i, lang, r) {
+    const mode = i < 15 ? 'pic' : i < 25 ? 'fruit' : i < 35 ? 'soup' : 'cake';
+    const P = mode === 'soup' ? VEG : mode === 'cake' ? DECO : FRUIT;
+    const ni = i < 8 ? 2 : i < 35 ? (i < 20 ? 2 : 3) : (i < 42 ? 3 : 4);
+    const maxc = i < 5 ? 2 : i < 10 ? 3 : i < 40 ? 4 : 5;
+    const need = sample(r, P, ni), extras = sample(r, P.filter(x => !need.includes(x)), i < 5 ? 1 : 2);
+    const counts = need.map(() => ri(r, 1, maxc));
+    const list = joinAnd(lang, need.map((it, k) => inAcc(lang, it, counts[k]))), have = joinAnd(lang, need.map((it, k) => inNom(lang, it, counts[k])));
+    const cont = { pic: '🥣', fruit: '🥣', soup: '🍲', cake: '🎂' }[mode];
+    const prompt = mode === 'pic' ? T(lang, 'Urob ovocný šalát podľa receptu. Ťukaj na ovocie a daj ho do misky.', 'Make a fruit salad from the recipe. Tap the fruit to put it in the bowl.', 'Prepara una ensalada de frutas con la receta. Toca la fruta para ponerla en el tazón.')
+      : mode === 'fruit' ? T(lang, `Do misky daj ${list}.`, `Put ${list} in the bowl.`, `Pon ${list} en el tazón.`)
+      : mode === 'soup' ? T(lang, `Uvaríme polievku. Do hrnca daj ${list}.`, `Let us cook soup. Put ${list} in the pot.`, `Vamos a hacer sopa. Pon ${list} en la olla.`)
+      : T(lang, `Ozdob tortu. Daj na ňu ${list}.`, `Decorate the cake. Put ${list} on it.`, `Decora el pastel. Pon ${list} encima.`);
+    const answer = mode === 'soup' ? T(lang, `V hrnci sú ${have}.`, `The pot has ${have}.`, `En la olla hay ${have}.`) : mode === 'cake' ? T(lang, `Na torte sú ${have}.`, `The cake has ${have}.`, `En el pastel hay ${have}.`) : T(lang, `V miske sú ${have}.`, `The bowl has ${have}.`, `En el tazón hay ${have}.`);
+    const pantry = shuffle(r, [...need, ...extras]);
+    const id = it => it.en[0].replace(/\s/g, '');
+    const needHint = {}, extraHint = {}, countSay = {};
+    need.forEach((it, k) => { needHint[id(it)] = T(lang, `Potrebuješ ${inAcc('sk', it, counts[k])}.`, `You need ${inAcc('en', it, counts[k])}.`, `Necesitas ${inAcc('es', it, counts[k])}.`); });
+    extras.forEach(it => { extraHint[id(it)] = T(lang, `${cap(it.sk[0])} sem nepatrí.`, `The ${it.en[0]} does not belong here.`, `${cap((it.eg === 'f' ? 'la ' : 'el ') + it.es[0])} no va aquí.`); });
+    pantry.forEach(it => { countSay[id(it)] = [...Array(MAXIN).keys()].map(n => cap(inNom(lang, it, n + 1)) + '.'); });
+    const recipe = mode === 'pic' ? `<div class="recipe">📋${need.map((it, k) => `<span class="rline">${it.e.repeat(counts[k])}</span>`).join('')}</div>` : listen();
+    return { kind: 'collect', prompt, hint: T(lang, 'Pozri sa ešte raz na recept.', 'Look at the recipe again.', 'Mira otra vez la receta.'), recipeHtml: recipe, container: cont,
+      pantry: pantry.map(it => ({ id: id(it), e: it.e, say: cap(T(lang, it.sk[0], it.en[0], it.es[0])) })), need: Object.fromEntries(need.map((it, k) => [id(it), counts[k]])),
+      needHint, extraHint, countSay, answer, phrases: [...Object.values(needHint), ...Object.values(extraHint), ...Object.values(countSay).flat()] };
+  }
+
   const GAMES = [
-    { id: 'colors', img: 'chameleon', color: '#f7d6e6', gen: genColors2,
-      title: { sk: 'Farby a tvary', en: 'Colors & Shapes', es: 'Colores y formas' }, helper: { sk: 'Chameleón Kamil', en: 'Kamil the Chameleon', es: 'Kamil el camaleón' },
-      intro: { sk: 'Ahoj, to som zase ja, chameleón Kamil! Dnes budeme miešať farby a počítať rohy.', en: 'Hi, it is me again, Kamil the Chameleon! Today we will mix colors and count corners.', es: '¡Hola, soy yo otra vez, Kamil el camaleón! Hoy vamos a mezclar colores y contar esquinas.' } },
-    { id: 'count', img: 'veverica', color: '#fbe0c8', gen: genCount2,
-      title: { sk: 'Počítanie', en: 'Counting', es: 'Contar' }, helper: { sk: 'Veverička Vierka', en: 'Vera the Squirrel', es: 'Vera la ardilla' },
-      intro: { sk: 'Ahoj, tu je veverička Vierka! Mám pre teba nové počty s lienkami, žabkami a kačiatkami.', en: 'Hi, Vera the Squirrel here! I have new counting games with ladybugs, frogs and ducklings.', es: '¡Hola, aquí Vera la ardilla! Tengo cuentas nuevas con mariquitas, ranas y patitos.' } },
-    { id: 'letters', img: 'sovicka', color: '#e6dcf5', gen: genLetters2,
-      title: { sk: 'Písmenká', en: 'Letters', es: 'Letras' }, helper: { sk: 'Sovička Soňa', en: 'Sonia the Owl', es: 'Sonia la lechuza' },
-      intro: { sk: 'Ahoj, sovička Soňa je späť! Budeme hľadať písmenká na začiatku aj na konci slov.', en: 'Hi, Sonia the Owl is back! We will find letters at the start and at the end of words.', es: '¡Hola, Sonia la lechuza ha vuelto! Vamos a buscar letras al principio y al final de las palabras.' } },
-    { id: 'words', img: 'papagaj', color: '#d6f0d9', gen: genWords2,
-      title: { sk: 'Prvé slová', en: 'First Words', es: 'Primeras palabras' }, helper: { sk: 'Papagáj Pepo', en: 'Pepo the Parrot', es: 'Pepo el loro' },
-      intro: { sk: 'Ahoj, papagáj Pepo ťa víta! Mám nové slová a budeme spolu tlieskať slabiky.', en: 'Hi, Pepo the Parrot says hello! I have new words and we will clap the syllables together.', es: '¡Hola, Pepo el loro te saluda! Tengo palabras nuevas y vamos a dar palmadas con las sílabas.' } },
-    { id: 'riddles', img: 'liska', color: '#fde6c6', gen: genRiddles2,
-      title: { sk: 'Hádanky', en: 'Riddles', es: 'Adivinanzas' }, helper: { sk: 'Líška Lili', en: 'Lili the Fox', es: 'Lili la zorrita' },
-      intro: { sk: 'Ahoj, líška Lili tu má nové hádanky! Uhádneš, kto som?', en: 'Hi, Lili the Fox has new riddles! Can you guess who I am?', es: '¡Hola, Lili la zorrita tiene adivinanzas nuevas! ¿Adivinas quién soy?' } },
-    { id: 'dress', img: 'zajacik', color: '#d8e9f7', gen: genDress2,
-      title: { sk: 'Obliekanie', en: 'Dressing Up', es: 'Vestirse' }, helper: { sk: 'Zajačik Zajko', en: 'Zack the Bunny', es: 'Coco el conejito' },
-      intro: { sk: 'Ahoj, zajačik Zajko ide na výlet! Pomôžeš mi vybrať oblečenie?', en: 'Hi, Zack the Bunny is going on a trip! Will you help me choose my clothes?', es: '¡Hola, Coco el conejito se va de excursión! ¿Me ayudas a elegir la ropa?' } }
+    { id: 'colors', img: 'chameleon', color: '#f7d6e6', gen: genColors3,
+      title: { sk: 'Farby a tiene', en: 'Colors & Shadows', es: 'Colores y sombras' }, helper: { sk: 'Chameleón Kamil', en: 'Kamil the Chameleon', es: 'Kamil el camaleón' },
+      intro: { sk: 'Ahoj, to som ja, chameleón Kamil! Dnes budeme triediť veci do košíkov, vyfarbovať tvary a hádať tiene.', en: 'Hi, it is me, Kamil the Chameleon! Today we will sort things into baskets, color shapes and guess shadows.', es: '¡Hola, soy Kamil el camaleón! Hoy vamos a ordenar cosas en canastas, pintar formas y adivinar sombras.' } },
+    { id: 'count', img: 'veverica', color: '#fbe0c8', gen: genCount3,
+      title: { sk: 'Počítame zvieratká', en: 'Counting Animals', es: 'Contamos animales' }, helper: { sk: 'Veverička Vierka', en: 'Vera the Squirrel', es: 'Vera la ardilla' },
+      intro: { sk: 'Ahoj, tu je veverička Vierka! Poďme na farmu počítať kravy, kačky, rybky a ďalšie zvieratká.', en: 'Hi, Vera the Squirrel here! Let us go to the farm and count cows, ducks, fish and more animals.', es: '¡Hola, aquí Vera la ardilla! Vamos a la granja a contar vacas, patos, peces y más animales.' } },
+    { id: 'letters', img: 'sovicka', color: '#e6dcf5', gen: genLetters3,
+      title: { sk: 'Písmenková hra', en: 'Letter Games', es: 'Juegos de letras' }, helper: { sk: 'Sovička Soňa', en: 'Sonia the Owl', es: 'Sonia la lechuza' },
+      intro: { sk: 'Ahoj, sovička Soňa je späť! Budeme spájať veľké a malé písmená, hľadať ich a skladať abecedu.', en: 'Hi, Sonia the Owl is back! We will match big and small letters, hunt for them and put the alphabet in order.', es: '¡Hola, Sonia la lechuza ha vuelto! Vamos a unir mayúsculas y minúsculas, buscarlas y ordenar el abecedario.' } },
+    { id: 'words', img: 'papagaj', color: '#d6f0d9', gen: genWords3,
+      title: { sk: 'Skladáme slová', en: 'Building Words', es: 'Formamos palabras' }, helper: { sk: 'Papagáj Pepo', en: 'Pepo the Parrot', es: 'Pepo el loro' },
+      intro: { sk: 'Ahoj, papagáj Pepo ťa víta! Pozri sa na obrázok a poskladaj slovo z písmen a zo slabík.', en: 'Hi, Pepo the Parrot says hello! Look at the picture and build the word from letters and syllables.', es: '¡Hola, Pepo el loro te saluda! Mira el dibujo y forma la palabra con letras y sílabas.' } },
+    { id: 'riddles', img: 'liska', color: '#fde6c6', gen: genRiddles3,
+      title: { sk: 'Hlavolamy', en: 'Brain Teasers', es: 'Rompecabezas' }, helper: { sk: 'Líška Lili', en: 'Lili the Fox', es: 'Lili la zorrita' },
+      intro: { sk: 'Ahoj, líška Lili tu má hlavolamy! Budeme hádať, čo príde ďalej, a dobre počúvať.', en: 'Hi, Lili the Fox has brain teasers! We will guess what comes next and listen carefully.', es: '¡Hola, Lili la zorrita tiene rompecabezas! Vamos a adivinar qué viene después y a escuchar con atención.' } },
+    { id: 'cook', img: 'zajacik', color: '#d8e9f7', gen: genCook,
+      title: { sk: 'Varíme so Zajkom', en: 'Cooking with Zack', es: 'Cocinamos con Coco' }, helper: { sk: 'Zajačik Zajko', en: 'Zack the Bunny', es: 'Coco el conejito' },
+      intro: { sk: 'Ahoj, zajačik Zajko dnes varí! Pomôžeš mi pripraviť šalát, polievku a tortu?', en: 'Hi, Zack the Bunny is cooking today! Will you help me make a salad, a soup and a cake?', es: '¡Hola, Coco el conejito cocina hoy! ¿Me ayudas a preparar una ensalada, una sopa y un pastel?' } }
   ];
 
   function stageOf(id, i) {
     switch (id) {
-      case 'colors': return i < 10 ? ['objcolor'] : i < 16 ? ['mix'] : i < 28 ? ['corners', true] : i < 40 ? ['size', true] : ['byear', true];
-      case 'count': return i < 12 ? ['count'] : i < 22 ? ['nextprev'] : i < 32 ? ['missing'] : i < 40 ? ['fewer'] : ['story', true];
-      case 'letters': return i < 10 ? ['upper'] : i < 22 ? ['lastsound', true] : i < 34 ? ['firstsound', true] : i < 42 ? ['vowel'] : ['hasletter'];
-      case 'words': return i < 20 ? ['read'] : i < 30 ? ['syllables'] : i < 40 ? ['picword'] : ['missingletter'];
-      case 'riddles': return i < 10 ? ['odd'] : i < 20 ? ['whoami', true] : i < 26 ? ['ordinal', true] : i < 32 ? ['between', true] : i < 42 ? ['missing'] : ['situation', true];
-      default: return i < 16 ? ['dress'] : ['rules', true];
+      case 'colors': return i < 20 ? ['sort'] : i < 35 ? ['paint', true] : ['shadow'];
+      case 'count': return i < 15 ? ['animals'] : i < 22 ? ['more'] : i < 30 ? ['fewer'] : i < 45 ? ['add', true] : ['ordergroups'];
+      case 'letters': return i < 15 ? ['pair'] : i < 28 ? ['hunt', true] : i < 40 ? ['alphabet'] : ['firstpics', true];
+      case 'words': return i < 25 ? ['buildletters'] : ['buildsyllables'];
+      case 'riddles': return i < 15 ? ['next'] : i < 30 ? ['most', true] : i < 40 ? ['story'] : ['think', true];
+      default: return i < 15 ? ['recipe'] : ['spokenrecipe', true];
     }
   }
-  // every task is unique inside a game: retry with another seed if the content repeats an earlier task
-  const sigOf = t => JSON.stringify([t.prompt, t.say || '', t.answer, t.kind === 'dress' ? t.target : null]);
+  const sigOf = t => JSON.stringify([t.prompt, t.say || '', t.answer, t.target || null, t.need || null]);
   const SALT = {};
   function saltFor(gameId, index) {
     const g = GAMES.find(x => x.id === gameId), S = SALT[gameId] = SALT[gameId] || { seen: new Set(), salts: [] };
     while (S.salts.length <= index) {
       const i = S.salts.length; let s = 0, sig;
-      for (; s < 120; s++) { sig = ['sk', 'en', 'es'].map(L => L + sigOf(g.gen(i, L, rng(hash('zs2' + gameId) + i * 7919 + s * 104729)))); if (!sig.some(x => S.seen.has(x))) break; }
+      for (; s < 200; s++) { sig = ['sk', 'en', 'es'].map(L => L + sigOf(g.gen(i, L, rng(hash('zs2b' + gameId) + i * 7919 + s * 104729)))); if (!sig.some(x => S.seen.has(x))) break; }
       sig.forEach(x => S.seen.add(x)); S.salts.push(s);
     }
     return S.salts[index];
   }
   function getTask(gameId, index, lang) {
     const g = GAMES.find(x => x.id === gameId);
-    const r = rng(hash('zs2' + gameId) + index * 7919 + saltFor(gameId, index) * 104729);
+    const r = rng(hash('zs2b' + gameId) + index * 7919 + saltFor(gameId, index) * 104729);
     const t = g.gen(index, lang, r); t.index = index;
     const [st, listen] = stageOf(gameId, index); t.type = gameId + ':' + st; t.listenOnly = listen; return t;
   }
 
-  window.ZS_GAMES = { GAMES, TASKS_PER_GAME, getTask, bunnySVG, itemSVG, num, nutsW, conf, FIRST: FIRST2, LAST, WORDS2, SYL, sigOf };
+  window.ZS_GAMES = { GAMES, TASKS_PER_GAME, getTask, bunnySVG, itemSVG, shapeSVG, num, nutsW, conf, FIRST: FIRST2, LAST, WORDS2, SYL, sigOf };
 })();

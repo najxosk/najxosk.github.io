@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   const { GAMES, TASKS_PER_GAME, getTask, bunnySVG, itemSVG, num } = window.ZS_GAMES;
-  const VERSION = 'g2v1';
+  const VERSION = 'g2v2';
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   const $ = s => document.querySelector(s);
   const KEY = 'zvieratkovaSkolka2.v1'; // separate progress & name from game 1
@@ -283,9 +283,10 @@
     $('#progFill').style.width = (100 * starsOf(g.id) / TASKS_PER_GAME) + '%';
     $('#progTxt').textContent = `${cur.index + 1} / ${TASKS_PER_GAME}`;
     const stage = $('#stage'), opts = $('#options');
-    stage.innerHTML = ''; opts.innerHTML = '';
+    stage.innerHTML = ''; opts.innerHTML = ''; opts.className = ''; opts.dataset.kind = t.kind;
     if (t.kind === 'choose') renderChoose(t, stage, opts);
     else if (t.kind === 'give') renderGive(t, stage, opts);
+    else if (R2[t.kind]) R2[t.kind](t, stage, opts);
     else renderDress(t, stage, opts);
     stage.querySelectorAll('[data-say]').forEach(el => el.onclick = () => say(el.dataset.say, { rate: 0.7, keep: true }));
     bubble(t.prompt);
@@ -323,7 +324,7 @@
   }
   const EN_NUMS = new Set(window.ZS_GAMES ? Array.from({ length: 21 }, (_, n) => num('en', n)) : []);
   function thisIsText(lang, x) {
-    if (lang === 'sk') return `To je ${x}.`;
+    if (lang === 'sk') return /^(dva|dve|tri|štyri) /.test(x) ? `To sú ${x}.` : `To je ${x}.`;
     if (lang === 'es') return /^(los|las|unos|unas) |bellotas$|^uvas$|^(dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|trece|catorce|quince|dieciséis|diecisiete|dieciocho|diecinueve|veinte) \S+s$/.test(x) ? `Son ${x}.` : `Es ${x}.`;
     if (/^(the |small )/.test(x) || EN_NUMS.has(x)) return `That is ${x}.`;
     const first = x.split(' ')[0];
@@ -529,6 +530,136 @@
     opts.appendChild(done);
   }
 
+  // ---------- game 2 mechanics: tiles in order, sorting, pairs, hunting, painting, cooking ----------
+  const sayKeep = x => say(Array.isArray(x) ? x : [x], { rate: 0.9, keep: true });
+  const shake = el => { if (!el) return; el.classList.remove('wrong'); void el.offsetWidth; el.classList.add('wrong'); };
+  const glowNext = el => { if (cur.wrong >= 2 && el) el.classList.add('glow'); };
+  const mk = (cls, html) => { const b = document.createElement('button'); b.className = cls; b.innerHTML = html; return b; };
+  function doneBtn(fn) { const d = mk('donebtn', '✔'); d.setAttribute('aria-label', 'OK'); d.onclick = () => { if (!cur.locked) fn(); }; return d; }
+  function renderSeq(t, stage, opts) {
+    stage.innerHTML = (t.display || '') + `<div class="slots${t.tilesOnly ? ' picslots' : ''}">${'<span class="slot"></span>'.repeat(t.slots)}</div>`;
+    const slots = stage.querySelectorAll('.slot'); let pos = 0;
+    const want = () => t.tiles.find(x => x.ord === pos);
+    const fits = (tl) => t.byValue ? tl.v === want().v : tl.ord === pos;
+    opts.style.setProperty('--cols', t.tilesOnly ? Math.min(t.tiles.length, innerHeight > innerWidth ? 2 : 4) : Math.min(t.tiles.length, innerHeight > innerWidth ? 4 : 7));
+    const btns = [];
+    t.tiles.forEach(tl => {
+      const b = mk('opt tile' + (t.tilesOnly ? ' pictile' : ''), tl.html); b.dataset.ord = tl.ord; b.dataset.v = tl.v || ''; btns.push(b);
+      b.onclick = () => {
+        if (cur.locked || b.classList.contains('used')) return;
+        if (fits(tl)) {
+          b.classList.add('used'); b.classList.remove('glow'); slots[pos].innerHTML = tl.html; slots[pos].classList.add('filled'); pos++; tone([523 + pos * 60], 0.12, 'sine', 0.07);
+          if (pos >= t.slots) success(stage.querySelector('.slots')); else sayKeep(tl.say);
+        } else { shake(b); wrongAnswer(); glowNext(btns.find((x, k) => !x.classList.contains('used') && fits(t.tiles[k]))); }
+      };
+      opts.appendChild(b);
+    });
+  }
+  function renderSort(t, stage, opts) {
+    let k = 0;
+    const show = () => { stage.innerHTML = `<div class="sortitem">${t.items[k].html}</div><div class="sortleft">${'•'.repeat(t.items.length - k)}</div>`;
+      opts.querySelectorAll('.bin').forEach(b => { b.dataset.ok = b.dataset.id === t.items[k].bin ? '1' : '0'; b.classList.remove('glow'); }); };
+    opts.style.setProperty('--cols', t.bins.length);
+    t.bins.forEach(bn => {
+      const b = mk('opt bin', bn.html + '<div class="binin"></div>'); b.dataset.id = bn.id; b.setAttribute('aria-label', bn.say);
+      b.onclick = () => {
+        if (cur.locked) return; const it = t.items[k];
+        if (bn.id === it.bin) {
+          b.querySelector('.binin').insertAdjacentHTML('beforeend', it.html.replace('huge', 'mini')); tone([660], 0.12, 'sine', 0.07); k++;
+          if (k >= t.items.length) { stage.innerHTML = '<div class="sortitem"><span class="emo huge">🧺</span></div>'; success(b); } else { sayKeep(it.say); show(); }
+        } else { shake(b); wrongAnswer(it.hint); glowNext(opts.querySelector(`.bin[data-id="${it.bin}"]`)); }
+      };
+      opts.appendChild(b);
+    });
+    show();
+  }
+  const PAIRC = ['#ffd1e4', '#cfe8ff', '#d7f5d0', '#fff0b3', '#e6d9ff'];
+  function renderPair(t, stage, opts) {
+    stage.innerHTML = '<span class="emo">🔤</span>';
+    opts.style.setProperty('--cols', 1);
+    const wrap = document.createElement('div'); wrap.className = 'pairs';
+    const top = document.createElement('div'), bot = document.createElement('div'); top.className = 'prow'; bot.className = 'prow';
+    let sel = null, done = 0;
+    t.left.forEach(x => {
+      const b = mk('opt ptile', x.html); b.dataset.id = x.id; b.dataset.side = 'L';
+      b.onclick = () => { if (cur.locked || b.classList.contains('used')) return; top.querySelectorAll('.ptile').forEach(y => y.classList.remove('sel')); sel = { x, b }; b.classList.add('sel'); tone([600], 0.1, 'sine', 0.06); };
+      top.appendChild(b);
+    });
+    t.right.forEach(x => {
+      const b = mk('opt ptile', x.html); b.dataset.id = x.id; b.dataset.side = 'R';
+      b.onclick = () => {
+        if (cur.locked || b.classList.contains('used')) return;
+        if (!sel) { shake(top); wrongAnswer(); return; }
+        if (sel.x.id === x.id) {
+          const c = PAIRC[done % PAIRC.length];[sel.b, b].forEach(e => { e.classList.add('used'); e.classList.remove('sel', 'glow'); e.style.background = c; });
+          done++; const said = sel.x.say; sel = null; tone([660, 880], 0.15, 'sine', 0.07);
+          if (done >= t.left.length) success(b); else sayKeep(said);
+        } else { shake(b); wrongAnswer(); glowNext(bot.querySelector(`.ptile[data-id="${sel.x.id}"]`)); }
+      };
+      bot.appendChild(b);
+    });
+    wrap.append(top, bot); opts.appendChild(wrap);
+  }
+  function renderHunt(t, stage, opts) {
+    stage.innerHTML = t.display;
+    const n = t.cells.length; opts.style.setProperty('--cols', t.pics ? (n <= 6 ? 3 : 4) : (n <= 9 ? 3 : n <= 12 ? 4 : 5));
+    let left = t.cells.filter(c => c.ok).length;
+    t.cells.forEach(c => {
+      const b = mk('opt hcell' + (t.pics ? '' : ' small'), c.html); b.dataset.ok = c.ok ? '1' : '0'; if (c.say) b.setAttribute('aria-label', c.say);
+      b.onclick = () => {
+        if (cur.locked || b.classList.contains('found')) return;
+        if (c.ok) { b.classList.add('found'); b.classList.remove('glow'); left--; tone([700 + left * 40], 0.12, 'sine', 0.07); if (!left) success(b); else if (c.say) sayKeep(cap(c.say) + '.'); }
+        else { shake(b); wrongAnswer(null, c.say ? thisIsText(save.lang, c.say) : ''); glowNext(opts.querySelector('.hcell[data-ok="1"]:not(.found)')); }
+      };
+      opts.appendChild(b);
+    });
+  }
+  function renderPaint(t, stage, opts) {
+    let col = null; const mine = {}; const SV = window.ZS_GAMES.shapeSVG, hex = id => (t.palette.find(p => p.id === id) || {}).hex;
+    stage.innerHTML = `<div class="paintrow"></div>`; const row = stage.firstChild; const sb = {};
+    t.shapes.forEach(s => {
+      const b = mk('pshape', ''); b.dataset.id = s.id; sb[s.id] = b;
+      const draw = () => { b.innerHTML = SV(s.id, mine[s.id] ? hex(mine[s.id]) : '#ffffff', 'shape big', true); };
+      draw();
+      b.onclick = () => { if (cur.locked) return; if (!col) { shake(opts.querySelector('.palette')); wrongAnswer(); return; } mine[s.id] = col; draw(); tone([700], 0.1, 'sine', 0.06); };
+      row.appendChild(b);
+    });
+    opts.style.setProperty('--cols', 1);
+    const pal = document.createElement('div'); pal.className = 'palette';
+    t.palette.forEach(p => {
+      const b = mk('opt swatch', ''); b.style.setProperty('--sw', p.hex); b.dataset.c = p.id; b.setAttribute('aria-label', p.say);
+      b.onclick = () => { if (cur.locked) return; col = p.id; pal.querySelectorAll('.swatch').forEach(x => x.classList.toggle('sel', x === b)); sayKeep(p.say); };
+      pal.appendChild(b);
+    });
+    opts.appendChild(pal);
+    opts.appendChild(doneBtn(() => {
+      const bad = t.shapes.find(s => mine[s.id] !== t.target[s.id]);
+      if (!bad) return success(row);
+      shake(sb[bad.id]); wrongAnswer(bad.rule); glowNext(pal.querySelector(`.swatch[data-c="${t.target[bad.id]}"]`));
+    }));
+  }
+  function renderCollect(t, stage, opts) {
+    const have = {};
+    stage.innerHTML = `<div class="cookwrap">${t.recipeHtml}<div class="bowl"><span class="bowlic">${t.container}</span><div class="bowlin"></div></div></div>`;
+    const bin = stage.querySelector('.bowlin'), bowl = stage.querySelector('.bowl');
+    const redraw = () => { bin.innerHTML = ''; t.pantry.forEach(p => { for (let k = 0; k < (have[p.id] || 0); k++) { const s = mk('inb', p.e); s.onclick = () => { if (cur.locked) return; have[p.id]--; redraw(); tone([400], 0.1, 'sine', 0.05); }; bin.appendChild(s); } }); };
+    opts.style.setProperty('--cols', 1);
+    const pan = document.createElement('div'); pan.className = 'pantry'; pan.style.setProperty('--pc', Math.min(t.pantry.length, innerHeight > innerWidth ? 3 : 6));
+    t.pantry.forEach(p => {
+      const b = mk('opt pant', `<span class="emo">${p.e}</span>`); b.dataset.id = p.id; b.dataset.ok = t.need[p.id] ? '1' : '0'; b.setAttribute('aria-label', p.say);
+      b.onclick = () => { if (cur.locked) return; const n = have[p.id] || 0; if (n >= 6) return; have[p.id] = n + 1; redraw(); tone([523 + n * 50], 0.12, 'sine', 0.07); sayKeep(t.countSay[p.id][n]); };
+      pan.appendChild(b);
+    });
+    opts.appendChild(pan);
+    opts.appendChild(doneBtn(() => {
+      const ids = [...Object.keys(t.need), ...t.pantry.map(p => p.id).filter(id => !t.need[id])];
+      const bad = ids.find(id => (have[id] || 0) !== (t.need[id] || 0));
+      if (!bad) return success(bowl);
+      shake(bowl); wrongAnswer(t.need[bad] ? t.needHint[bad] : t.extraHint[bad]); glowNext(pan.querySelector(`.pant[data-id="${bad}"]`));
+    }));
+  }
+  const R2 = { seq: renderSeq, sort: renderSort, pair: renderPair, hunt: renderHunt, paint: renderPaint, collect: renderCollect };
+
   // ---------- buttons ----------
   $('#btnStart').onclick = () => { unlock(); if (save.name == null) openName(); else openMenu(); };
   $('#btnNameOk').onclick = saveName;
@@ -573,6 +704,8 @@
         (t.display || '').replace(/data-say="([^"]+)"/g, (m, x) => add(g.id, x));
         (t.options || []).forEach(o => { add(g.id, thisIsText(lang, o.say)); });
         if (t.kind === 'dress') { t.slots.forEach(sl => { add(g.id, t.slotHints[sl]); add(g.id, t.slotNames[sl]); Object.values(t.itemSay[sl]).forEach(x => add(g.id, cap(x) + '.')); }); if (t.byEar) add(g.id, t.prompt); }
+        (t.phrases || []).forEach(x => add(g.id, typeof x === 'object' ? x.key : x));
+        (t.cells || []).forEach(c => { if (c.say) add(g.id, thisIsText(lang, c.say)); });
         if (t.kind === 'give') for (let b = 0; b <= 10; b++) { add(g.id, cap(num(lang, b))); if (b !== t.n) giveHint(lang, b, t.n).forEach(x => add(g.id, x)); }
       }
     });

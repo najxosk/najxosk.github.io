@@ -238,3 +238,48 @@ body.s-welcome #btnHome,body.s-welcome #tbStars,body.s-menu #btnHome,body.s-name
 .g2title{margin:4px auto 2px;text-align:center;font-size:clamp(20px,5.2vw,30px);color:#7a4a8c;font-weight:800;letter-spacing:.3px}
 .badge2{display:inline-flex;align-items:center;justify-content:center;width:1.45em;height:1.45em;border-radius:50%;background:linear-gradient(135deg,#ff9ec7,#ffb86b);color:#fff;font-size:.8em;vertical-align:middle;box-shadow:0 3px 0 #e07aa6,0 4px 10px rgba(255,120,170,.4);transform:rotate(-8deg);margin-left:4px}
 @media (orientation:landscape) and (max-height:500px){.welcome{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:12px;max-width:96vw}.welcome .teacher{width:min(30vh,140px);height:auto}.welcome .bubble.big{font-size:18px;max-width:52vw}.welcome .bigbtn{flex:0 0 auto}}
+
+/* ===== game 2 mechanics ===== */
+#options[data-kind="pair"],#options[data-kind="paint"],#options[data-kind="collect"]{align-content:center;justify-items:center}
+.slots{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;width:100%}
+.slot{min-width:56px;min-height:64px;border-radius:18px;border:3px dashed #e7a9c8;background:#fff;display:grid;place-items:center;padding:2px 6px}
+.slot.filled{border-style:solid;border-color:#9fd8a8;background:#f1fff1;animation:pop .3s}
+.slot .bigtxt{font-size:clamp(28px,7vw,44px)}
+.picslots .slot{min-width:72px;min-height:72px}
+.picslots .slot .nuts{max-width:110px}.picslots .slot .nut{font-size:16px}
+.tile{min-height:72px}.tile .bigtxt{font-size:clamp(30px,8vw,48px)}
+.tile.used{opacity:.25;transform:scale(.9);pointer-events:none}
+.pictile .nuts{max-width:150px}.pictile .nut{font-size:clamp(18px,4.6vw,28px)}
+.sortitem .emo.huge{font-size:clamp(70px,20vw,120px)}
+.sortleft{font-size:22px;color:#e7a9c8;letter-spacing:4px;width:100%;text-align:center}
+.basket2{font-size:clamp(44px,12vw,64px);display:inline-block;border-radius:50%;padding:6px 10px;background:var(--bc);box-shadow:inset 0 -6px 0 rgba(0,0,0,.08)}
+.bin{min-height:130px;align-content:start}
+.binin{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;min-height:26px}.binin .emo.mini{font-size:22px}
+.pairs{display:flex;flex-direction:column;gap:22px;width:100%}
+.prow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.ptile{min-width:64px;min-height:76px;flex:0 1 84px}.ptile .bigtxt{font-size:clamp(30px,8vw,48px)}
+.ptile.sel{outline:5px solid #ff9ec7;transform:translateY(-4px)}
+.ptile.used{pointer-events:none;box-shadow:0 3px 0 #c9d9c9}
+.hcell{min-height:64px}.hcell.small .bigtxt{font-size:clamp(26px,7vw,40px)}
+.hcell .emo{font-size:clamp(34px,9vw,52px)}
+.hcell.found{background:#d7f5d0!important;border-color:#9fd8a8;pointer-events:none;animation:pop .3s}
+.sil{filter:brightness(0) opacity(.85)}
+.patrow{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;align-items:center}.patrow .emo{font-size:clamp(30px,8vw,46px)}.patrow .q{animation:pulse 1.2s infinite}
+.paintrow{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.pshape{background:none;border:0;padding:4px}.pshape .shape{width:min(22vw,110px);max-height:20vh}
+.palette{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.swatch{width:64px;height:64px;min-height:64px;border-radius:50%;background:var(--sw)!important;padding:0}
+.swatch.sel{outline:6px solid #7a4a8c;transform:scale(1.08)}
+.cookwrap{display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap}
+.recipe{background:#fffbe8;border:3px solid #ffe08a;border-radius:20px;padding:8px 12px;font-size:26px;display:flex;flex-direction:column;gap:2px;align-items:flex-start}
+.rline{font-size:clamp(24px,6.4vw,34px);letter-spacing:2px}
+.bowl{position:relative;min-width:170px;min-height:110px;display:flex;flex-direction:column;align-items:center}
+.bowlic{font-size:clamp(56px,15vw,84px);line-height:1}
+.bowlin{display:flex;flex-wrap:wrap;gap:2px;justify-content:center;max-width:220px;min-height:30px}
+.inb{background:none;border:0;font-size:26px;padding:0 1px;cursor:pointer}
+.pantry{display:grid;grid-template-columns:repeat(var(--pc,3),1fr);gap:10px;width:100%}
+.pant{min-height:76px}.pant .emo{font-size:clamp(36px,10vw,52px)}
+#options[data-kind="paint"] .donebtn,#options[data-kind="collect"] .donebtn{margin-top:6px}
+@keyframes pop{0%{transform:scale(.7)}70%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes pulse{50%{transform:scale(1.2)}}
+@media (orientation:landscape) and (max-height:500px){.slot{min-height:46px;min-width:42px}.tile,.ptile,.hcell,.pant{min-height:48px}.bin{min-height:84px}.swatch{width:46px;height:46px;min-height:46px}.pairs{gap:8px}.bowlic{font-size:48px}.recipe{font-size:20px}.rline{font-size:20px}.pshape .shape{max-height:26vh}}
