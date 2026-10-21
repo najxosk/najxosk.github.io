@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   const { GAMES, TASKS_PER_GAME, getTask, bunnySVG, itemSVG, num } = window.ZS_GAMES;
-  const VERSION = 'v4';
+  const VERSION = 'v5';
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   const $ = s => document.querySelector(s);
   const KEY = 'zvieratkovaSkolka.v1';
@@ -25,6 +25,7 @@
       confirmGame: t => `Naozaj chceš hru ${t} hrať odznova? Hviezdičky z tejto hry zmiznú.`, confirmAll: 'Naozaj chceš vynulovať všetko? Zmiznú všetky hviezdičky, diplomy aj meno.',
       dipTitle: 'DIPLOM', dipSub: 'šikovný žiak', dipSave: 'Uložiť diplom', dipFor: 'za hru',
       dipSay: (n, t, d, k) => `Diplom! ${n}, šikovný žiak, za hru ${t}. ${d}. Máš ${k} hviezdičiek.`,
+      dipVoice: (t, k) => [`Šikovný žiak, za hru ${t}.`, `Máš ${k} hviezdičiek.`], dipHead: 'Diplom!', hiPlain: 'Ahoj!', soundOn: 'Zvuk je zapnutý.',
       retry: 'Skús to ešte raz.', done: 'Hurá! Všetkých 50 úloh je hotových! Si úžasný kamarát. Môžeš hrať znova alebo si vybrať inú hru.',
       home: 'Domov', speak: 'Zopakuj', music: 'Hudba', voice: 'Hlas', sound: 'Zvuk zapnúť / vypnúť', lang: 'Jazyk'
     },
@@ -36,6 +37,7 @@
       confirmGame: t => `Do you really want to play ${t} from the start? The stars from this game will disappear.`, confirmAll: 'Do you really want to reset everything? All stars, diplomas and the name will disappear.',
       dipTitle: 'Diploma', dipSub: 'smart student', dipSave: 'Save diploma', dipFor: 'for the game',
       dipSay: (n, t, d, k) => `Diploma! ${n}, smart student, for the game ${t}. ${d}. You earned ${k} stars.`,
+      dipVoice: (t, k) => [`Smart student, for the game ${t}.`, `You earned ${k} stars.`], dipHead: 'Diploma!', hiPlain: 'Hello!', soundOn: 'Sound is on.',
       retry: 'Try again.', done: 'Hooray! All 50 tasks are done! You are amazing. You can play again or choose another game.',
       home: 'Home', speak: 'Repeat', music: 'Music', voice: 'Voice', sound: 'Sound on / off', lang: 'Language'
     }
@@ -47,28 +49,72 @@
   const loadVoices = () => { try { voices = speechSynthesis.getVoices() || []; } catch (e) { voices = []; } };
   if ('speechSynthesis' in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
   let lastSpoken = '';
-  const sayLog = []; // texts actually handed to speechSynthesis (for tests)
+  const sayLog = []; // texts actually spoken via Web Speech fallback (for tests)
+  const clipLog = []; // clip urls played (for tests)
   let speechSeq = 0;
+  // ---- pre-generated neural voice clips (Lili SK / Ana EN), loaded lazily per language ----
+  const VOICE_BASE = 'assets/voice/';
+  const voiceMaps = {}; // lang -> {text: relative file} | null while loading
+  const voiceEl = new Audio(); voiceEl.preload = 'auto';
+  const normT = t => String(t).trim().replace(/\s+/g, ' ');
+  const nameKey = n => normT(n).toLowerCase();
+  const stripD = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  function loadVoiceMap(lang) {
+    if (lang in voiceMaps || location.protocol === 'file:' || window.__ASSETS) { if (!(lang in voiceMaps)) voiceMaps[lang] = {}; return; }
+    voiceMaps[lang] = null;
+    fetch(VOICE_BASE + lang + '/manifest.json').then(r => r.ok ? r.json() : {}).then(j => { voiceMaps[lang] = j || {}; }).catch(() => { voiceMaps[lang] = {}; });
+  }
+  function clipFor(t) {
+    const m = voiceMaps[save.lang]; if (!m) return null;
+    let f = m[normT(t)];
+    if (!f && t[0] === '@') f = m[stripD(normT(t))]; // names typed without diacritics
+    return f ? VOICE_BASE + save.lang + '/' + f : null;
+  }
+  const nameClipKey = (kind, n) => '@' + kind + ':' + nameKey(n);
   function stopSpeech() {
     speechSeq++;
-    if (!('speechSynthesis' in window)) return;
-    try { speechSynthesis.cancel(); } catch (e) { /* ignore */ }
+    try { voiceEl.onended = voiceEl.onerror = null; voiceEl.pause(); } catch (e) { /* ignore */ }
+    if ('speechSynthesis' in window) { try { speechSynthesis.cancel(); } catch (e) { /* ignore */ } }
     duck(false);
   }
+  // text: string or array of parts; a part may be {key, alt} = optional clip (e.g. a name), never spoken by the device voice
   function say(text, opt) {
     const done = opt && opt.done;
-    lastSpoken = (opt && opt.keep) ? lastSpoken : text;
-    if (!save.voice || !('speechSynthesis' in window) || !text) { if (done) done(); return; }
+    const parts = (Array.isArray(text) ? text : [text]).filter(Boolean);
+    if (!(opt && opt.keep)) lastSpoken = parts;
+    if (!save.voice || !parts.length) { if (done) done(); return; }
+    stopSpeech();
+    const my = speechSeq;
+    const urls = []; let missing = false; const plain = [];
+    for (const p of parts) {
+      if (typeof p === 'object') { const u = clipFor(p.key); if (u) urls.push(u); else if (p.alt) { const a = clipFor(p.alt); if (a) urls.push(a); else missing = true; plain.push(p.alt); } continue; }
+      plain.push(p); const u = clipFor(p); if (u) urls.push(u); else missing = true;
+    }
+    if (!missing && urls.length) return playChain(urls, my, done);
+    webSpeak(plain.join(' '), opt, my, done);
+  }
+  function playChain(urls, my, done) {
+    let k = 0;
+    const next = () => {
+      if (my !== speechSeq) return;
+      if (k >= urls.length) { duck(false); if (done) done(); return; }
+      const u = urls[k++]; clipLog.push(u);
+      voiceEl.onended = next; voiceEl.onerror = next;
+      voiceEl.src = u; duck(true);
+      const pr = voiceEl.play(); if (pr && pr.catch) pr.catch(() => { if (my === speechSeq) next(); });
+    };
+    next();
+  }
+  function webSpeak(text, opt, my, done) {
+    if (!('speechSynthesis' in window) || !text) { if (done) done(); return; }
     try {
-      speechSynthesis.cancel();
-      const my = ++speechSeq;
       const u = new SpeechSynthesisUtterance(text);
       const code = save.lang === 'sk' ? 'sk' : 'en';
       u.lang = code === 'sk' ? 'sk-SK' : 'en-GB';
       const v = voices.find(v => v.lang && v.lang.toLowerCase().replace('_', '-').startsWith(code + '-')) || voices.find(v => v.lang && v.lang.toLowerCase().startsWith(code));
       if (v) u.voice = v;
       u.rate = (opt && opt.rate) || 0.88; u.pitch = 1.1;
-      u.onstart = () => { if (!save.voice) { try { speechSynthesis.cancel(); } catch (e) {} return; } duck(true); };
+      u.onstart = () => { if (!save.voice || my !== speechSeq) { try { speechSynthesis.cancel(); } catch (e) {} return; } duck(true); };
       u.onend = u.onerror = () => { duck(false); if (done && my === speechSeq) done(); };
       sayLog.push(text);
       speechSynthesis.speak(u);
@@ -85,6 +131,7 @@
     if (audioUnlocked) return;
     if (ev && ev.target && ev.target.closest && ev.target.closest('.snd')) return; // tapping a sound button must never start music
     audioUnlocked = true;
+    try { voiceEl.src = VOICE_BASE + 'silence.mp3'; const q = voiceEl.play(); if (q && q.catch) q.catch(() => {}); } catch (e) { /* unlock audio element on iOS */ }
     try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; }
     startMusic();
   }
@@ -178,7 +225,7 @@
       }
       c.appendChild(w);
     });
-    say(ui().hello(childName()));
+    say([save.name ? { key: nameClipKey('hi', save.name), alt: ui().hiPlain } : ui().hiPlain, ui().menu]);
   }
 
   // ---------- game ----------
@@ -217,7 +264,7 @@
     stage.querySelectorAll('[data-say]').forEach(el => el.onclick = () => say(el.dataset.say, { rate: 0.7, keep: true }));
     bubble(t.prompt);
     const speech = t.say || t.prompt;
-    if (cur.intro) { cur.intro = false; say(g.intro[save.lang] + ' ' + speech); lastSpoken = speech; }
+    if (cur.intro) { cur.intro = false; say([g.intro[save.lang], speech]); lastSpoken = [speech]; }
     else say(speech);
   }
 
@@ -241,14 +288,22 @@
   function choose(btn, o) {
     if (cur.locked) return;
     if (o.ok) { btn.classList.add('good'); success(btn); }
-    else { btn.classList.remove('wrong'); void btn.offsetWidth; btn.classList.add('wrong'); wrongAnswer(null, o.say ? `${ui().thisIs} ${o.say}.` : ''); }
+    else { btn.classList.remove('wrong'); void btn.offsetWidth; btn.classList.add('wrong'); wrongAnswer(null, o.say ? thisIsText(save.lang, o.say) : ''); }
+  }
+  const EN_NUMS = new Set(window.ZS_GAMES ? Array.from({ length: 21 }, (_, n) => num('en', n)) : []);
+  function thisIsText(lang, x) {
+    if (lang === 'sk') return `To je ${x}.`;
+    if (/^(the |small )/.test(x) || EN_NUMS.has(x)) return `That is ${x}.`;
+    const first = x.split(' ')[0];
+    if (/s$/.test(x) && !/(bus|dress|cactus)$/.test(x)) return EN_NUMS.has(first) ? `Those are ${x}.` : `Those are the ${x}.`;
+    return `That is the ${x}.`;
   }
   function wrongAnswer(customHint, prefix) {
     cur.wrong++; sfxSoft();
     const t = cur.task;
     const hint = customHint || t.hint || ui().retry;
-    bubble(hint, true, t.hintShow);
-    say((prefix ? prefix + ' ' : '') + hint, { keep: true });
+    say([prefix, ...(Array.isArray(hint) ? hint : [hint])], { keep: true });
+    bubble(Array.isArray(hint) ? hint.join(' ') : hint, true, t.hintShow);
     if (cur.wrong >= 2 && t.kind === 'choose') { const g = $('#options .opt[data-ok="1"]'); if (g) g.classList.add('glow'); }
   }
   function success(fromEl) {
@@ -294,7 +349,7 @@
     $('#dipGame').textContent = `${ui().dipFor}: ${D.title}`; $('#dipDate').textContent = D.date; $('#dipStars').textContent = `⭐ ${D.stars} / ${TASKS_PER_GAME}`;
     $('#btnSaveDip').textContent = '💾 ' + ui().dipSave;
     burst($('#dipCard'));
-    say(ui().dipSay(D.name, D.title, D.date, D.stars));
+    say([ui().dipHead, save.name ? { key: nameClipKey('n', save.name) } : null, ...ui().dipVoice(D.title, D.stars)]);
   }
   function roundRect(x, c, X, Y, W, H, R) { x.beginPath(); x.moveTo(X + R, Y); x.arcTo(X + W, Y, X + W, Y + H, R); x.arcTo(X + W, Y + H, X, Y + H, R); x.arcTo(X, Y + H, X, Y, R); x.arcTo(X, Y, X + W, Y, R); x.closePath(); }
   async function renderDiplomaPNG(id) {
@@ -392,14 +447,18 @@
         const more = inBasket < t.n;
         const W = window.ZS_GAMES.nutsW;
         const inB = save.lang === 'sk' ? (inBasket >= 2 && inBasket <= 4 ? `V košíku sú ${W('sk', inBasket)}` : `V košíku je ${W('sk', inBasket)}`) : `There ${inBasket === 1 ? 'is' : 'are'} ${W('en', inBasket)} in the basket`;
-        const h = save.lang === 'sk' ? `${inB}. Potrebujeme ${W('sk', t.n)}. ${more ? 'Pridaj ešte.' : 'Niektoré vráť späť.'}`
-          : `${inB}. We need ${W('en', t.n)}. ${more ? 'Add some more.' : 'Take some back.'}`;
+        const h = giveHint(save.lang, inBasket, t.n);
         wrongAnswer(h);
       }
     };
     opts.appendChild(done);
   }
 
+  function giveHint(lang, inBasket, n) {
+    const W = window.ZS_GAMES.nutsW, more = inBasket < n;
+    const inB = lang === 'sk' ? (inBasket >= 2 && inBasket <= 4 ? `V košíku sú ${W('sk', inBasket)}.` : `V košíku je ${W('sk', inBasket)}.`) : `There ${inBasket === 1 ? 'is' : 'are'} ${W('en', inBasket)} in the basket.`;
+    return lang === 'sk' ? [inB, `Potrebujeme ${W('sk', n)}.`, more ? 'Pridaj ešte.' : 'Niektoré vráť späť.'] : [inB, `We need ${W('en', n)}.`, more ? 'Add some more.' : 'Take some back.'];
+  }
   function renderDress(t, stage, opts) {
     const mine = {};
     stage.innerHTML = `<div class="dresswrap"><div class="order${t.byEar ? ' byear' : ''}" data-say="${t.byEar ? t.prompt : ''}">${t.byEar ? '<div class="listen">👂</div>' : '📋' + bunnySVG(t.target, 'bunny')}</div><div class="mybunny"></div></div>`;
@@ -449,7 +508,7 @@
   $('#btnMenu2').onclick = () => openMenu();
   $('#btnAgain').onclick = () => { const id = cur.game.id; openGame(id, 0); };
   document.querySelectorAll('.bubble').forEach(b => b.addEventListener('click', () => say(lastSpoken || ui().menu, { keep: true })));
-  soundBtn('#btnSound', () => { const on = save.music || save.voice; setSound(!on, !on); if (!on) { audioUnlocked = true; say(save.lang === 'sk' ? 'Zvuk je zapnutý.' : 'Sound is on.', { keep: true }); } });
+  soundBtn('#btnSound', () => { const on = save.music || save.voice; setSound(!on, !on); if (!on) { audioUnlocked = true; say(ui().soundOn, { keep: true }); } });
   soundBtn('#btnMusic', () => { audioUnlocked = true; setSound(!save.music, save.voice); });
   soundBtn('#btnVoice', () => setSound(save.music, !save.voice));
   $('#btnLang').onclick = () => {
@@ -465,6 +524,25 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden) { music.pause(); stopSpeech(); } else startMusic(); });
   window.addEventListener('resize', () => { if (cur && cur.task && cur.task.kind === 'choose' && document.querySelector('#scrGame.active')) { const n = cur.task.options.length; if (!cur.task.houses && n === 4) $('#options').style.setProperty('--cols', 2); } });
 
-  window.ZS = { version: VERSION, renderDiplomaPNG, openDiploma, GAMES, TASKS_PER_GAME, getTask, sayLog, get state() { return { save, cur }; } };
+  loadVoiceMap('sk'); loadVoiceMap('en');
+  // every phrase the game can speak (used to pre-generate clips and to test coverage)
+  function allPhrases(lang) {
+    const U = UI[lang], G = {}; const add = (g, t) => { if (t) (G[g] = G[g] || new Set()).add(normT(t)); };
+    [U.welcome, U.askName, U.menu, U.hiPlain, U.retry, U.done, U.confirmAll, U.soundOn, U.dipHead].forEach(t => add('ui', t));
+    GAMES.forEach(g => { add('ui', U.confirmGame(g.title[lang])); U.dipVoice(g.title[lang], TASKS_PER_GAME).forEach(t => add('ui', t)); });
+    GAMES.forEach(g => {
+      add(g.id, g.intro[lang]);
+      for (let i = 0; i < TASKS_PER_GAME; i++) {
+        const t = getTask(g.id, i, lang);
+        add(g.id, t.say || t.prompt); add(g.id, t.hint); add(g.id, t.answer && cap(t.answer));
+        (t.display || '').replace(/data-say="([^"]+)"/g, (m, x) => add(g.id, x));
+        (t.options || []).forEach(o => { add(g.id, thisIsText(lang, o.say)); });
+        if (t.kind === 'dress') { t.slots.forEach(sl => { add(g.id, t.slotHints[sl]); add(g.id, t.slotNames[sl]); Object.values(t.itemSay[sl]).forEach(x => add(g.id, cap(x) + '.')); }); if (t.byEar) add(g.id, t.prompt); }
+        if (t.kind === 'give') for (let b = 0; b <= 10; b++) { add(g.id, cap(num(lang, b))); if (b !== t.n) giveHint(lang, b, t.n).forEach(x => add(g.id, x)); }
+      }
+    });
+    const out = {}; for (const k in G) out[k] = [...G[k]]; return out;
+  }
+  window.ZS = { version: VERSION, allPhrases, clipLog, voiceEl, clipFor: t => clipFor(t), voiceReady: l => !!voiceMaps[l], renderDiplomaPNG, openDiploma, GAMES, TASKS_PER_GAME, getTask, sayLog, get state() { return { save, cur }; } };
   openWelcome();
 })();
