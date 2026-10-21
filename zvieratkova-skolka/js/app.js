@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   const { GAMES, TASKS_PER_GAME, getTask, bunnySVG, itemSVG, num } = window.ZS_GAMES;
-  const VERSION = 'v6';
+  const VERSION = 'v7';
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   const $ = s => document.querySelector(s);
   const KEY = 'zvieratkovaSkolka.v1';
@@ -278,8 +278,13 @@
     stage.querySelectorAll('[data-say]').forEach(el => el.onclick = () => say(el.dataset.say, { rate: 0.7, keep: true }));
     bubble(t.prompt);
     const speech = t.say || t.prompt;
-    if (cur.intro) { cur.intro = false; say([g.intro[save.lang], speech]); lastSpoken = [speech]; }
-    else say(speech);
+    // the instruction is spoken automatically only the first time a task type appears; listen-only tasks always speak
+    save.heard = save.heard || {};
+    const auto = t.listenOnly || !save.heard[t.type];
+    if (!t.listenOnly) { save.heard[t.type] = 1; persist(); }
+    if (cur.intro) { cur.intro = false; say(auto ? [g.intro[save.lang], speech] : [g.intro[save.lang]]); }
+    else if (auto) say(speech); else stopSpeech();
+    lastSpoken = [speech];
   }
 
   function sayOpt(o, prefix) { say(cap((prefix ? prefix + ' ' : '') + o.say) + '.', { rate: 0.85, keep: true }); }
@@ -316,8 +321,8 @@
   function wrongAnswer(customHint, prefix) {
     cur.wrong++; sfxSoft();
     const t = cur.task;
-    const hint = customHint || t.hint || ui().retry;
-    say([prefix, ...(Array.isArray(hint) ? hint : [hint])], { keep: true });
+    const hint = customHint || t.hint || ui().retry, hs = customHint || t.hintParts || hint;
+    say([prefix, ...(Array.isArray(hs) ? hs : [hs])], { keep: true });
     bubble(Array.isArray(hint) ? hint.join(' ') : hint, true, t.hintShow);
     if (cur.wrong >= 2 && t.kind === 'choose') { const g = $('#options .opt[data-ok="1"]'); if (g) g.classList.add('glow'); }
   }
@@ -340,7 +345,7 @@
       if (cur.index >= TASKS_PER_GAME - 1) { cur.index = firstUnsolved(g.id); return loadTask(); }
       cur.index++; loadTask();
     };
-    say(ans, { done: () => setTimeout(go, Math.max(250, 1400 - (Date.now() - t0))) });
+    say(cur.task.answerParts || ans, { done: () => setTimeout(go, Math.max(250, 1400 - (Date.now() - t0))) });
     setTimeout(go, save.voice ? 6000 : 1400);
   }
   function finish() {
@@ -409,13 +414,13 @@
   }
   function confirmResetGame(g) {
     confirmDlg(ui().confirmGame(g.title[save.lang]), { nameToggle: true }, alsoName => {
-      delete save.games[g.id]; delete save.diplomas[g.id]; persist();
+      delete save.games[g.id]; delete save.diplomas[g.id]; if (save.heard) Object.keys(save.heard).forEach(k => { if (k.startsWith(g.id + ':')) delete save.heard[k]; }); persist();
       if (alsoName) openName(); else openMenu();
     });
   }
   function confirmResetAll() {
     confirmDlg(ui().confirmAll, {}, () => {
-      const old = save.name; save.games = {}; save.diplomas = {}; save.name = null; persist();
+      const old = save.name; save.games = {}; save.diplomas = {}; save.heard = {}; save.name = null; persist();
       openName(old || '');
     });
   }
@@ -550,7 +555,9 @@
       add(g.id, g.intro[lang]);
       for (let i = 0; i < TASKS_PER_GAME; i++) {
         const t = getTask(g.id, i, lang);
-        add(g.id, t.say || t.prompt); add(g.id, t.hint); add(g.id, t.answer && cap(t.answer));
+        add(g.id, t.say || t.prompt);
+        const addP = (parts, txt) => { if (parts) parts.forEach(x => add(g.id, typeof x === 'object' ? x.key : x)); else add(g.id, txt); };
+        addP(t.hintParts, t.hint); addP(t.answerParts, t.answer && cap(t.answer));
         (t.display || '').replace(/data-say="([^"]+)"/g, (m, x) => add(g.id, x));
         (t.options || []).forEach(o => { add(g.id, thisIsText(lang, o.say)); });
         if (t.kind === 'dress') { t.slots.forEach(sl => { add(g.id, t.slotHints[sl]); add(g.id, t.slotNames[sl]); Object.values(t.itemSay[sl]).forEach(x => add(g.id, cap(x) + '.')); }); if (t.byEar) add(g.id, t.prompt); }
@@ -559,6 +566,6 @@
     });
     const out = {}; for (const k in G) out[k] = [...G[k]]; return out;
   }
-  window.ZS = { version: VERSION, allPhrases, clipLog, voiceEl, clipFor: t => clipFor(t), voiceReady: l => !!voiceMaps[l], renderDiplomaPNG, openDiploma, GAMES, TASKS_PER_GAME, getTask, sayLog, get state() { return { save, cur }; } };
+  window.ZS = { version: VERSION, loadTask: () => loadTask(), allPhrases, clipLog, voiceEl, clipFor: t => clipFor(t), voiceReady: l => !!voiceMaps[l], renderDiplomaPNG, openDiploma, GAMES, TASKS_PER_GAME, getTask, sayLog, get state() { return { save, cur }; } };
   openWelcome();
 })();

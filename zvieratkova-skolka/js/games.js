@@ -341,6 +341,28 @@
       ['⚽', 'PELOTA'], ['🐰', 'CONEJO'], ['👑', 'CORONA'], ['🎂', 'PASTEL'], ['🚀', 'COHETE'], ['🦒', 'JIRAFA'], ['🍦', 'HELADO'], ['🐴', 'CABALLO'], ['🐢', 'TORTUGA'], ['🌻', 'GIRASOL'],
       ['⭐', 'ESTRELLA'], ['🍎', 'MANZANA'], ['🍌', 'PLÁTANO'], ['🐿️', 'ARDILLA'], ['☂️', 'PARAGUAS'], ['🦋', 'MARIPOSA'], ['🐘', 'ELEFANTE'], ['🚲', 'BICICLETA'], ['🍫', 'CHOCOLATE']]
   };
+  // ---------- syllables (checked by hand; first-grade style) ----------
+  const SYL = {
+    sk: { OKO: 'o-ko', MAMA: 'ma-ma', TATO: 'ta-to', AUTO: 'au-to', RYBA: 'ry-ba', SOVA: 'so-va', KOZA: 'ko-za', RUKA: 'ru-ka', NOHA: 'no-ha', UCHO: 'u-cho', DÚHA: 'dú-ha', OVCA: 'ov-ca', ŽABA: 'ža-ba',
+      LOPTA: 'lop-ta', MAČKA: 'mač-ka', SLNKO: 'sln-ko', KAČKA: 'kač-ka', KNIHA: 'kni-ha', TORTA: 'tor-ta', BABKA: 'bab-ka', BANÁN: 'ba-nán', OBLAK: 'ob-lak', MOTÝĽ: 'mo-týľ', KOHÚT: 'ko-hút',
+      HRUŠKA: 'hruš-ka', MEDVEĎ: 'med-veď', JABLKO: 'ja-bl-ko', MESIAC: 'me-siac', CITRÓN: 'cit-rón', KORUNA: 'ko-ru-na', HVIEZDA: 'hviez-da', BICYKEL: 'bi-cy-kel', DÁŽDNIK: 'dážd-nik', PAPAGÁJ: 'pa-pa-gáj',
+      ZMRZLINA: 'zmrz-li-na', LIETADLO: 'lie-tad-lo', SLNEČNICA: 'sl-neč-ni-ca', VEVERIČKA: 've-ve-rič-ka', ČOKOLÁDA: 'čo-ko-lá-da', JAŠTERICA: 'jaš-te-ri-ca', KORYTNAČKA: 'ko-ryt-nač-ka' },
+    en: { LION: 'li-on', APPLE: 'ap-ple', LEMON: 'lem-on', BANANA: 'ba-na-na', RABBIT: 'rab-bit', TURTLE: 'tur-tle', FLOWER: 'flow-er', PARROT: 'par-rot', RAINBOW: 'rain-bow', BICYCLE: 'bi-cy-cle',
+      ELEPHANT: 'el-e-phant', UMBRELLA: 'um-brel-la', AIRPLANE: 'air-plane', SQUIRREL: 'squir-rel', SUNFLOWER: 'sun-flow-er', BUTTERFLY: 'but-ter-fly', CHOCOLATE: 'choc-o-late', STRAWBERRY: 'straw-ber-ry' },
+    es: { OSO: 'o-so', OJO: 'o-jo', LUNA: 'lu-na', MAMÁ: 'ma-má', PAPÁ: 'pa-pá', CASA: 'ca-sa', GATO: 'ga-to', PATO: 'pa-to', VACA: 'va-ca', MANO: 'ma-no', NUBE: 'nu-be', ROSA: 'ro-sa', RANA: 'ra-na',
+      LEÓN: 'le-ón', PERA: 'pe-ra', LORO: 'lo-ro', UVAS: 'u-vas', PERRO: 'pe-rro', LIBRO: 'li-bro', FRESA: 'fre-sa', ZORRO: 'zo-rro', ABEJA: 'a-be-ja', OVEJA: 'o-ve-ja', LIMÓN: 'li-món', GLOBO: 'glo-bo',
+      QUESO: 'que-so', BARCO: 'bar-co', AVIÓN: 'a-vión', RATÓN: 'ra-tón', PELOTA: 'pe-lo-ta', CONEJO: 'co-ne-jo', CORONA: 'co-ro-na', PASTEL: 'pas-tel', COHETE: 'co-he-te', JIRAFA: 'ji-ra-fa', HELADO: 'he-la-do',
+      CABALLO: 'ca-ba-llo', TORTUGA: 'tor-tu-ga', GIRASOL: 'gi-ra-sol', ESTRELLA: 'es-tre-lla', MANZANA: 'man-za-na', PLÁTANO: 'plá-ta-no', ARDILLA: 'ar-di-lla', PARAGUAS: 'pa-ra-guas', MARIPOSA: 'ma-ri-po-sa',
+      ELEFANTE: 'e-le-fan-te', BICICLETA: 'bi-ci-cle-ta', CHOCOLATE: 'cho-co-la-te' }
+  };
+  const sylOf = (lang, w) => (SYL[lang][w] || w.toLowerCase()).split('-');
+  const sylClip = x => ({ key: '@syl:' + x, alt: x });
+  // "Mama. Ma – ma. Mama." (text) + speech parts with one clip per syllable
+  function sylSay(lang, w, head) {
+    const wl = cap(w.toLowerCase()), sy = sylOf(lang, w);
+    if (sy.length < 2) return { text: (head ? head + ' ' : '') + wl + '.', parts: [head, wl + '.'].filter(Boolean) };
+    return { text: `${head ? head + ' ' : wl + '. '}${cap(sy.join(' – '))}. ${wl}.`, parts: [head || wl + '.', ...sy.map(sylClip), wl + '.'] };
+  }
   function genWords(i, lang, r) {
     const W = WORDS[lang];
     // start a bit further into the list (skip the most trivial words), end with the longest ones
@@ -349,12 +371,15 @@
     const wl = w.toLowerCase();
     const n = i < 3 ? 3 : i < 40 ? 4 : 5;
     if (i < 28) {
+      const multi = sylOf(lang, w).length > 1;
+      const hs = sylSay(lang, w, multi ? T(lang, 'Ťukni na slovo. Počúvaj po slabikách:', 'Tap the word. Listen to the syllables:', 'Toca la palabra. Escucha las sílabas:')
+        : T(lang, 'Ťukni na slovo a počúvaj:', 'Tap the word and listen:', 'Toca la palabra y escucha:'));
+      const as = sylSay(lang, w);
       const others = sample(r, W.filter(x => x[0] !== e), n - 1);
       return {
         kind: 'choose', prompt: T(lang, 'Prečítaj slovo a nájdi obrázok.', 'Read the word and find the picture.', 'Lee la palabra y busca el dibujo.'),
         say: T(lang, 'Prečítaj slovo a nájdi obrázok. Ťukni na slovo a vypočuješ si ho.', 'Read the word and find the picture. Tap the word to hear it.', 'Lee la palabra y busca el dibujo. Toca la palabra para escucharla.'),
-        hint: T(lang, `Ťukni na slovo. Počúvaj: ${w.split('').join(', ')}… ${wl}.`, `Tap the word. Listen: ${w.split('').join(', ')}… ${wl}.`, `Toca la palabra. Escucha: ${w.split('').join(', ')}… ${wl}.`),
-        answer: T(lang, `${cap(wl)}. ${w.split('').join(', ')}.`, `${cap(wl)}. ${w.split('').join(', ')}.`),
+        hint: hs.text, hintParts: hs.parts, answer: as.text, answerParts: as.parts,
         display: `<button class="word" data-say="${wl}">${w}</button>`,
         options: shuffle(r, [[e, w], ...others].map(([ee, ww]) => ({ html: emo(ee), ok: ee === e, say: ww.toLowerCase() })))
       };
@@ -590,10 +615,22 @@
       intro: { sk: 'Ahoj, ja som zajačik Zajko. Pomôžeš mi obliecť sa podľa obrázka?', en: 'Hi, I am Zack the Bunny. Will you help me get dressed like in the picture?', es: '¡Hola! Soy Coco, el conejito. ¿Me ayudas a vestirme como en el dibujo?' } }
   ];
 
+  // task type (stage) of each index; listen-only stages must speak their content every time
+  function stageOf(id, i) {
+    switch (id) {
+      case 'colors': return i < 8 ? ['color'] : i < 18 ? ['shape'] : i < 30 ? ['both'] : ['byear', true];
+      case 'count': return (i < 14 || (i >= 42 && i < 46)) ? ['count'] : i < 20 ? ['give'] : i < 26 ? ['more'] : i < 30 ? ['plus'] : i < 42 ? ['minus'] : ['story'];
+      case 'letters': return i < 8 ? ['same'] : i < 18 ? ['byear', true] : i < 30 ? ['case'] : i < 42 ? ['firstsound', true] : ['picture'];
+      case 'words': return i < 28 ? ['read'] : ['picword'];
+      case 'riddles': return i < 10 ? ['odd'] : i < 24 ? ['pattern'] : i < 30 ? ['house', true] : i < 38 ? ['housedeco', true] : i < 44 ? ['between', true] : ['twostep', true];
+      default: return i < 44 ? ['dress'] : ['byear', true];
+    }
+  }
   function getTask(gameId, index, lang) {
     const g = GAMES.find(x => x.id === gameId);
     const r = rng(hash(gameId) + index * 7919);
-    const t = g.gen(index, lang, r); t.index = index; return t;
+    const t = g.gen(index, lang, r); t.index = index;
+    const [st, listen] = stageOf(gameId, index); t.type = gameId + ':' + st; t.listenOnly = listen; return t;
   }
 
   window.ZS_GAMES = { GAMES, TASKS_PER_GAME, getTask, bunnySVG, itemSVG, num, nutsW, conf, FIRST };
