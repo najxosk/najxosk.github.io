@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   const { GAMES, TASKS_PER_GAME, getTask, bunnySVG, itemSVG, num } = window.ZS_GAMES;
-  const VERSION = 'v9';
+  const VERSION = 'v10';
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   const $ = s => document.querySelector(s);
   const KEY = 'zvieratkovaSkolka.v1';
@@ -73,10 +73,11 @@
   const normT = t => String(t).trim().replace(/\s+/g, ' ');
   const nameKey = n => normT(n).toLowerCase();
   const stripD = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const mapReady = {}; // lang -> promise resolved when the manifest is in
   function loadVoiceMap(lang) {
     if (lang in voiceMaps || location.protocol === 'file:' || window.__ASSETS) { if (!(lang in voiceMaps)) voiceMaps[lang] = {}; return; }
     voiceMaps[lang] = null;
-    fetch(VOICE_BASE + lang + '/manifest.json?' + VERSION).then(r => r.ok ? r.json() : {}).then(j => { voiceMaps[lang] = j || {}; }).catch(() => { voiceMaps[lang] = {}; });
+    mapReady[lang] = fetch(VOICE_BASE + lang + '/manifest.json?' + VERSION).then(r => r.ok ? r.json() : {}).then(j => { voiceMaps[lang] = j || {}; }).catch(() => { voiceMaps[lang] = {}; });
   }
   function clipFor(t) {
     const m = voiceMaps[save.lang]; if (!m) return null;
@@ -99,6 +100,11 @@
     if (!save.voice || !parts.length) { if (done) done(); return; }
     stopSpeech();
     const my = speechSeq;
+    // clip list still loading (first page load): wait for it, then play the recorded clip
+    if (voiceMaps[save.lang] === null && mapReady[save.lang] && !(opt && opt.noWait)) {
+      const go = () => { if (my === speechSeq) say(text, Object.assign({}, opt, { noWait: true, keep: true })); };
+      Promise.race([mapReady[save.lang], new Promise(r => setTimeout(r, 3000))]).then(go); return;
+    }
     const urls = []; let missing = false; const plain = [];
     for (const p of parts) {
       if (typeof p === 'object') { const u = clipFor(p.key); if (u) urls.push(u); else if (p.alt) { const a = clipFor(p.alt); if (a) urls.push(a); else missing = true; plain.push(p.alt); } continue; }
@@ -108,14 +114,18 @@
     webSpeak(plain.join(' '), opt, my, done);
   }
   function playChain(urls, my, done) {
-    let k = 0;
+    let k = 0, wd = null, finished = false;
+    const end = () => { if (finished) return; finished = true; clearTimeout(wd); duck(false); if (done && my === speechSeq) done(); };
     const next = () => {
-      if (my !== speechSeq) return;
-      if (k >= urls.length) { duck(false); if (done) done(); return; }
-      const u = urls[k++]; clipLog.push(u);
-      voiceEl.onended = next; voiceEl.onerror = next;
+      clearTimeout(wd);
+      if (my !== speechSeq || finished) return;
+      if (k >= urls.length) return end();
+      const u = urls[k++]; clipLog.push(u); let moved = false;
+      const step = () => { if (moved) return; moved = true; next(); };
+      voiceEl.onended = step; voiceEl.onerror = step;
       voiceEl.src = u; duck(true);
-      const pr = voiceEl.play(); if (pr && pr.catch) pr.catch(() => { if (my === speechSeq) next(); });
+      wd = setTimeout(step, 7000); // slow network / stalled clip: skip it
+      try { const pr = voiceEl.play(); if (pr && pr.catch) pr.catch(() => { if (my === speechSeq) { moved = true; end(); } }); } catch (e) { moved = true; end(); } // autoplay blocked: skip the rest
     };
     next();
   }

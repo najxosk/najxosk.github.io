@@ -233,3 +233,22 @@ body.s-welcome #btnHome,body.s-welcome #tbStars,body.s-menu #btnHome,body.s-name
 #scrGame.cursive .bigtxt.let,#scrGame.cursive .word:not(.picword),#scrGame.cursive .bigtxt.wordopt{font-family:"ZSScript",cursive;font-weight:400;letter-spacing:0;line-height:1.5}
 #scrGame.cursive .word:not(.picword),#scrGame.cursive .bigtxt.wordopt{text-transform:lowercase}
 #scrGame.cursive .bigtxt.let.huge{font-size:clamp(56px,16vw,100px)}
+@media (max-height:700px){#scrGame{overflow-y:auto}.wrow .opt{min-height:54px;padding:4px}.item{max-height:42px}.wardrobe{gap:5px}.donebtn{height:60px;font-size:34px}.mybunny .bunny,.order .bunny{max-height:24vh}#stage{min-height:84px;padding:6px}}
+/* content taller than the space: let the right column scroll instead of covering the ✔ button with the progress bar */
+#options{flex:1 0 auto}#progress{flex:0 0 auto}
+/* QA fix: long word options overflowed 2-col grid on 360px phones; dress check button below fold at 640px */
+#options{grid-template-columns:repeat(var(--cols,3),minmax(0,1fr))}
+.bigtxt.wordopt{font-size:clamp(18px,5.6vmin,44px);letter-spacing:1px}
+@media (max-height:700px){.mybunny .bunny,.order .bunny{max-height:13vh}.wrow .opt{min-height:44px}.item{max-height:30px}}
+@media (orientation:landscape) and (max-height:500px){.pile button,.basket button{font-size:32px}.pile,.basket{min-height:0}}
+@media (max-width:400px){#topbar{gap:4px;padding:8px 6px}.tb.snd.mini{width:38px;height:38px}.tb.lang{min-width:0;padding:0 8px;gap:4px}}
+/* QA fix: diploma buttons below fold on 360x640 and short landscape */
+@media (max-height:700px){.dipimg{width:min(62vw,26vh,300px)}.diploma{gap:8px}}
+@media (orientation:landscape) and (max-height:500px){
+ .diploma{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;align-items:center}
+ .dipimg{grid-row:1/3;width:min(50vh,190px)}
+ .dipcard{padding:8px 12px;min-width:0}.diptitle{font-size:34px}.dipname{font-size:28px}.dipsub{font-size:18px}.dipgame{font-size:16px;margin-top:2px}.dipmeta{font-size:15px;margin-top:2px}
+ .diploma .row{justify-self:center;gap:16px}.diploma .okbtn.sm{height:64px}.diploma .bigbtn.sm{width:64px;height:64px;font-size:32px}
+}
+/* dress-up progress bar fit at <=700px tall */
+@media (max-height:700px){#scrGame{gap:6px}.helper{width:56px}}

@@ -100,6 +100,7 @@
       items: [['🌸', 'kvietok', 'blossom', 'la flor'], ['🌻', 'slnečnica', 'sunflower', 'el girasol'], ['🌷', 'tulipán', 'tulip', 'el tulipán'], ['🌹', 'ruža', 'rose', 'la rosa'], ['🌳', 'strom', 'tree', 'el árbol'], ['🌵', 'kaktus', 'cactus', 'el cactus'], ['🌲', 'jedlička', 'fir tree', 'el pino'], ['🌼', 'margaréta', 'daisy', 'la margarita']] }
   ];
 
+  const PLUR = /^(čerešne|nohavice|šaty|ponožky|rukavice|tenisky|grapes|cherries|trousers|socks|gloves|sneakers)$/; // plural item names (verb agreement)
   // ---------- GAME 1: colors & shapes ----------
   function genColors(i, lang, r) {
     if (i < 8) { // same colour, 3 then 4 options, shapes vary from i>=4
@@ -448,7 +449,7 @@
         kind: 'choose', prompt: T(lang, 'Čo príde ďalej?', 'What comes next?', '¿Qué sigue?'),
         say: T(lang, `Čo príde ďalej? ${items.map(k => names[k]).join(', ')}, a potom?`, `What comes next? ${items.map(k => names[k]).join(', ')}, and then?`, `¿Qué sigue? ${items.map(k => names[k]).join(', ')}, ¿y después?`),
         hint: T(lang, `Povedz si to nahlas: ${items.slice(0, unit.length * 2).map(k => names[k]).join(', ')}…`, `Say it out loud: ${items.slice(0, unit.length * 2).map(k => names[k]).join(', ')}…`, `Dilo en voz alta: ${items.slice(0, unit.length * 2).map(k => names[k]).join(', ')}…`),
-        answer: T(lang, `Potom príde ${names[next]}.`, `Next comes the ${names[next]}.`, `Después viene ${names[next]}.`),
+        answer: T(lang, `Potom ${PLUR.test(names[next]) ? 'prídu' : 'príde'} ${names[next]}.`, `Next ${PLUR.test(names[next]) ? 'come' : 'comes'} the ${names[next]}.`, `Después ${/^(las|los) /.test(names[next]) ? 'vienen' : 'viene'} ${names[next]}.`),
         display: `<div class="seq">${items.map(k => `<span class="cell">${pool[k]}</span>`).join('')}<span class="cell q">?</span></div>`,
         options: shuffle(r, [0, 1, 2, 3].map(k => ({ html: pool[k], ok: k === next, say: names[k] })))
       };

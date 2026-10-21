@@ -345,7 +345,7 @@
   const SYL = {
     sk: { OKO: 'o-ko', MAMA: 'ma-ma', TATO: 'ta-to', AUTO: 'au-to', RYBA: 'ry-ba', SOVA: 'so-va', KOZA: 'ko-za', RUKA: 'ru-ka', NOHA: 'no-ha', UCHO: 'u-cho', DÚHA: 'dú-ha', OVCA: 'ov-ca', ŽABA: 'ža-ba',
       LOPTA: 'lop-ta', MAČKA: 'mač-ka', SLNKO: 'sln-ko', KAČKA: 'kač-ka', KNIHA: 'kni-ha', TORTA: 'tor-ta', BABKA: 'bab-ka', BANÁN: 'ba-nán', OBLAK: 'ob-lak', MOTÝĽ: 'mo-týľ', KOHÚT: 'ko-hút',
-      HRUŠKA: 'hruš-ka', MEDVEĎ: 'med-veď', JABLKO: 'ja-bl-ko', MESIAC: 'me-siac', CITRÓN: 'cit-rón', KORUNA: 'ko-ru-na', HVIEZDA: 'hviez-da', BICYKEL: 'bi-cy-kel', DÁŽDNIK: 'dážd-nik', PAPAGÁJ: 'pa-pa-gáj',
+      HRUŠKA: 'hruš-ka', MEDVEĎ: 'med-veď', JABLKO: 'jab-lko', MESIAC: 'me-siac', CITRÓN: 'cit-rón', KORUNA: 'ko-ru-na', HVIEZDA: 'hviez-da', BICYKEL: 'bi-cy-kel', DÁŽDNIK: 'dážd-nik', PAPAGÁJ: 'pa-pa-gáj',
       ZMRZLINA: 'zmrz-li-na', LIETADLO: 'lie-tad-lo', SLNEČNICA: 'sl-neč-ni-ca', VEVERIČKA: 've-ve-rič-ka', ČOKOLÁDA: 'čo-ko-lá-da', JAŠTERICA: 'jaš-te-ri-ca', KORYTNAČKA: 'ko-ryt-nač-ka' },
     en: { LION: 'li-on', APPLE: 'ap-ple', LEMON: 'lem-on', BANANA: 'ba-na-na', RABBIT: 'rab-bit', TURTLE: 'tur-tle', FLOWER: 'flow-er', PARROT: 'par-rot', RAINBOW: 'rain-bow', BICYCLE: 'bi-cy-cle',
       ELEPHANT: 'el-e-phant', UMBRELLA: 'um-brel-la', AIRPLANE: 'air-plane', SQUIRREL: 'squir-rel', SUNFLOWER: 'sun-flow-er', BUTTERFLY: 'but-ter-fly', CHOCOLATE: 'choc-o-late', STRAWBERRY: 'straw-ber-ry' },

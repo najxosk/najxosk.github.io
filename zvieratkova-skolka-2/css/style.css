@@ -289,3 +289,15 @@ body.s-welcome #btnHome,body.s-welcome #tbStars,body.s-menu #btnHome,body.s-name
 .swatch{width:54px;height:54px;min-height:54px}
 @media (max-height:700px){#options .opt{min-height:60px}.bin{min-height:96px}.sortitem .emo.huge{font-size:72px}#stage{min-height:84px;padding:6px}.donebtn{height:60px;font-size:34px}}
 @media (orientation:landscape) and (max-height:500px){.pshape .shape{width:min(12vw,80px);max-height:22vh}.swatch{width:42px;height:42px;min-height:42px}.sortitem .emo.huge{font-size:54px}.bin{min-height:70px}.basket2{font-size:34px}}
+/* QA fix g2v5: grid columns could grow past the screen in landscape (seq syllable tiles, pantry) */
+#options{grid-template-columns:repeat(var(--cols,3),minmax(0,1fr))}
+.pantry{grid-template-columns:repeat(var(--pc,3),minmax(0,1fr))}
+.tile .bigtxt{font-size:clamp(24px,7vmin,48px)}
+/* QA fix g2v5: diploma buttons below fold on 360x640 and short landscape */
+@media (max-height:700px){.dipimg{width:min(62vw,26vh,300px)}.diploma{gap:8px}}
+@media (orientation:landscape) and (max-height:500px){
+ .diploma{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;align-items:center}
+ .dipimg{grid-row:1/3;width:min(50vh,190px)}
+ .dipcard{padding:8px 12px;min-width:0}.diptitle{font-size:34px}.dipname{font-size:28px}.dipsub{font-size:18px}.dipgame{font-size:16px;margin-top:2px}.dipmeta{font-size:15px;margin-top:2px}
+ .diploma .row{justify-self:center;gap:16px}.diploma .okbtn.sm{height:64px}.diploma .bigbtn.sm{width:64px;height:64px;font-size:32px}
+}
