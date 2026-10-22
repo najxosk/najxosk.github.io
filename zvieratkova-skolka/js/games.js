@@ -11,7 +11,7 @@
   const pick = (r, arr) => arr[Math.floor(r() * arr.length)];
   function shuffle(r, arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
   const sample = (r, arr, n) => shuffle(r, arr).slice(0, n);
-  const T = (lang, sk, en, es) => (lang === 'sk' ? sk : lang === 'es' && es !== undefined ? es : en);
+  const T = (lang, sk, en, es, cs) => (lang === 'sk' ? sk : lang === 'cs' ? (cs !== undefined ? cs : cz(sk)) : lang === 'es' && es !== undefined ? es : en);
   const esC = (m, f, mp, fp) => ({ m, f, mp, fp });
 
   // ---------- shared visual vocab ----------
@@ -28,6 +28,22 @@
   ];
   // Slovak adjective forms from stem: m/f/n nominative, accF accusative fem, loc, ins, pl nominative (inanimate)
   const adj = (c, form) => c.sk + ({ m: 'ý', f: 'á', n: 'é', pl: 'é', accF: 'ú', loc: 'om', ins: 'ým' })[form];
+
+  // ===================== Czech (cs) =====================
+  const CZ = window.ZS_CZ || {};
+  const czMiss = new Set();
+  const cz = s => { if (s == null || s === '') return s; if (Object.prototype.hasOwnProperty.call(CZ, s)) return CZ[s]; czMiss.add(s); return s; };
+  const czA = s => cz('acc:' + s);
+  const CS_STEM = { red: 'červen', blue: 'modr', yellow: 'žlut', green: 'zelen', purple: 'fialov', orange: 'oranžov', pink: 'růžov', brown: 'hněd' };
+  COLORS.forEach(c => { c.cs = CS_STEM[c.id]; });
+  const adjC = (c, form) => c.cs + ({ m: 'ý', f: 'á', n: 'é', pl: 'é', accF: 'ou', loc: 'ém', ins: 'ým' })[form];
+  const adjAccC = (c, s) => adjC(c, s.g === 'm' ? 'm' : s.g === 'f' ? 'accF' : 'n');
+  const CS_SHAPE = { circle: ['kruh', 'kruh'], square: ['čtverec', 'čtverec'], triangle: ['trojúhelník', 'trojúhelník'], star: ['hvězda', 'hvězdu'], heart: ['srdce', 'srdce'], diamond: ['kosočtverec', 'kosočtverec'], oval: ['ovál', 'ovál'] };
+  const vInC = w => (/^[fv]/i.test(w) ? 've ' : 'v ') + w;
+  const csNum = (n, g) => n === 1 ? ({ f: 'jedna', n: 'jedno', m: 'jeden', pl: 'jedny' })[g] : n === 2 ? (g === 'm' ? 'dva' : 'dvě') : num('cs', n);
+  const csAccF = n => n === 1 ? 'jednu' : n === 2 ? 'dvě' : num('cs', n);
+  const csBe = n => (n >= 2 && n <= 4 ? 'jsou' : 'je');
+  const PLUR_CS = /^(třešně|hrozny|kalhoty|šaty|ponožky|rukavice|tenisky|boty)$/;
   const SHAPES = [
     { id: 'circle', sk: 'kruh', skAcc: 'kruh', g: 'm', en: 'circle', es: 'círculo', eg: 'm' },
     { id: 'square', sk: 'štvorec', skAcc: 'štvorec', g: 'm', en: 'square', es: 'cuadrado', eg: 'm' },
@@ -38,12 +54,13 @@
     { id: 'oval', sk: 'ovál', skAcc: 'ovál', g: 'm', en: 'oval', es: 'óvalo', eg: 'm' }
   ];
   const shapeById = id => SHAPES.find(s => s.id === id);
+  SHAPES.forEach(s => { [s.cs, s.csAcc] = CS_SHAPE[s.id]; });
   const adjAcc = (c, s) => adj(c, s.g === 'm' ? 'm' : s.g === 'f' ? 'accF' : 'n');
   // "modrá hviezda" / "blue star" (nominative)
   const ART = { m: 'el', f: 'la', mp: 'los', fp: 'las' }, UN = { m: 'un', f: 'una', mp: 'unos', fp: 'unas' };
   const esNoun = (c, noun, g, art) => `${(art || ART)[g]} ${noun} ${c.es[g]}`; // "la estrella azul"
-  const colShape = (lang, c, s) => T(lang, `${adj(c, s.g)} ${s.sk}`, `${c.en} ${s.en}`, esNoun(c, s.es, s.eg));
-  const colShapeAcc = (lang, c, s) => T(lang, `${adjAcc(c, s)} ${s.skAcc}`, `the ${c.en} ${s.en}`, esNoun(c, s.es, s.eg));
+  const colShape = (lang, c, s) => T(lang, `${adj(c, s.g)} ${s.sk}`, `${c.en} ${s.en}`, esNoun(c, s.es, s.eg), `${adjC(c, s.g)} ${s.cs}`);
+  const colShapeAcc = (lang, c, s) => T(lang, `${adjAcc(c, s)} ${s.skAcc}`, `the ${c.en} ${s.en}`, esNoun(c, s.es, s.eg), `${adjAccC(c, s)} ${s.csAcc}`);
 
   const FACE_Y = { circle: 52, square: 52, triangle: 64, star: 52, heart: 44, diamond: 52, oval: 52 };
   function face(cy, scale) {
@@ -75,12 +92,13 @@
   // ---------- numbers ----------
   const NUM = {
     sk: ['nula', 'jeden', 'dva', 'tri', 'štyri', 'päť', 'šesť', 'sedem', 'osem', 'deväť', 'desať', 'jedenásť', 'dvanásť', 'trinásť', 'štrnásť', 'pätnásť', 'šestnásť', 'sedemnásť', 'osemnásť', 'devätnásť', 'dvadsať'],
+    cs: ['nula', 'jedna', 'dva', 'tři', 'čtyři', 'pět', 'šest', 'sedm', 'osm', 'devět', 'deset', 'jedenáct', 'dvanáct', 'třináct', 'čtrnáct', 'patnáct', 'šestnáct', 'sedmnáct', 'osmnáct', 'devatenáct', 'dvacet'],
     en: ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'],
     es: ['cero', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve', 'veinte']
   };
   const num = (lang, n) => NUM[lang][n] != null ? NUM[lang][n] : String(n);
   // correct Slovak plural: 1 oriešok, 2–4 oriešky, 0/5+ orieškov
-  const nutsW = (lang, n) => lang === 'sk'
+  const nutsW = (lang, n) => lang === 'cs' ? `${n === 1 ? 'jeden' : num('cs', n)} ${n === 1 ? 'oříšek' : n >= 2 && n <= 4 ? 'oříšky' : 'oříšků'}` : lang === 'sk'
     ? `${num('sk', n)} ${n === 1 ? 'oriešok' : n >= 2 && n <= 4 ? 'oriešky' : 'orieškov'}`
     : lang === 'es' ? (n === 1 ? 'una bellota' : `${num('es', n)} bellotas`)
     : `${num('en', n)} ${n === 1 ? 'nut' : 'nuts'}`;
@@ -108,10 +126,10 @@
       const cols = sample(r, COLORS, n); const target = cols[0];
       const shp = shapeById(i < 4 ? 'circle' : pick(r, SHAPES).id);
       return {
-        kind: 'choose', prompt: T(lang, 'Nájdi rovnakú farbu.', 'Find the same color.', 'Busca el mismo color.'),
-        say: T(lang, `Nájdi rovnakú farbu. Hľadáme ${adj(target, 'accF')} farbu.`, `Find the same color. We are looking for ${target.en}.`, `Busca el mismo color. Buscamos el color ${target.es.m}.`),
-        hint: T(lang, `Hľadáme ${adj(target, 'accF')} farbu.`, `Look for the color ${target.en}.`, `Buscamos el color ${target.es.m}.`),
-        answer: T(lang, `${adj(target, 'f')} farba. ${cap(colShape(lang, target, shp))}.`, `${target.en}. The ${colShape(lang, target, shp)}.`, `El color ${target.es.m}. ${cap(colShape(lang, target, shp))}.`),
+        kind: 'choose', prompt: T(lang, 'Nájdi rovnakú farbu.', 'Find the same color.', 'Busca el mismo color.', 'Najdi stejnou barvu.'),
+        say: T(lang, `Nájdi rovnakú farbu. Hľadáme ${adj(target, 'accF')} farbu.`, `Find the same color. We are looking for ${target.en}.`, `Busca el mismo color. Buscamos el color ${target.es.m}.`, `Najdi stejnou barvu. Hledáme ${adjC(target, 'accF')} barvu.`),
+        hint: T(lang, `Hľadáme ${adj(target, 'accF')} farbu.`, `Look for the color ${target.en}.`, `Buscamos el color ${target.es.m}.`, `Hledáme ${adjC(target, 'accF')} barvu.`),
+        answer: T(lang, `${adj(target, 'f')} farba. ${cap(colShape(lang, target, shp))}.`, `${target.en}. The ${colShape(lang, target, shp)}.`, `El color ${target.es.m}. ${cap(colShape(lang, target, shp))}.`, `${adjC(target, 'f')} barva. ${cap(colShape(lang, target, shp))}.`),
         display: `<div class="blob" style="background:${target.hex}"></div>`,
         options: shuffle(r, cols.map((c, k) => ({ html: shapeSVG(shp.id, c.hex), ok: k === 0, say: colShape(lang, c, shp) })))
       };
@@ -121,10 +139,10 @@
       const shs = sample(r, SHAPES, n); const target = shs[0];
       const cs = shs.map(() => pick(r, COLORS));
       return {
-        kind: 'choose', prompt: T(lang, 'Nájdi rovnaký tvar.', 'Find the same shape.', 'Busca la misma forma.'),
-        say: T(lang, `Nájdi rovnaký tvar. Hľadáme ${target.skAcc}.`, `Find the same shape. We are looking for a ${target.en}.`, `Busca la misma forma. Buscamos ${ART[target.eg]} ${target.es}.`),
-        hint: T(lang, `Hľadáme ${target.skAcc}.`, `Look for the ${target.en}.`, `Buscamos ${ART[target.eg]} ${target.es}.`),
-        answer: T(lang, `${cap(colShape(lang, cs[0], target))}. To je ${target.sk}.`, `The ${colShape(lang, cs[0], target)}. That is a ${target.en}.`, `${cap(colShape(lang, cs[0], target))}. Es ${UN[target.eg]} ${target.es}.`),
+        kind: 'choose', prompt: T(lang, 'Nájdi rovnaký tvar.', 'Find the same shape.', 'Busca la misma forma.', 'Najdi stejný tvar.'),
+        say: T(lang, `Nájdi rovnaký tvar. Hľadáme ${target.skAcc}.`, `Find the same shape. We are looking for a ${target.en}.`, `Busca la misma forma. Buscamos ${ART[target.eg]} ${target.es}.`, `Najdi stejný tvar. Hledáme ${target.csAcc}.`),
+        hint: T(lang, `Hľadáme ${target.skAcc}.`, `Look for the ${target.en}.`, `Buscamos ${ART[target.eg]} ${target.es}.`, `Hledáme ${target.csAcc}.`),
+        answer: T(lang, `${cap(colShape(lang, cs[0], target))}. To je ${target.sk}.`, `The ${colShape(lang, cs[0], target)}. That is a ${target.en}.`, `${cap(colShape(lang, cs[0], target))}. Es ${UN[target.eg]} ${target.es}.`, `${cap(colShape(lang, cs[0], target))}. To je ${target.cs}.`),
         display: shapeSVG(target.id, '#e6dbe8', 'shape big'),
         options: shuffle(r, shs.map((s, k) => ({ html: shapeSVG(s.id, cs[k].hex), ok: k === 0, say: colShape(lang, cs[k], s) })))
       };
@@ -142,11 +160,11 @@
     const byVoice = i >= 30;
     return {
       kind: 'choose',
-      prompt: byVoice ? T(lang, `Ťukni na ${colShapeAcc(lang, tc, ts)}.`, `Tap ${colShapeAcc(lang, tc, ts)}.`, `Toca ${colShapeAcc(lang, tc, ts)}.`)
-        : T(lang, 'Nájdi rovnakú farbu aj tvar.', 'Find the same color and the same shape.', 'Busca el mismo color y la misma forma.'),
-      say: byVoice ? null : T(lang, `Nájdi rovnakú farbu aj tvar. Hľadáme ${colShapeAcc(lang, tc, ts)}.`, `Find the same color and shape. We are looking for ${colShapeAcc(lang, tc, ts)}.`, `Busca el mismo color y la misma forma. Buscamos ${colShapeAcc(lang, tc, ts)}.`),
-      hint: T(lang, `Hľadáme ${colShapeAcc(lang, tc, ts)}. Farba aj tvar musia sedieť.`, `Look for ${colShapeAcc(lang, tc, ts)}. Both the color and the shape must match.`, `Buscamos ${colShapeAcc(lang, tc, ts)}. El color y la forma tienen que coincidir.`),
-      answer: T(lang, `${cap(colShape(lang, tc, ts))}.`, `The ${colShape(lang, tc, ts)}.`, `${cap(colShape(lang, tc, ts))}.`),
+      prompt: byVoice ? T(lang, `Ťukni na ${colShapeAcc(lang, tc, ts)}.`, `Tap ${colShapeAcc(lang, tc, ts)}.`, `Toca ${colShapeAcc(lang, tc, ts)}.`, `Ťukni na ${colShapeAcc(lang, tc, ts)}.`)
+        : T(lang, 'Nájdi rovnakú farbu aj tvar.', 'Find the same color and the same shape.', 'Busca el mismo color y la misma forma.', 'Najdi stejnou barvu i tvar.'),
+      say: byVoice ? null : T(lang, `Nájdi rovnakú farbu aj tvar. Hľadáme ${colShapeAcc(lang, tc, ts)}.`, `Find the same color and shape. We are looking for ${colShapeAcc(lang, tc, ts)}.`, `Busca el mismo color y la misma forma. Buscamos ${colShapeAcc(lang, tc, ts)}.`, `Najdi stejnou barvu i tvar. Hledáme ${colShapeAcc(lang, tc, ts)}.`),
+      hint: T(lang, `Hľadáme ${colShapeAcc(lang, tc, ts)}. Farba aj tvar musia sedieť.`, `Look for ${colShapeAcc(lang, tc, ts)}. Both the color and the shape must match.`, `Buscamos ${colShapeAcc(lang, tc, ts)}. El color y la forma tienen que coincidir.`, `Hledáme ${colShapeAcc(lang, tc, ts)}. Barva i tvar musí sedět.`),
+      answer: T(lang, `${cap(colShape(lang, tc, ts))}.`, `The ${colShape(lang, tc, ts)}.`, `${cap(colShape(lang, tc, ts))}.`, `${cap(colShape(lang, tc, ts))}.`),
       display: byVoice ? listen() : shapeSVG(ts.id, tc.hex, 'shape big'),
       options: shuffle(r, opts.map((o, k) => ({ html: shapeSVG(o.s.id, o.c.hex), ok: k === 0, say: colShape(lang, o.c, o.s) })))
     };
@@ -170,20 +188,20 @@
     if (i < 14 || (i >= 42 && i < 46)) {
       const n = i < 6 ? ri(r, 2, 6) : i < 14 ? ri(r, 5, 10) : ri(r, 11, 20);
       return {
-        kind: 'choose', prompt: T(lang, 'Koľko je tu orieškov?', 'How many nuts are there?', '¿Cuántas bellotas hay?'),
-        hint: n > 10 ? T(lang, 'Najprv spočítaj jeden riadok: päť. Potom pokračuj: šesť, sedem…', 'Count one row first: five. Then go on: six, seven…', 'Primero cuenta una fila: cinco. Luego sigue: seis, siete…')
-          : T(lang, 'Spočítaj oriešky prstom: jeden, dva, tri…', 'Count the nuts with your finger: one, two, three…', 'Cuenta las bellotas con el dedo: uno, dos, tres…'),
-        answer: T(lang, `${nutsW(lang, n)}.`, `${nutsW(lang, n)}.`, `${cap(nutsW(lang, n))}.`),
+        kind: 'choose', prompt: T(lang, 'Koľko je tu orieškov?', 'How many nuts are there?', '¿Cuántas bellotas hay?', 'Kolik je tu oříšků?'),
+        hint: n > 10 ? T(lang, 'Najprv spočítaj jeden riadok: päť. Potom pokračuj: šesť, sedem…', 'Count one row first: five. Then go on: six, seven…', 'Primero cuenta una fila: cinco. Luego sigue: seis, siete…', 'Nejdřív spočítej jednu řadu: pět. Pak pokračuj: šest, sedm…')
+          : T(lang, 'Spočítaj oriešky prstom: jeden, dva, tri…', 'Count the nuts with your finger: one, two, three…', 'Cuenta las bellotas con el dedo: uno, dos, tres…', 'Spočítej oříšky prstem: jeden, dva, tři…'),
+        answer: T(lang, `${nutsW(lang, n)}.`, `${nutsW(lang, n)}.`, `${cap(nutsW(lang, n))}.`, `${nutsW(lang, n)}.`),
         display: nuts(n), options: numOpts(r, lang, n, 4, n > 10 ? 20 : 10)
       };
     }
     if (i < 20) {
       const n = [3, 5, 6, 7, 8, 10][i - 14];
       return {
-        kind: 'give', n, prompt: T(lang, `Daj veveričke presne ${n} do košíka. Potom ťukni na fajku.`, `Put exactly ${n} nuts in the basket. Then tap the check mark.`, `Pon exactamente ${n} ${n === 1 ? 'bellota' : 'bellotas'} en la canasta. Luego toca la palomita.`),
-        say: T(lang, `Daj veveričke presne ${nutsW(lang, n)} do košíka. Potom ťukni na fajku.`, `Put exactly ${nutsW(lang, n)} in the basket. Then tap the check mark.`, `Pon exactamente ${nutsW(lang, n)} en la canasta. Luego toca la palomita.`),
-        hint: T(lang, `Spočítaj oriešky v košíku. Potrebujeme ${nutsW(lang, n)}.`, `Count the nuts in the basket. We need ${nutsW(lang, n)}.`, `Cuenta las bellotas de la canasta. Necesitamos ${nutsW(lang, n)}.`),
-        answer: T(lang, `${nutsW(lang, n)}.`, `${nutsW(lang, n)}.`, `${cap(nutsW(lang, n))}.`),
+        kind: 'give', n, prompt: T(lang, `Daj veveričke presne ${n} do košíka. Potom ťukni na fajku.`, `Put exactly ${n} nuts in the basket. Then tap the check mark.`, `Pon exactamente ${n} ${n === 1 ? 'bellota' : 'bellotas'} en la canasta. Luego toca la palomita.`, `Dej veverce přesně ${n} do košíku. Pak ťukni na fajfku.`),
+        say: T(lang, `Daj veveričke presne ${nutsW(lang, n)} do košíka. Potom ťukni na fajku.`, `Put exactly ${nutsW(lang, n)} in the basket. Then tap the check mark.`, `Pon exactamente ${nutsW(lang, n)} en la canasta. Luego toca la palomita.`, `Dej veverce přesně ${nutsW(lang, n)} do košíku. Pak ťukni na fajfku.`),
+        hint: T(lang, `Spočítaj oriešky v košíku. Potrebujeme ${nutsW(lang, n)}.`, `Count the nuts in the basket. We need ${nutsW(lang, n)}.`, `Cuenta las bellotas de la canasta. Necesitamos ${nutsW(lang, n)}.`, `Spočítej oříšky v košíku. Potřebujeme ${nutsW(lang, n)}.`),
+        answer: T(lang, `${nutsW(lang, n)}.`, `${nutsW(lang, n)}.`, `${cap(nutsW(lang, n))}.`, `${nutsW(lang, n)}.`),
         display: big(n, 'num huge')
       };
     }
@@ -192,13 +210,13 @@
       b = i >= 23 ? a + (a < 10 && r() < 0.5 ? 1 : -1) : (a > 6 ? a - ri(r, 2, 3) : a + ri(r, 2, 3));
       const mx = Math.max(a, b), mn = Math.min(a, b);
       return {
-        kind: 'choose', prompt: T(lang, 'Kde je viac orieškov?', 'Where are more nuts?', '¿Dónde hay más bellotas?'),
-        hint: T(lang, 'Spočítaj obe kôpky. Ktorá má viac?', 'Count both piles. Which one has more?', 'Cuenta los dos montones. ¿Cuál tiene más?'),
-        answer: T(lang, `${cap(num(lang, mx))} je viac ako ${num(lang, mn)}.`, `${cap(num(lang, mx))} is more than ${num(lang, mn)}.`, `${cap(num(lang, mx))} es más que ${num(lang, mn)}.`),
+        kind: 'choose', prompt: T(lang, 'Kde je viac orieškov?', 'Where are more nuts?', '¿Dónde hay más bellotas?', 'Kde je víc oříšků?'),
+        hint: T(lang, 'Spočítaj obe kôpky. Ktorá má viac?', 'Count both piles. Which one has more?', 'Cuenta los dos montones. ¿Cuál tiene más?', 'Spočítej obě hromádky. Která má víc?'),
+        answer: T(lang, `${cap(num(lang, mx))} je viac ako ${num(lang, mn)}.`, `${cap(num(lang, mx))} is more than ${num(lang, mn)}.`, `${cap(num(lang, mx))} es más que ${num(lang, mn)}.`, `${cap(num(lang, mx))} je víc než ${num(lang, mn)}.`),
         display: emo('🐿️'), options: shuffle(r, [{ html: nuts(a), ok: a > b, say: nutsW(lang, a) }, { html: nuts(b), ok: b > a, say: nutsW(lang, b) }]), wide: true
       };
     }
-    const opWord = (plus) => plus ? T(lang, 'plus', 'plus', 'más') : T(lang, 'mínus', 'minus', 'menos');
+    const opWord = (plus) => plus ? T(lang, 'plus', 'plus', 'más', 'plus') : T(lang, 'mínus', 'minus', 'menos', 'mínus');
     if (i < 42) {
       let a, b, plus, max = i < 34 ? 10 : 20;
       plus = i < 34 ? i < 30 : r() < 0.5;
@@ -208,10 +226,10 @@
       const disp = plus ? `<div class="sum">${nuts(a)}<span class="op">+</span>${nuts(b)}</div>` : `<div class="sum">${nuts(a, b)}</div>`;
       return {
         kind: 'choose',
-        prompt: T(lang, `Koľko je ${a} ${opWord(plus)} ${b}?`, `What is ${a} ${opWord(plus)} ${b}?`, `¿Cuánto es ${a} ${opWord(plus)} ${b}?`),
-        hint: plus ? T(lang, `Spočítaj všetky oriešky spolu.`, `Count all the nuts together.`, `Cuenta todas las bellotas juntas.`)
-          : T(lang, `Veverička zjedla ${nutsW(lang, b)}. Spočítaj tie, čo zostali.`, `The squirrel ate ${nutsW(lang, b)}. Count the nuts that are left.`, `La ardilla se comió ${nutsW(lang, b)}. Cuenta las que quedan.`),
-        answer: T(lang, `${cap(num(lang, a))} ${opWord(plus)} ${num(lang, b)} je ${num(lang, ans)}.`, `${cap(num(lang, a))} ${opWord(plus)} ${num(lang, b)} is ${num(lang, ans)}.`, `${cap(num(lang, a))} ${opWord(plus)} ${num(lang, b)} es ${num(lang, ans)}.`),
+        prompt: T(lang, `Koľko je ${a} ${opWord(plus)} ${b}?`, `What is ${a} ${opWord(plus)} ${b}?`, `¿Cuánto es ${a} ${opWord(plus)} ${b}?`, `Kolik je ${a} ${opWord(plus)} ${b}?`),
+        hint: plus ? T(lang, `Spočítaj všetky oriešky spolu.`, `Count all the nuts together.`, `Cuenta todas las bellotas juntas.`, `Spočítej všechny oříšky dohromady.`)
+          : T(lang, `Veverička zjedla ${nutsW(lang, b)}. Spočítaj tie, čo zostali.`, `The squirrel ate ${nutsW(lang, b)}. Count the nuts that are left.`, `La ardilla se comió ${nutsW(lang, b)}. Cuenta las que quedan.`, `Veverka snědla ${nutsW(lang, b)}. Spočítej ty, které zbyly.`),
+        answer: T(lang, `${cap(num(lang, a))} ${opWord(plus)} ${num(lang, b)} je ${num(lang, ans)}.`, `${cap(num(lang, a))} ${opWord(plus)} ${num(lang, b)} is ${num(lang, ans)}.`, `${cap(num(lang, a))} ${opWord(plus)} ${num(lang, b)} es ${num(lang, ans)}.`, `${cap(num(lang, a))} ${opWord(plus)} ${num(lang, b)} je ${num(lang, ans)}.`),
         display: disp + `<div class="eq">${a} ${plus ? '+' : '−'} ${b} = ?</div>`,
         options: numOpts(r, lang, ans, 4, max)
       };
@@ -220,10 +238,10 @@
     const a = ri(r, 3, 8), b = ri(r, 2, 6), c = ri(r, 1, Math.min(5, a + b - 1)), ans = a + b - c;
     return {
       kind: 'choose',
-      prompt: T(lang, `Veverička mala ${a}. Našla ešte ${b}. Potom ${c} zjedla. Koľko jej zostalo?`, `The squirrel had ${a} nuts. She found ${b} more. Then she ate ${c}. How many are left?`, `La ardilla tenía ${a} bellotas. Encontró ${b} más. Luego se comió ${c}. ¿Cuántas le quedan?`),
-      say: T(lang, `Veverička mala ${nutsW(lang, a)}. Našla ešte ${num(lang, b)}. Potom ${num(lang, c)} zjedla. Koľko orieškov jej zostalo?`, `The squirrel had ${nutsW(lang, a)}. She found ${num(lang, b)} more. Then she ate ${num(lang, c)}. How many nuts are left?`, `La ardilla tenía ${nutsW(lang, a)}. Encontró ${numF(lang, b)} más. Luego se comió ${numF(lang, c)}. ¿Cuántas bellotas le quedan?`),
-      hint: T(lang, `Najprv ${a} plus ${b}. Potom odober ${c}.`, `First ${a} plus ${b}. Then take away ${c}.`, `Primero ${a} más ${b}. Luego quita ${c}.`),
-      answer: T(lang, `${cap(num(lang, a))} plus ${num(lang, b)} je ${num(lang, a + b)}, mínus ${num(lang, c)} je ${num(lang, ans)}.`, `${cap(num(lang, a))} plus ${num(lang, b)} is ${num(lang, a + b)}, minus ${num(lang, c)} is ${num(lang, ans)}.`, `${cap(num(lang, a))} más ${num(lang, b)} es ${num(lang, a + b)}, menos ${num(lang, c)} es ${num(lang, ans)}.`),
+      prompt: T(lang, `Veverička mala ${a}. Našla ešte ${b}. Potom ${c} zjedla. Koľko jej zostalo?`, `The squirrel had ${a} nuts. She found ${b} more. Then she ate ${c}. How many are left?`, `La ardilla tenía ${a} bellotas. Encontró ${b} más. Luego se comió ${c}. ¿Cuántas le quedan?`, `Veverka měla ${a}. Našla ještě ${b}. Pak ${c} snědla. Kolik jí zbylo?`),
+      say: T(lang, `Veverička mala ${nutsW(lang, a)}. Našla ešte ${num(lang, b)}. Potom ${num(lang, c)} zjedla. Koľko orieškov jej zostalo?`, `The squirrel had ${nutsW(lang, a)}. She found ${num(lang, b)} more. Then she ate ${num(lang, c)}. How many nuts are left?`, `La ardilla tenía ${nutsW(lang, a)}. Encontró ${numF(lang, b)} más. Luego se comió ${numF(lang, c)}. ¿Cuántas bellotas le quedan?`, `Veverka měla ${nutsW(lang, a)}. Našla ještě ${csNum(b, 'm')}. Pak ${csNum(c, 'm')} snědla. Kolik oříšků jí zbylo?`),
+      hint: T(lang, `Najprv ${a} plus ${b}. Potom odober ${c}.`, `First ${a} plus ${b}. Then take away ${c}.`, `Primero ${a} más ${b}. Luego quita ${c}.`, `Nejdřív ${a} plus ${b}. Pak uber ${c}.`),
+      answer: T(lang, `${cap(num(lang, a))} plus ${num(lang, b)} je ${num(lang, a + b)}, mínus ${num(lang, c)} je ${num(lang, ans)}.`, `${cap(num(lang, a))} plus ${num(lang, b)} is ${num(lang, a + b)}, minus ${num(lang, c)} is ${num(lang, ans)}.`, `${cap(num(lang, a))} más ${num(lang, b)} es ${num(lang, a + b)}, menos ${num(lang, c)} es ${num(lang, ans)}.`, `${cap(num(lang, a))} plus ${num(lang, b)} je ${num(lang, a + b)}, mínus ${num(lang, c)} je ${num(lang, ans)}.`),
       display: `<div class="sum">${nuts(a)}<span class="op">+</span>${nuts(b)}</div><div class="eq">${a} + ${b} − ${c} = ?</div>`,
       options: numOpts(r, lang, ans, 4, 20)
     };
@@ -237,7 +255,8 @@
   };
   // Spanish letters that sound alike at the start of a word must never compete with each other
   const SAME_ES = [['C', 'K', 'Q', 'S', 'Z', 'X'], ['B', 'V'], ['G', 'J'], ['I', 'Y', 'H', 'A', 'E', 'O', 'U']];
-  const conf = (lang, a, b) => a === b || (lang === 'es' && SAME_ES.some(g => g.includes(a) && g.includes(b)));
+  const SAME_CS = [['I', 'Y'], ['Í', 'Ý'], ['Ú', 'Ů'], ['Ě', 'E']];
+  const conf = (lang, a, b) => a === b || (lang === 'es' && SAME_ES.some(g => g.includes(a) && g.includes(b))) || (lang === 'cs' && SAME_CS.some(g => g.includes(a) && g.includes(b)));
   const FIRST = {
     sk: [['🐟', 'RYBA'], ['🍎', 'JABLKO'], ['🐱', 'MAČKA'], ['🏠', 'DOM'], ['🐶', 'PES'], ['☀️', 'SLNKO'], ['🦉', 'SOVA'], ['🚗', 'AUTO'], ['🍌', 'BANÁN'], ['🦊', 'LÍŠKA'],
       ['🐝', 'VČELA'], ['⭐', 'HVIEZDA'], ['🍋', 'CITRÓN'], ['🐢', 'KORYTNAČKA'], ['🎈', 'BALÓN'], ['🌷', 'TULIPÁN'], ['🐸', 'ŽABA'], ['🐑', 'OVCA'], ['🦁', 'LEV'], ['🚂', 'VLAK'],
@@ -260,8 +279,8 @@
     const f = FIRST[lang].find(x => x[1][0] === L) || WORDS[lang].find(x => x[1][0] === L);
     return f ? f[1].toLowerCase() : null;
   }
-  const letterName = (lang, L, lower) => T(lang, `${lower ? 'malé' : 'písmeno'} ${lower ? L.toLowerCase() : L}`, `${lower ? 'small' : 'the letter'} ${lower ? L.toLowerCase() : L}`, lower ? `la ${L.toLowerCase()} minúscula` : `la letra ${L}`);
-  const letterTeach = (lang, L) => { const w = exampleFor(lang, L); return T(lang, `Písmeno ${L}${w ? ', ako ' + w : ''}.`, `The letter ${L}${w ? ', as in ' + w : ''}.`, `La letra ${L}${w ? ', de ' + w : ''}.`); };
+  const letterName = (lang, L, lower) => T(lang, `${lower ? 'malé' : 'písmeno'} ${lower ? L.toLowerCase() : L}`, `${lower ? 'small' : 'the letter'} ${lower ? L.toLowerCase() : L}`, lower ? `la ${L.toLowerCase()} minúscula` : `la letra ${L}`, `${lower ? 'malé' : 'písmeno'} ${lower ? L.toLowerCase() : L}`);
+  const letterTeach = (lang, L) => { const w = exampleFor(lang, L); return T(lang, `Písmeno ${L}${w ? ', ako ' + w : ''}.`, `The letter ${L}${w ? ', as in ' + w : ''}.`, `La letra ${L}${w ? ', de ' + w : ''}.`, `Písmeno ${L}${w ? ', jako ' + w : ''}.`); };
   function letterOpts(r, lang, target, pool, n, lower) {
     const others = sample(r, pool.filter(l => l !== target), n - 1);
     return shuffle(r, [target, ...others]).map(l => ({ html: big(lower ? l.toLowerCase() : l, 'let'), ok: l === target, say: letterName(lang, l, lower) }));
@@ -273,9 +292,9 @@
       const t = i >= 13 && r() < 0.4 ? pick(r, L.hard) : pick(r, L.easy);
       return {
         kind: 'choose',
-        prompt: voice ? T(lang, `Ťukni na písmeno ${t}.`, `Tap the letter ${t}.`, `Toca la letra ${t}.`) : T(lang, 'Nájdi rovnaké písmeno.', 'Find the same letter.', 'Busca la misma letra.'),
-        say: voice ? letterTeach(lang, t).replace(/^/, T(lang, 'Ťukni na písmeno ' + t + '. ', 'Tap the letter ' + t + '. ', 'Toca la letra ' + t + '. ')) : T(lang, `Nájdi rovnaké písmeno. ${letterTeach(lang, t)}`, `Find the same letter. ${letterTeach(lang, t)}`, `Busca la misma letra. ${letterTeach(lang, t)}`),
-        hint: T(lang, `Pozri sa pozorne. Hľadáme písmeno ${t}.`, `Look carefully. We are looking for the letter ${t}.`, `Mira bien. Buscamos la letra ${t}.`),
+        prompt: voice ? T(lang, `Ťukni na písmeno ${t}.`, `Tap the letter ${t}.`, `Toca la letra ${t}.`, `Ťukni na písmeno ${t}.`) : T(lang, 'Nájdi rovnaké písmeno.', 'Find the same letter.', 'Busca la misma letra.', 'Najdi stejné písmeno.'),
+        say: voice ? letterTeach(lang, t).replace(/^/, T(lang, 'Ťukni na písmeno ' + t + '. ', 'Tap the letter ' + t + '. ', 'Toca la letra ' + t + '. ', 'Ťukni na písmeno ' + t + '. ')) : T(lang, `Nájdi rovnaké písmeno. ${letterTeach(lang, t)}`, `Find the same letter. ${letterTeach(lang, t)}`, `Busca la misma letra. ${letterTeach(lang, t)}`, `Najdi stejné písmeno. ${letterTeach(lang, t)}`),
+        hint: T(lang, `Pozri sa pozorne. Hľadáme písmeno ${t}.`, `Look carefully. We are looking for the letter ${t}.`, `Mira bien. Buscamos la letra ${t}.`, `Podívej se pozorně. Hledáme písmeno ${t}.`),
         answer: letterTeach(lang, t),
         hintShow: big(t, 'let'),
         display: voice ? listen() : big(t, 'let huge'),
@@ -286,10 +305,10 @@
       const hardMix = i >= 22; const pool = hardMix ? all : L.easy;
       const t = hardMix ? pick(r, i % 2 ? L.hard : L.easy) : pick(r, L.easy);
       return {
-        kind: 'choose', prompt: T(lang, 'Nájdi malé písmeno k veľkému.', 'Find the small letter for the big one.', 'Busca la minúscula de esta mayúscula.'),
-        say: T(lang, `Nájdi malé písmeno ${t}.`, `Find the small letter ${t}.`, `Busca la ${t.toLowerCase()} minúscula.`),
-        hint: T(lang, `Veľké ${t} a malé ${t.toLowerCase()} sú to isté písmeno.`, `Big ${t} and small ${t.toLowerCase()} are the same letter.`, `La ${t} mayúscula y la ${t.toLowerCase()} minúscula son la misma letra.`),
-        answer: T(lang, `Veľké ${t} a malé ${t.toLowerCase()}.`, `Big ${t} and small ${t.toLowerCase()}.`, `La ${t} mayúscula y la ${t.toLowerCase()} minúscula.`),
+        kind: 'choose', prompt: T(lang, 'Nájdi malé písmeno k veľkému.', 'Find the small letter for the big one.', 'Busca la minúscula de esta mayúscula.', 'Najdi malé písmeno k velkému.'),
+        say: T(lang, `Nájdi malé písmeno ${t}.`, `Find the small letter ${t}.`, `Busca la ${t.toLowerCase()} minúscula.`, `Najdi malé písmeno ${t}.`),
+        hint: T(lang, `Veľké ${t} a malé ${t.toLowerCase()} sú to isté písmeno.`, `Big ${t} and small ${t.toLowerCase()} are the same letter.`, `La ${t} mayúscula y la ${t.toLowerCase()} minúscula son la misma letra.`, `Velké ${t} a malé ${t.toLowerCase()} jsou stejné písmeno.`),
+        answer: T(lang, `Veľké ${t} a malé ${t.toLowerCase()}.`, `Big ${t} and small ${t.toLowerCase()}.`, `La ${t} mayúscula y la ${t.toLowerCase()} minúscula.`, `Velké ${t} a malé ${t.toLowerCase()}.`),
         hintShow: big(t + ' ' + t.toLowerCase(), 'let'),
         display: big(t, 'let huge'), options: letterOpts(r, lang, t, pool, i < 26 ? 4 : 5, true)
       };
@@ -301,10 +320,10 @@
       const pool = all.filter(l => !conf(lang, l, t));
       const wl = w.toLowerCase();
       return {
-        kind: 'choose', prompt: T(lang, 'Akým písmenom sa začína toto slovo?', 'Which letter does this word start with?', '¿Con qué letra empieza esta palabra?'),
-        say: T(lang, `Akým písmenom sa začína slovo ${wl}?`, `Which letter does the word ${wl} start with?`, `¿Con qué letra empieza la palabra ${wl}?`),
-        hint: T(lang, `Počúvaj: ${t}… ${wl}.`, `Listen: ${t}… ${wl}.`, `Escucha: ${t}… ${wl}.`),
-        answer: T(lang, `${cap(wl)} sa začína na ${t}.`, `${cap(wl)} starts with ${t}.`, `${cap(wl)} empieza con ${t}.`),
+        kind: 'choose', prompt: T(lang, 'Akým písmenom sa začína toto slovo?', 'Which letter does this word start with?', '¿Con qué letra empieza esta palabra?', 'Jakým písmenem začíná toto slovo?'),
+        say: T(lang, `Akým písmenom sa začína slovo ${wl}?`, `Which letter does the word ${wl} start with?`, `¿Con qué letra empieza la palabra ${wl}?`, `Jakým písmenem začíná slovo ${wl}?`),
+        hint: T(lang, `Počúvaj: ${t}… ${wl}.`, `Listen: ${t}… ${wl}.`, `Escucha: ${t}… ${wl}.`, `Poslouchej: ${t}… ${wl}.`),
+        answer: T(lang, `${cap(wl)} sa začína na ${t}.`, `${cap(wl)} starts with ${t}.`, `${cap(wl)} empieza con ${t}.`, `${cap(wl)} začíná na ${t}.`),
         hintShow: big(t, 'let'),
         display: `<button class="word picword" data-say="${wl}">${e}</button>`, options: letterOpts(r, lang, t, [t, ...pool], 4, false)
       };
@@ -316,9 +335,9 @@
     const picks = [base]; const seen = new Set([t]);
     for (const o of others) { if (picks.length >= 4) break; if (![...seen].some(l => conf(lang, l, o[1][0]))) { seen.add(o[1][0]); picks.push(o); } }
     return {
-      kind: 'choose', prompt: T(lang, `Ktorý obrázok sa začína na písmeno ${t}?`, `Which picture starts with the letter ${t}?`, `¿Qué dibujo empieza con la letra ${t}?`),
-      hint: T(lang, `Povedz si každý obrázok nahlas. Ktorý znie na začiatku ${t}?`, `Say each picture out loud. Which one starts with the sound ${t}?`, `Di cada dibujo en voz alta. ¿Cuál empieza con ${t}?`),
-      answer: T(lang, `${cap(base[1].toLowerCase())} sa začína na ${t}.`, `${cap(base[1].toLowerCase())} starts with ${t}.`, `${cap(base[1].toLowerCase())} empieza con ${t}.`),
+      kind: 'choose', prompt: T(lang, `Ktorý obrázok sa začína na písmeno ${t}?`, `Which picture starts with the letter ${t}?`, `¿Qué dibujo empieza con la letra ${t}?`, `Který obrázek začíná na písmeno ${t}?`),
+      hint: T(lang, `Povedz si každý obrázok nahlas. Ktorý znie na začiatku ${t}?`, `Say each picture out loud. Which one starts with the sound ${t}?`, `Di cada dibujo en voz alta. ¿Cuál empieza con ${t}?`, `Řekni každý obrázek nahlas. Který zní na začátku ${t}?`),
+      answer: T(lang, `${cap(base[1].toLowerCase())} sa začína na ${t}.`, `${cap(base[1].toLowerCase())} starts with ${t}.`, `${cap(base[1].toLowerCase())} empieza con ${t}.`, `${cap(base[1].toLowerCase())} začíná na ${t}.`),
       hintShow: big(t, 'let'), display: big(t, 'let huge'),
       options: shuffle(r, picks.map(p => ({ html: emo(p[0]), ok: p === base, say: p[1].toLowerCase() })))
     };
@@ -373,13 +392,13 @@
     const n = i < 3 ? 3 : i < 40 ? 4 : 5;
     if (i < 28) {
       const multi = sylOf(lang, w).length > 1;
-      const hs = sylSay(lang, w, multi ? T(lang, 'Ťukni na slovo. Počúvaj po slabikách:', 'Tap the word. Listen to the syllables:', 'Toca la palabra. Escucha las sílabas:')
-        : T(lang, 'Ťukni na slovo a počúvaj:', 'Tap the word and listen:', 'Toca la palabra y escucha:'));
+      const hs = sylSay(lang, w, multi ? T(lang, 'Ťukni na slovo. Počúvaj po slabikách:', 'Tap the word. Listen to the syllables:', 'Toca la palabra. Escucha las sílabas:', 'Ťukni na slovo. Poslouchej po slabikách:')
+        : T(lang, 'Ťukni na slovo a počúvaj:', 'Tap the word and listen:', 'Toca la palabra y escucha:', 'Ťukni na slovo a poslouchej:'));
       const as = sylSay(lang, w);
       const others = sample(r, W.filter(x => x[0] !== e), n - 1);
       return {
-        kind: 'choose', prompt: T(lang, 'Prečítaj slovo a nájdi obrázok.', 'Read the word and find the picture.', 'Lee la palabra y busca el dibujo.'),
-        say: T(lang, 'Prečítaj slovo a nájdi obrázok. Ťukni na slovo a vypočuješ si ho.', 'Read the word and find the picture. Tap the word to hear it.', 'Lee la palabra y busca el dibujo. Toca la palabra para escucharla.'),
+        kind: 'choose', prompt: T(lang, 'Prečítaj slovo a nájdi obrázok.', 'Read the word and find the picture.', 'Lee la palabra y busca el dibujo.', 'Přečti slovo a najdi obrázek.'),
+        say: T(lang, 'Prečítaj slovo a nájdi obrázok. Ťukni na slovo a vypočuješ si ho.', 'Read the word and find the picture. Tap the word to hear it.', 'Lee la palabra y busca el dibujo. Toca la palabra para escucharla.', 'Přečti slovo a najdi obrázek. Ťukni na slovo a uslyšíš ho.'),
         hint: hs.text, hintParts: hs.parts, answer: as.text, answerParts: as.parts,
         display: `<button class="word" data-say="${wl}">${w}</button>`,
         options: shuffle(r, [[e, w], ...others].map(([ee, ww]) => ({ html: emo(ee), ok: ee === e, say: ww.toLowerCase() })))
@@ -392,9 +411,9 @@
     });
     const others = sample(r, near.slice(0, 8), n - 1);
     return {
-      kind: 'choose', prompt: T(lang, 'Ktoré slovo patrí k obrázku?', 'Which word goes with the picture?', '¿Qué palabra va con el dibujo?'),
-      hint: T(lang, `Hľadáme slovo ${wl}. Začína sa na ${w[0]}.`, `We need the word ${wl}. It starts with ${w[0]}.`, `Buscamos la palabra ${wl}. Empieza con ${w[0]}.`),
-      answer: T(lang, `${cap(wl)}.`, `${cap(wl)}.`),
+      kind: 'choose', prompt: T(lang, 'Ktoré slovo patrí k obrázku?', 'Which word goes with the picture?', '¿Qué palabra va con el dibujo?', 'Které slovo patří k obrázku?'),
+      hint: T(lang, `Hľadáme slovo ${wl}. Začína sa na ${w[0]}.`, `We need the word ${wl}. It starts with ${w[0]}.`, `Buscamos la palabra ${wl}. Empieza con ${w[0]}.`, `Hledáme slovo ${wl}. Začíná na ${w[0]}.`),
+      answer: T(lang, `${cap(wl)}.`, `${cap(wl)}.`, undefined, `${cap(wl)}.`),
       display: emo(e, 'huge'),
       options: shuffle(r, [[e, w], ...others].map(([, ww]) => ({ html: big(ww, 'wordopt'), ok: ww === w, say: ww.toLowerCase() }))), wide: true
     };
@@ -412,19 +431,19 @@
   }
   const houseName = (lang, c, deco) => T(lang, `${adj(c, 'm')} domček${deco === 'tree' ? ' so stromom' : deco === 'flower' ? ' so slnečnicou' : ''}`,
     `the ${c.en} house${deco === 'tree' ? ' with a tree' : deco === 'flower' ? ' with a sunflower' : ''}`,
-    `la casita ${c.es.f}${deco === 'tree' ? ' con árbol' : deco === 'flower' ? ' con girasol' : ''}`);
-  const livesIn = (lang, who, c) => T(lang, `${who.sk} býva ${vIn(adj(c, 'loc'))} domčeku.`, `${who.en} lives in the ${c.en} house.`, `${who.es} vive en la casita ${c.es.f}.`);
+    `la casita ${c.es.f}${deco === 'tree' ? ' con árbol' : deco === 'flower' ? ' con girasol' : ''}`, `${adjC(c, 'm')} domeček${deco === 'tree' ? ' se stromem' : deco === 'flower' ? ' se slunečnicí' : ''}`);
+  const livesIn = (lang, who, c) => T(lang, `${who.sk} býva ${vIn(adj(c, 'loc'))} domčeku.`, `${who.en} lives in the ${c.en} house.`, `${who.es} vive en la casita ${c.es.f}.`, `${who.cs} bydlí ${vInC(adjC(c, 'loc'))} domečku.`);
   function genRiddles(i, lang, r) {
     if (i < 10) {
       const [c1, c2] = sample(r, CATS, 2);
       const n = i < 5 ? 5 : 6;
       const same = sample(r, c1.items, n - 1), odd = pick(r, c2.items);
-      const nm = it => lang === 'sk' ? it[1] : lang === 'es' ? it[3] : it[2];
+      const nm = it => lang === 'sk' ? it[1] : lang === 'cs' ? cz(it[1]) : lang === 'es' ? it[3] : it[2];
       return {
-        kind: 'choose', prompt: T(lang, 'Čo sem nepatrí?', 'Which one does not belong?', '¿Cuál no va aquí?'),
-        say: T(lang, `Čo sem nepatrí? ${c1.skAll}`, `Which one does not belong? ${c1.enAll}`, `¿Cuál no va aquí? ${c1.esAll}`),
-        hint: T(lang, `${c1.skAll} Čo medzi ne nepatrí?`, `${c1.enAll} Which one is different?`, `${c1.esAll} ¿Cuál es diferente?`),
-        answer: T(lang, `${cap(nm(odd))} nepatrí medzi ${c1.sk}.`, `The ${nm(odd)} does not belong with the ${c1.en}.`, `${cap(nm(odd))} no va con ${c1.es}.`),
+        kind: 'choose', prompt: T(lang, 'Čo sem nepatrí?', 'Which one does not belong?', '¿Cuál no va aquí?', 'Co sem nepatří?'),
+        say: T(lang, `Čo sem nepatrí? ${c1.skAll}`, `Which one does not belong? ${c1.enAll}`, `¿Cuál no va aquí? ${c1.esAll}`, `Co sem nepatří? ${c1.csAll}`),
+        hint: T(lang, `${c1.skAll} Čo medzi ne nepatrí?`, `${c1.enAll} Which one is different?`, `${c1.esAll} ¿Cuál es diferente?`, `${c1.csAll} Co mezi ně nepatří?`),
+        answer: T(lang, `${cap(nm(odd))} nepatrí medzi ${c1.sk}.`, `The ${nm(odd)} does not belong with the ${c1.en}.`, `${cap(nm(odd))} no va con ${c1.es}.`, `${cap(nm(odd))} nepatří mezi ${c1.cs}.`),
         display: emo('🔍'),
         options: shuffle(r, [...same.map(e => ({ html: emo(e[0]), ok: false, say: nm(e) })), { html: emo(odd[0]), ok: true, say: nm(odd) }])
       };
@@ -438,7 +457,7 @@
         pool = cs.map((c, k) => shapeSVG(ss[k].id, c.hex)); names = cs.map((c, k) => colShape(lang, c, ss[k]));
       } else {
         const its = sample(r, pick(r, CATS).items, 4);
-        pool = its.map(e => emo(e[0])); names = its.map(e => lang === 'sk' ? e[1] : lang === 'es' ? e[3] : e[2]);
+        pool = its.map(e => emo(e[0])); names = its.map(e => lang === 'sk' ? e[1] : lang === 'cs' ? cz(e[1]) : lang === 'es' ? e[3] : e[2]);
       }
       let unit;
       if (i < 12) unit = [0, 1]; else if (i < 16) unit = r() < 0.5 ? [0, 0, 1] : [0, 1, 1]; else if (i < 21) unit = r() < 0.5 ? [0, 1, 2] : [0, 1, 1, 2]; else unit = [0, 1, 2, 3];
@@ -446,10 +465,10 @@
       for (let k = 0; k <= shown; k++) items.push(unit[k % unit.length]);
       const next = items.pop();
       return {
-        kind: 'choose', prompt: T(lang, 'Čo príde ďalej?', 'What comes next?', '¿Qué sigue?'),
-        say: T(lang, `Čo príde ďalej? ${items.map(k => names[k]).join(', ')}, a potom?`, `What comes next? ${items.map(k => names[k]).join(', ')}, and then?`, `¿Qué sigue? ${items.map(k => names[k]).join(', ')}, ¿y después?`),
-        hint: T(lang, `Povedz si to nahlas: ${items.slice(0, unit.length * 2).map(k => names[k]).join(', ')}…`, `Say it out loud: ${items.slice(0, unit.length * 2).map(k => names[k]).join(', ')}…`, `Dilo en voz alta: ${items.slice(0, unit.length * 2).map(k => names[k]).join(', ')}…`),
-        answer: T(lang, `Potom ${PLUR.test(names[next]) ? 'prídu' : 'príde'} ${names[next]}.`, `Next ${PLUR.test(names[next]) ? 'come' : 'comes'} the ${names[next]}.`, `Después ${/^(las|los) /.test(names[next]) ? 'vienen' : 'viene'} ${names[next]}.`),
+        kind: 'choose', prompt: T(lang, 'Čo príde ďalej?', 'What comes next?', '¿Qué sigue?', 'Co přijde dál?'),
+        say: T(lang, `Čo príde ďalej? ${items.map(k => names[k]).join(', ')}, a potom?`, `What comes next? ${items.map(k => names[k]).join(', ')}, and then?`, `¿Qué sigue? ${items.map(k => names[k]).join(', ')}, ¿y después?`, `Co přijde dál? ${items.map(k => names[k]).join(', ')}, a potom?`),
+        hint: T(lang, `Povedz si to nahlas: ${items.slice(0, unit.length * 2).map(k => names[k]).join(', ')}…`, `Say it out loud: ${items.slice(0, unit.length * 2).map(k => names[k]).join(', ')}…`, `Dilo en voz alta: ${items.slice(0, unit.length * 2).map(k => names[k]).join(', ')}…`, `Řekni to nahlas: ${items.slice(0, unit.length * 2).map(k => names[k]).join(', ')}…`),
+        answer: T(lang, `Potom ${PLUR.test(names[next]) ? 'prídu' : 'príde'} ${names[next]}.`, `Next ${PLUR.test(names[next]) ? 'come' : 'comes'} the ${names[next]}.`, `Después ${/^(las|los) /.test(names[next]) ? 'vienen' : 'viene'} ${names[next]}.`, `Potom ${PLUR_CS.test(names[next]) ? 'přijdou' : 'přijde'} ${names[next]}.`),
         display: `<div class="seq">${items.map(k => `<span class="cell">${pool[k]}</span>`).join('')}<span class="cell q">?</span></div>`,
         options: shuffle(r, [0, 1, 2, 3].map(k => ({ html: pool[k], ok: k === next, say: names[k] })))
       };
@@ -460,7 +479,7 @@
       return {
         kind: 'choose', houses: true,
         prompt: livesIn(lang, who, cols[0]),
-        hint: T(lang, `Hľadáme ${adj(cols[0], 'm')} domček.`, `Look for the ${cols[0].en} house.`, `Buscamos la casita ${cols[0].es.f}.`),
+        hint: T(lang, `Hľadáme ${adj(cols[0], 'm')} domček.`, `Look for the ${cols[0].en} house.`, `Buscamos la casita ${cols[0].es.f}.`, `Hledáme ${adjC(cols[0], 'm')} domeček.`),
         answer: livesIn(lang, who, cols[0]),
         display: emo(who.e) + listen(),
         options: shuffle(r, cols.map((c, k) => ({ html: houseSVG(c.hex), ok: k === 0, say: houseName(lang, c) })))
@@ -472,12 +491,12 @@
       const tDeco = withTree ? 'tree' : 'flower', oDeco = withTree ? 'flower' : 'tree';
       const opts = [{ c: a, d: tDeco, ok: true }, { c: a, d: oDeco, ok: false }, { c: b, d: tDeco, ok: false }];
       if (i >= 34) opts.push({ c: b, d: oDeco, ok: false });
-      const nearW = withTree ? T(lang, 'so stromom', 'with the tree', 'con el árbol') : T(lang, 'so slnečnicou', 'with the sunflower', 'con el girasol');
+      const nearW = withTree ? T(lang, 'so stromom', 'with the tree', 'con el árbol', 'se stromem') : T(lang, 'so slnečnicou', 'with the sunflower', 'con el girasol', 'se slunečnicí');
       return {
         kind: 'choose', houses: true,
-        prompt: T(lang, `${who.sk} býva ${vIn(adj(a, 'loc'))} domčeku ${nearW}.`, `${who.en} lives in the ${a.en} house ${nearW}.`, `${who.es} vive en la casita ${a.es.f} ${nearW}.`),
-        hint: T(lang, `Sú tu dva ${adj(a, 'pl')} domčeky. Ktorý je ${nearW}?`, `There are two ${a.en} houses. Which one is ${nearW}?`, `Hay dos casitas ${a.es.fp}. ¿Cuál es la casita ${nearW}?`),
-        answer: T(lang, `${who.sk} býva ${vIn(adj(a, 'loc'))} domčeku ${nearW}.`, `${who.en} lives in the ${a.en} house ${nearW}.`, `${who.es} vive en la casita ${a.es.f} ${nearW}.`),
+        prompt: T(lang, `${who.sk} býva ${vIn(adj(a, 'loc'))} domčeku ${nearW}.`, `${who.en} lives in the ${a.en} house ${nearW}.`, `${who.es} vive en la casita ${a.es.f} ${nearW}.`, `${who.cs} bydlí ${vInC(adjC(a, 'loc'))} domečku ${nearW}.`),
+        hint: T(lang, `Sú tu dva ${adj(a, 'pl')} domčeky. Ktorý je ${nearW}?`, `There are two ${a.en} houses. Which one is ${nearW}?`, `Hay dos casitas ${a.es.fp}. ¿Cuál es la casita ${nearW}?`, `Jsou tu dva ${adjC(a, 'pl')} domečky. Který je ${nearW}?`),
+        answer: T(lang, `${who.sk} býva ${vIn(adj(a, 'loc'))} domčeku ${nearW}.`, `${who.en} lives in the ${a.en} house ${nearW}.`, `${who.es} vive en la casita ${a.es.f} ${nearW}.`, `${who.cs} bydlí ${vInC(adjC(a, 'loc'))} domečku ${nearW}.`),
         display: emo(who.e) + listen(),
         options: shuffle(r, opts.map(o => ({ html: houseSVG(o.c.hex, o.d), ok: o.ok, say: houseName(lang, o.c, o.d) })))
       };
@@ -487,8 +506,8 @@
       const L = cols[t - 1], R = cols[t + 1];
       return {
         kind: 'choose', houses: true, keepOrder: true,
-        prompt: T(lang, `${who.sk} býva v domčeku medzi ${adj(L, 'ins')} a ${adj(R, 'ins')} domčekom.`, `${who.en} lives in the house between the ${L.en} house and the ${R.en} house.`, `${who.es} vive en la casita que está entre la casita ${L.es.f} y la casita ${R.es.f}.`),
-        hint: T(lang, `Nájdi ${adj(L, 'm')} a ${adj(R, 'm')} domček. ${who.sk} býva v strede medzi nimi.`, `Find the ${L.en} and the ${R.en} house. ${who.en} lives in the middle.`, `Busca la casita ${L.es.f} y la casita ${R.es.f}. ${who.es} vive en medio de las dos.`),
+        prompt: T(lang, `${who.sk} býva v domčeku medzi ${adj(L, 'ins')} a ${adj(R, 'ins')} domčekom.`, `${who.en} lives in the house between the ${L.en} house and the ${R.en} house.`, `${who.es} vive en la casita que está entre la casita ${L.es.f} y la casita ${R.es.f}.`, `${who.cs} bydlí v domečku mezi ${adjC(L, 'ins')} a ${adjC(R, 'ins')} domečkem.`),
+        hint: T(lang, `Nájdi ${adj(L, 'm')} a ${adj(R, 'm')} domček. ${who.sk} býva v strede medzi nimi.`, `Find the ${L.en} and the ${R.en} house. ${who.en} lives in the middle.`, `Busca la casita ${L.es.f} y la casita ${R.es.f}. ${who.es} vive en medio de las dos.`, `Najdi ${adjC(L, 'm')} a ${adjC(R, 'm')} domeček. ${who.cs} bydlí uprostřed mezi nimi.`),
         answer: livesIn(lang, who, cols[t]),
         display: emo(who.e) + listen(),
         options: cols.map((c, k) => ({ html: houseSVG(c.hex), ok: k === t, say: houseName(lang, c) }))
@@ -498,11 +517,11 @@
     const [x, y, z, w] = sample(r, COLORS, 4);
     const withTree = r() < 0.5; const d = withTree ? 'tree' : 'flower', od = withTree ? 'flower' : 'tree';
     const opts = [{ c: y, d, ok: true }, { c: x, d, ok: false }, { c: z, d: od, ok: false }, { c: w, d: null, ok: false }];
-    const hasW = withTree ? T(lang, `Pri ${who.poss} domčeku rastie strom.`, 'There is a tree by its house.', 'Junto a su casita hay un árbol.') : T(lang, `Pri ${who.poss} domčeku rastie slnečnica.`, 'There is a sunflower by its house.', 'Junto a su casita hay un girasol.');
+    const hasW = withTree ? T(lang, `Pri ${who.poss} domčeku rastie strom.`, 'There is a tree by its house.', 'Junto a su casita hay un árbol.', `U ${who.csPoss} domečku roste strom.`) : T(lang, `Pri ${who.poss} domčeku rastie slnečnica.`, 'There is a sunflower by its house.', 'Junto a su casita hay un girasol.', `U ${who.csPoss} domečku roste slunečnice.`);
     return {
       kind: 'choose', houses: true,
-      prompt: T(lang, `${who.sk} nebýva ${vIn(adj(x, 'loc'))} domčeku. ${hasW}`, `${who.en} does not live in the ${x.en} house. ${hasW}`, `${who.es} no vive en la casita ${x.es.f}. ${hasW}`),
-      hint: T(lang, `Najprv nájdi domčeky ${withTree ? 'so stromom' : 'so slnečnicou'}. Potom vynechaj ${adj(x, 'm')}.`, `First find the houses ${withTree ? 'with a tree' : 'with a sunflower'}. Then skip the ${x.en} one.`, `Primero busca las casitas ${withTree ? 'con árbol' : 'con girasol'}. Luego descarta la casita ${x.es.f}.`),
+      prompt: T(lang, `${who.sk} nebýva ${vIn(adj(x, 'loc'))} domčeku. ${hasW}`, `${who.en} does not live in the ${x.en} house. ${hasW}`, `${who.es} no vive en la casita ${x.es.f}. ${hasW}`, `${who.cs} nebydlí ${vInC(adjC(x, 'loc'))} domečku. ${hasW}`),
+      hint: T(lang, `Najprv nájdi domčeky ${withTree ? 'so stromom' : 'so slnečnicou'}. Potom vynechaj ${adj(x, 'm')}.`, `First find the houses ${withTree ? 'with a tree' : 'with a sunflower'}. Then skip the ${x.en} one.`, `Primero busca las casitas ${withTree ? 'con árbol' : 'con girasol'}. Luego descarta la casita ${x.es.f}.`, `Nejdřív najdi domečky ${withTree ? 'se stromem' : 'se slunečnicí'}. Pak vynech ${adjC(x, 'm')}.`),
       answer: livesIn(lang, who, y),
       display: emo(who.e) + listen(),
       options: shuffle(r, opts.map(o => ({ html: houseSVG(o.c.hex, o.d), ok: o.ok, say: houseName(lang, o.c, o.d) })))
@@ -521,8 +540,8 @@
     if (slot === 'hat') { [key, cid] = val.split('|'); }
     const it = ITEM[key], c = colorOf(cid);
     if (lang === 'es') return esNoun(c, it.es, it.eg, acc ? UN : ART); // acc = 'un gorro rojo', else 'el gorro rojo'
-    if (acc && it.g === 'f') return T(lang, `${adj(c, 'accF')} ${it.sk.replace(/a$/, 'u')}`, `${c.en} ${it.en}`); // červenú čiapku
-    return T(lang, `${adj(c, it.g)} ${it.sk}`, `${c.en} ${it.en}`);
+    if (acc && it.g === 'f') return T(lang, `${adj(c, 'accF')} ${it.sk.replace(/a$/, 'u')}`, `${c.en} ${it.en}`, undefined, `${adjC(c, 'accF')} ${it.csAcc}`); // červenú čiapku
+    return T(lang, `${adj(c, it.g)} ${it.sk}`, `${c.en} ${it.en}`, undefined, `${acc && it.cg === 'f' ? adjC(c, 'accF') + ' ' + it.csAcc : adjC(c, it.cg) + ' ' + it.cs}`);
   }
   const SLOT_Q = {
     hat: { sk: 'Pozri sa, čo má zajačik na hlave.', en: 'Look at what the bunny wears on its head.', es: 'Mira lo que lleva el conejito en la cabeza.' },
@@ -530,7 +549,7 @@
     shirt: { sk: 'Pozri sa na tričko.', en: 'Look at the shirt.', es: 'Mira la camiseta.' },
     shoes: { sk: 'Pozri sa na topánky.', en: 'Look at the shoes.', es: 'Mira los zapatos.' }
   };
-  const joinAnd = (lang, arr) => arr.length < 2 ? arr.join('') : arr.slice(0, -1).join(', ') + T(lang, ' a ', ' and ', ' y ') + arr[arr.length - 1];
+  const joinAnd = (lang, arr) => arr.length < 2 ? arr.join('') : arr.slice(0, -1).join(', ') + T(lang, ' a ', ' and ', ' y ', ' a ') + arr[arr.length - 1];
   function genDress(i, lang, r) {
     const slots = i < 6 ? ['hat'] : i < 16 ? ['hat', 'scarf'] : i < 30 ? ['hat', 'scarf', 'shirt'] : ['hat', 'scarf', 'shirt', 'shoes'];
     const nCh = i < 8 ? 3 : 4;
@@ -553,14 +572,14 @@
     const byEar = i >= 44; // last tasks: no picture, only listen
     return {
       kind: 'dress', slots, target, choices, byEar,
-      prompt: byEar ? T(lang, `Obleč zajačika: ${joinAnd(lang, names)}.`, `Dress the bunny: ${joinAnd(lang, names)}.`, `Viste al conejito: ${joinAnd(lang, namesAcc)}.`)
-        : T(lang, 'Obleč zajačika presne ako na obrázku. Potom ťukni na fajku.', 'Dress the bunny just like in the picture. Then tap the check mark.', 'Viste al conejito igual que en el dibujo. Luego toca la palomita.'),
-      say: byEar ? T(lang, `Počúvaj. Obleč zajačika: ${joinAnd(lang, names)}. Potom ťukni na fajku.`, `Listen. Dress the bunny: ${joinAnd(lang, names)}. Then tap the check mark.`, `Escucha. Viste al conejito: ${joinAnd(lang, namesAcc)}. Luego toca la palomita.`)
-        : T(lang, `Obleč zajačika ako na obrázku: ${joinAnd(lang, names)}. Potom ťukni na fajku.`, `Dress the bunny like in the picture: ${joinAnd(lang, names)}. Then tap the check mark.`, `Viste al conejito como en el dibujo: ${joinAnd(lang, namesAcc)}. Luego toca la palomita.`),
-      hint: T(lang, 'Porovnaj zajačika s obrázkom.', 'Compare the bunny with the picture.', 'Compara al conejito con el dibujo.'),
-      answer: T(lang, `Zajačik má ${joinAnd(lang, namesAcc)}.`, `The bunny has a ${joinAnd(lang, names)}.`.replace('a shoes', 'shoes'), `El conejito tiene ${joinAnd(lang, namesAcc)}.`),
+      prompt: byEar ? T(lang, `Obleč zajačika: ${joinAnd(lang, names)}.`, `Dress the bunny: ${joinAnd(lang, names)}.`, `Viste al conejito: ${joinAnd(lang, namesAcc)}.`, `Obleč zajíčka: ${joinAnd(lang, names)}.`)
+        : T(lang, 'Obleč zajačika presne ako na obrázku. Potom ťukni na fajku.', 'Dress the bunny just like in the picture. Then tap the check mark.', 'Viste al conejito igual que en el dibujo. Luego toca la palomita.', 'Obleč zajíčka přesně jako na obrázku. Pak ťukni na fajfku.'),
+      say: byEar ? T(lang, `Počúvaj. Obleč zajačika: ${joinAnd(lang, names)}. Potom ťukni na fajku.`, `Listen. Dress the bunny: ${joinAnd(lang, names)}. Then tap the check mark.`, `Escucha. Viste al conejito: ${joinAnd(lang, namesAcc)}. Luego toca la palomita.`, `Poslouchej. Obleč zajíčka: ${joinAnd(lang, names)}. Pak ťukni na fajfku.`)
+        : T(lang, `Obleč zajačika ako na obrázku: ${joinAnd(lang, names)}. Potom ťukni na fajku.`, `Dress the bunny like in the picture: ${joinAnd(lang, names)}. Then tap the check mark.`, `Viste al conejito como en el dibujo: ${joinAnd(lang, namesAcc)}. Luego toca la palomita.`, `Obleč zajíčka jako na obrázku: ${joinAnd(lang, names)}. Pak ťukni na fajfku.`),
+      hint: T(lang, 'Porovnaj zajačika s obrázkom.', 'Compare the bunny with the picture.', 'Compara al conejito con el dibujo.', 'Porovnej zajíčka s obrázkem.'),
+      answer: T(lang, `Zajačik má ${joinAnd(lang, namesAcc)}.`, `The bunny has a ${joinAnd(lang, names)}.`.replace('a shoes', 'shoes'), `El conejito tiene ${joinAnd(lang, namesAcc)}.`, `Zajíček má ${joinAnd(lang, namesAcc)}.`),
       slotHints: Object.fromEntries(slots.map(s => [s, SLOT_Q[s][lang]])),
-      slotNames: Object.fromEntries(slots.map(s => [s, T(lang, `Zajačik má mať ${itemName(lang, s, target[s], true)}.`, `The bunny needs the ${itemName(lang, s, target[s])}.`, `El conejito necesita ${itemName(lang, s, target[s], true)}.`)])),
+      slotNames: Object.fromEntries(slots.map(s => [s, T(lang, `Zajačik má mať ${itemName(lang, s, target[s], true)}.`, `The bunny needs the ${itemName(lang, s, target[s])}.`, `El conejito necesita ${itemName(lang, s, target[s], true)}.`, `Zajíček má mít ${itemName(lang, s, target[s], true)}.`)])),
       itemSay: Object.fromEntries(slots.map(s => [s, Object.fromEntries(choices[s].map(v => [v, itemName(lang, s, v)]))]))
     };
   }
@@ -595,6 +614,19 @@
     return `<svg viewBox="0 0 100 100" class="item"><path d="M8 62 Q8 44 26 44 L34 44 Q38 60 50 62 L54 62 Q60 62 60 72 L60 78 L8 78 Z" fill="${c}" stroke="rgba(0,0,0,.2)" stroke-width="3"/><path d="M44 62 Q44 44 62 44 L70 44 Q74 60 86 62 L90 62 Q96 62 96 72 L96 78 L44 78 Z" fill="${c}" stroke="rgba(0,0,0,.2)" stroke-width="3"/></svg>`;
   }
 
+
+  // ----- Czech data -----
+  const CSW = {RYBA:'RYBA',JABLKO:'JABLKO',MAČKA:'KOČKA',DOM:'DŮM',PES:'PES',SLNKO:'SLUNCE',SOVA:'SOVA',AUTO:'AUTO',BANÁN:'BANÁN',LÍŠKA:'LIŠKA',VČELA:'VČELA',HVIEZDA:'HVĚZDA',CITRÓN:'CITRON',KORYTNAČKA:'ŽELVA',BALÓN:'BALÓNEK',TULIPÁN:'TULIPÁN',ŽABA:'ŽÁBA',OVCA:'OVCE',LEV:'LEV',VLAK:'VLAK',SLON:'SLON',MESIAC:'MĚSÍC',HAD:'HAD',RUŽA:'RŮŽE',MELÓN:'MELOUN',KOZA:'KOZA',SYR:'SÝR',KORUNA:'KORUNA',MYŠ:'MYŠ',STROM:'STROM',HROZNO:'HROZNY',KAČKA:'KACHNA',LIENKA:'BERUŠKA',JAHODA:'JAHODA',DARČEK:'DÁREK',ŽIRAFA:'ŽIRAFA',SLIEPKA:'SLEPICE',MUFFIN:'MUFFIN',RAKETA:'RAKETA',PIZZA:'PIZZA',OKO:'OKO',NOS:'NOS',KÔŇ:'KŮŇ',LES:'LES',ZUB:'ZUB',LOĎ:'LOĎ',MAMA:'MÁMA',TATO:'TÁTA',RUKA:'RUKA',NOHA:'NOHA',UCHO:'UCHO',KVET:'KVĚT',DÚHA:'DUHA',LOPTA:'MÍČ',KNIHA:'KNIHA',TORTA:'DORT',BABKA:'BABIČKA',OBLAK:'MRAK',MOTÝĽ:'MOTÝL',KOHÚT:'KOHOUT',HRUŠKA:'HRUŠKA',MEDVEĎ:'MEDVĚD',BICYKEL:'KOLO',DÁŽDNIK:'DEŠTNÍK',PAPAGÁJ:'PAPOUŠEK',ZMRZLINA:'ZMRZLINA',LIETADLO:'LETADLO',SLNEČNICA:'SLUNEČNICE',VEVERIČKA:'VEVERKA',ČOKOLÁDA:'ČOKOLÁDA',JAŠTERICA:'JEŠTĚRKA',RAK:'RAK',VLK:'VLK',MED:'MED',ČAJ:'ČAJ',HRAD:'HRAD',HRIB:'HŘIB',ŠÁL:'ŠÁLA',CHLIEB:'CHLÉB',KĽÚČ:'KLÍČ',LAMA:'LAMA',MAPA:'MAPA',PERO:'PERO',LYŽE:'LYŽE',OROL:'OREL',ZEBRA:'ZEBRA',TIGER:'TYGR',KRAVA:'KRÁVA',MRKVA:'MRKEV',TAŠKA:'TAŠKA',VAJCE:'VEJCE',JEŽKO:'JEŽEK',PAVÚK:'PAVOUK',LABUŤ:'LABUŤ',KOLÁČ:'KOLÁČ',VLAJKA:'VLAJKA',ČIAPKA:'ČEPICE',DELFÍN:'DELFÍN',SLIMÁK:'ŠNEK',MLIEKO:'MLÉKO',BUBON:'BUBEN',KAKTUS:'KAKTUS',GITARA:'KYTARA',HODINY:'HODINY',TRAKTOR:'TRAKTOR',TUČNIAK:'TUČŇÁK',PONOŽKY:'PONOŽKY',TELEFÓN:'TELEFON',OKULIARE:'BRÝLE',KROKODÍL:'KROKODÝL',KUKURICA:'KUKUŘICE',PARADAJKA:'RAJČE',CHOBOTNICA:'CHOBOTNICE',DINOSAURUS:'DINOSAURUS',JELEŇ:'JELEN',ČEREŠNE:'TŘEŠNĚ'};
+  const csL = L => L.map(([e, w]) => [e, CSW[w] || w]);
+  FIRST.cs = csL(FIRST.sk); WORDS.cs = csL(WORDS.sk); SYL.cs = {RYBA:'ry-ba',JABLKO:'jab-lko',KOČKA:'koč-ka',SLUNCE:'slun-ce',SOVA:'so-va',AUTO:'au-to',BANÁN:'ba-nán',LIŠKA:'liš-ka',VČELA:'vče-la',HVĚZDA:'hvěz-da',CITRON:'ci-tron',ŽELVA:'žel-va',BALÓNEK:'ba-ló-nek',TULIPÁN:'tu-li-pán',ŽÁBA:'žá-ba',OVCE:'ov-ce',MĚSÍC:'mě-síc',RŮŽE:'rů-že',MELOUN:'me-loun',KOZA:'ko-za',KORUNA:'ko-ru-na',HROZNY:'hroz-ny',KACHNA:'kach-na',BERUŠKA:'be-ruš-ka',JAHODA:'ja-ho-da',DÁREK:'dá-rek',ŽIRAFA:'ži-ra-fa',SLEPICE:'sle-pi-ce',MUFFIN:'muf-fin',RAKETA:'ra-ke-ta',PIZZA:'piz-za',OKO:'o-ko',MÁMA:'má-ma',TÁTA:'tá-ta',RUKA:'ru-ka',NOHA:'no-ha',UCHO:'u-cho',DUHA:'du-ha',KNIHA:'kni-ha',BABIČKA:'ba-bič-ka',MOTÝL:'mo-týl',KOHOUT:'ko-hout',HRUŠKA:'hruš-ka',MEDVĚD:'med-věd',KOLO:'ko-lo',DEŠTNÍK:'dešt-ník',PAPOUŠEK:'pa-pou-šek',ZMRZLINA:'zmrz-li-na',LETADLO:'le-tad-lo',SLUNEČNICE:'slu-neč-ni-ce',VEVERKA:'ve-ver-ka',ČOKOLÁDA:'čo-ko-lá-da',JEŠTĚRKA:'ješ-těr-ka',ŠÁLA:'šá-la',LAMA:'la-ma',MAPA:'ma-pa',PERO:'pe-ro',LYŽE:'ly-že',OREL:'o-rel',ZEBRA:'ze-bra',TYGR:'ty-gr',KRÁVA:'krá-va',MRKEV:'mr-kev',TAŠKA:'taš-ka',VEJCE:'vej-ce',JEŽEK:'je-žek',PAVOUK:'pa-vouk',LABUŤ:'la-buť',KOLÁČ:'ko-láč',VLAJKA:'vlaj-ka',ČEPICE:'če-pi-ce',DELFÍN:'del-fín',MLÉKO:'mlé-ko',BUBEN:'bu-ben',KAKTUS:'kak-tus',KYTARA:'ky-ta-ra',HODINY:'ho-di-ny',TRAKTOR:'trak-tor',TUČŇÁK:'tuč-ňák',PONOŽKY:'po-nož-ky',TELEFON:'te-le-fon',BRÝLE:'brý-le',KROKODÝL:'kro-ko-dýl',KUKUŘICE:'ku-ku-ři-ce',RAJČE:'raj-če',CHOBOTNICE:'cho-bot-ni-ce',DINOSAURUS:'di-no-sau-rus',JELEN:'je-len',TŘEŠNĚ:'třeš-ně',CHLÉB:'chléb'};
+  LET.cs = { easy: LET.sk.easy, hard: 'Č Š Ž Ř Á É Í Ó Ú Ů Ě Ď Ť Ň Y Ý F G'.split(' ') };
+  const CS_CATS = [['ovoce', 'Skoro všechno tady je ovoce.'], ['zvířátka', 'Skoro všechno tady jsou zvířátka.'], ['vozidla', 'Skoro všechno tady jsou vozidla.'], ['oblečení', 'Skoro všechno tady je oblečení.'], ['květiny a stromy', 'Skoro všechno tady jsou květiny a stromy.']];
+  CATS.forEach((c, k) => { [c.cs, c.csAll] = CS_CATS[k]; });
+  const CS_HOUSE = { '🐰': ['Zajíček', 'jeho'], '🦔': ['Ježek', 'jeho'], '🐭': ['Myška', 'jejího'], '🐱': ['Kočička', 'jejího'] };
+  HOUSE_ANIMALS.forEach(h => { [h.cs, h.csPoss] = CS_HOUSE[h.e]; });
+  Object.assign(ITEM.beanie, { cs: 'čepice', csAcc: 'čepici', cg: 'f' }); Object.assign(ITEM.tophat, { cs: 'klobouk', cg: 'm' }); Object.assign(ITEM.scarf, { cs: 'šála', csAcc: 'šálu', cg: 'f' });
+  Object.assign(ITEM.shirt, { cs: 'tričko', cg: 'n' }); Object.assign(ITEM.shoes, { cs: 'boty', cg: 'pl' });
+  SLOT_Q.hat.cs = 'Podívej se, co má zajíček na hlavě.'; SLOT_Q.scarf.cs = 'Podívej se na šálu.'; SLOT_Q.shirt.cs = 'Podívej se na tričko.'; SLOT_Q.shoes.cs = 'Podívej se na boty.';
   const GAMES = [
     { id: 'colors', img: 'chameleon', color: '#f7d6e6', gen: genColors,
       title: { sk: 'Farby a tvary', en: 'Colors & Shapes', es: 'Colores y formas' }, helper: { sk: 'Chameleón Kamil', en: 'Kamil the Chameleon', es: 'Kamil el camaleón' },
@@ -617,6 +649,9 @@
   ];
 
   // task type (stage) of each index; listen-only stages must speak their content every time
+
+  const CS_GAMES = {"colors": ["Barvy a tvary", "Chameleon Kamil", "Ahoj, já jsem chameleon Kamil. Umím měnit barvy! Pojď se mnou hledat barvy a tvary."], "count": ["Počítání", "Veverka Věrka", "Ahoj, já jsem veverka Věrka. Mám plno oříšků. Pojď je se mnou počítat!"], "letters": ["Písmenka", "Sovička Soňa", "Ahoj, já jsem sovička Soňa. Ráda čtu knížky. Pojď poznávat písmenka!"], "words": ["První slova", "Papoušek Pepa", "Ahoj, já jsem papoušek Pepa. Rád povídám. Pojď číst první slova!"], "riddles": ["Hádanky", "Liška Lili", "Ahoj, já jsem liška Lili. Mám ráda hádanky. Pojď je se mnou řešit!"], "dress": ["Oblékání", "Zajíček Zajda", "Ahoj, já jsem zajíček Zajda. Pomůžeš mi obléknout se podle obrázku?"]};
+  GAMES.forEach(g => { const v = CS_GAMES[g.id]; if (v) { g.title.cs = v[0]; g.helper.cs = v[1]; g.intro.cs = v[2]; } });
   function stageOf(id, i) {
     switch (id) {
       case 'colors': return i < 8 ? ['color'] : i < 18 ? ['shape'] : i < 30 ? ['both'] : ['byear', true];
@@ -634,5 +669,5 @@
     const [st, listen] = stageOf(gameId, index); t.type = gameId + ':' + st; t.listenOnly = listen; return t;
   }
 
-  window.ZS_GAMES = { GAMES, TASKS_PER_GAME, getTask, bunnySVG, itemSVG, num, nutsW, conf, FIRST };
+  window.ZS_GAMES = { czMiss,  GAMES, TASKS_PER_GAME, getTask, bunnySVG, itemSVG, num, nutsW, conf, FIRST };
 })();
