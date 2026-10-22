@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   const { GAMES, TASKS_PER_GAME, getTask, bunnySVG, itemSVG, num } = window.ZS_GAMES;
-  const VERSION = 'v12c';
+  const VERSION = 'v13';
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   const $ = s => document.querySelector(s);
   const KEY = 'zvieratkovaSkolka.v1';
@@ -250,6 +250,8 @@
       b.className = 'card'; b.style.background = g.color; b.dataset.game = g.id;
       b.setAttribute('aria-label', g.title[save.lang]);
       b.innerHTML = `<img src="assets/animals/${g.img}.webp" alt=""><span class="ct">${g.title[save.lang]}</span><span class="cs">⭐ ${starsOf(g.id)} / ${TASKS_PER_GAME}</span>`;
+      const lk = window.ZSU && ZSU.locked(g.id);
+      if (lk) { b.classList.add('locked'); b.insertAdjacentHTML('beforeend', '<span class="lockb" aria-hidden="true">🔒</span>'); }
       b.onclick = () => openGame(g.id);
       w.appendChild(b);
       if (starsOf(g.id) > 0 || save.diplomas[g.id]) {
@@ -271,6 +273,7 @@
   let cur = null; // {game, index, task, wrong, locked}
   function openGame(id, from) {
     const g = GAMES.find(x => x.id === id);
+    if (window.ZSU && ZSU.locked(id)) { stopSpeech(); ZSU.open(save.lang, () => openMenu(), `assets/animals/${g.img}.webp`); return; }
     const st = gs(id);
     let idx = from != null ? from : st.next;
     if (idx >= TASKS_PER_GAME) idx = firstUnsolved(id);
