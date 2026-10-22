@@ -303,7 +303,8 @@ body.s-welcome #btnHome,body.s-welcome #tbStars,body.s-menu #btnHome,body.s-name
 .zl-lock{position:absolute;right:-4px;bottom:0;font-size:52px;animation:zlw 2.4s ease-in-out infinite}.zl-pic:not(:has(img)) .zl-lock{position:static;font-size:80px}
 @keyframes zlw{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
 .zl-title{font-size:24px;margin:6px 0 8px;font-weight:800}.zl-kid,.zl-q{font-size:20px;font-weight:700;margin:6px 0 12px}
-.zl-text{font-size:16px;line-height:1.45;margin:4px 0 8px;text-align:left}.zl-price{font-weight:800;font-size:16px;margin:4px 0}.zl-shop{font-size:15px;margin:4px 0 12px;opacity:.85}
+.zl-text{font-size:16px;line-height:1.45;margin:4px 0 8px;text-align:left}.zl-price{font-weight:800;font-size:16px;margin:4px 0}.zl-shop{font-size:14px;margin:4px 0 10px;line-height:1.35}.zl-sl{font-size:13px;margin-top:2px;overflow-wrap:anywhere;user-select:text}.zl-sl span{white-space:nowrap}.zl-sl .zl-k{display:block}
+@media (max-width:420px){.zl-card{padding:14px 14px 12px}.zl-text{font-size:14.5px;line-height:1.38}.zl-title{font-size:21px;margin:2px 0 6px}.zl-in{font-size:21px;padding:8px 10px}.zl-btn{min-height:50px;padding:10px 16px}}
 .zl-l{display:block;font-weight:700;font-size:16px;margin:6px 0 4px}
 .zl-in{font:inherit;font-size:24px;font-weight:800;text-align:center;width:100%;max-width:300px;padding:10px 12px;border-radius:18px;border:3px solid #f7c6da;outline:none;color:#5b3a52;box-sizing:border-box}.zl-in:focus{border-color:#ff9cc2}
 .zl-code{letter-spacing:2px;text-transform:uppercase}

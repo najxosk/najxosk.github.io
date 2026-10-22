@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   const { GAMES, TASKS_PER_GAME, getTask, bunnySVG, itemSVG, num } = window.ZS_GAMES;
-  const VERSION = 'g2v8';
+  const VERSION = 'g2v9';
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   const $ = s => document.querySelector(s);
   const KEY = 'zvieratkovaSkolka2.v1'; // separate progress & name from game 1

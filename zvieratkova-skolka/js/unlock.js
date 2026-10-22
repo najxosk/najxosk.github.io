@@ -3,8 +3,12 @@
   const CFG = {
     PRODUCT: (document.querySelector('meta[name="zs-product"]') || {}).content || 'g1',
     FREE: ['colors', 'count'],
-    // Shop URL for parents (shown as plain text after the parent check). Empty = generic line.
-    SHOP_URL: '',
+    // Shop links for parents: plain text (not clickable), parent screen only.
+    SHOP: {
+      g1: ['najxo.itch.io/zvieratkova-skolka-1', 'ko-fi.com/s/dc4c35cb67'],
+      g2: ['najxo.itch.io/zvieratkova-skolka-2', 'ko-fi.com/s/0768f0ec78'],
+      bundle: ['najxo.itch.io/zvieratkova-skolka-balik', 'ko-fi.com/s/0fc8b4ec61']
+    },
     // SHA-256 of normalized code (uppercase, no spaces/dashes) -> products it unlocks. Generate with final/kody/make_codes.py
     HASHES: {
       '3110c8482bbb7254237a9279855e0e5478d3c7f41a71d900874288908a462e98': ['g1'],
@@ -45,16 +49,18 @@
     const o = get(); prods.forEach(p => o[p] = true); put(o); return prods;
   }
   const T = {
-    sk: { title: 'Táto hra je v plnej verzii', kid: 'Túto hru ti môže odomknúť mama alebo ocko. 🙂', parents: 'Pre rodičov', back: 'Späť', q: (a, b) => `Otázka pre dospelého: koľko je ${a} × ${b}?`, ok: 'OK', notAdult: 'Skúsme to inak. Požiadaj o pomoc dospelého. 🙂',
+    sk: { bundle: 'Balík (obe hry)', pname: 'Škôlka', title: 'Táto hra je v plnej verzii', kid: 'Túto hru ti môže odomknúť mama alebo ocko. 🙂', parents: 'Pre rodičov', back: 'Späť', q: (a, b) => `Otázka pre dospelého: koľko je ${a} × ${b}?`, ok: 'OK', notAdult: 'Skúsme to inak. Požiadaj o pomoc dospelého. 🙂',
       ptitle: 'Odomkni plnú verziu', ptext: 'Ďakujeme, že hráte! Bezplatne sú k dispozícii prvé 2 hry. Plná verzia odomkne všetkých 6 hier – bez reklám, bez časomiery, navždy na tomto zariadení. Kúpou podporíte vznik ďalších hier pre deti.', price: 'Škôlka 1 alebo Škôlka 2: 3,99 € · obe spolu: 6 €', shop: 'Plnú verziu nájdete v našom obchode', shopSoon: 'Odkaz na obchod pribudne čoskoro.', codeL: 'Máte kód? Zadajte ho sem:', unlock: 'Odomknúť', bad: 'Tento kód nepoznáme. Skontrolujte ho, prosím, a skúste znova. 🙂', okMsg: 'Hotovo! Plná verzia je odomknutá. 🎉', other: 'Kód platí pre Škôlku 2 – odomkne sa tam. Pre túto hru potrebujete kód Škôlky 1 alebo balík.', other2: 'Kód platí pre Škôlku 1 – odomkne sa tam. Pre túto hru potrebujete kód Škôlky 2 alebo balík.' },
-    cs: { title: 'Tato hra je v plné verzi', kid: 'Tuhle hru ti může odemknout máma nebo táta. 🙂', parents: 'Pro rodiče', back: 'Zpět', q: (a, b) => `Otázka pro dospělého: kolik je ${a} × ${b}?`, ok: 'OK', notAdult: 'Zkusme to jinak. Požádej o pomoc dospělého. 🙂',
+    cs: { bundle: 'Balíček (obě hry)', pname: 'Školka', title: 'Tato hra je v plné verzi', kid: 'Tuhle hru ti může odemknout máma nebo táta. 🙂', parents: 'Pro rodiče', back: 'Zpět', q: (a, b) => `Otázka pro dospělého: kolik je ${a} × ${b}?`, ok: 'OK', notAdult: 'Zkusme to jinak. Požádej o pomoc dospělého. 🙂',
       ptitle: 'Odemkni plnou verzi', ptext: 'Děkujeme, že hrajete! Zdarma jsou první 2 hry. Plná verze odemkne všech 6 her – bez reklam, bez časomíry, navždy na tomto zařízení. Nákupem podpoříte vznik dalších her pro děti.', price: 'Školka 1 nebo Školka 2: 3,99 € · obě spolu: 6 €', shop: 'Plnou verzi najdete v našem obchodě', shopSoon: 'Odkaz na obchod brzy přibude.', codeL: 'Máte kód? Zadejte ho sem:', unlock: 'Odemknout', bad: 'Tento kód neznáme. Zkontrolujte ho prosím a zkuste to znovu. 🙂', okMsg: 'Hotovo! Plná verze je odemčená. 🎉', other: 'Kód platí pro Školku 2 – odemkne se tam. Pro tuto hru potřebujete kód Školky 1 nebo balíček.', other2: 'Kód platí pro Školku 1 – odemkne se tam. Pro tuto hru potřebujete kód Školky 2 nebo balíček.' },
-    en: { title: 'This game is in the full version', kid: 'Mom or Dad can unlock this game for you. 🙂', parents: 'For parents', back: 'Back', q: (a, b) => `Question for a grown-up: what is ${a} × ${b}?`, ok: 'OK', notAdult: "Let's try another way. Ask a grown-up for help. 🙂",
+    en: { bundle: 'Bundle (both games)', pname: 'Škôlka', title: 'This game is in the full version', kid: 'Mom or Dad can unlock this game for you. 🙂', parents: 'For parents', back: 'Back', q: (a, b) => `Question for a grown-up: what is ${a} × ${b}?`, ok: 'OK', notAdult: "Let's try another way. Ask a grown-up for help. 🙂",
       ptitle: 'Unlock the full version', ptext: 'Thank you for playing! The first 2 games are free. The full version unlocks all 6 games – no ads, no timers, forever on this device. Your purchase helps us make more games for kids.', price: 'Škôlka 1 or Škôlka 2: €3.99 · both together: €6', shop: 'You can get the full version in our shop', shopSoon: 'The shop link is coming soon.', codeL: 'Have a code? Enter it here:', unlock: 'Unlock', bad: "We don't recognise this code. Please check it and try again. 🙂", okMsg: 'Done! The full version is unlocked. 🎉', other: 'This code is for Škôlka 2 – it unlocks there. For this game you need a Škôlka 1 or bundle code.', other2: 'This code is for Škôlka 1 – it unlocks there. For this game you need a Škôlka 2 or bundle code.' },
-    es: { title: 'Este juego es de la versión completa', kid: 'Mamá o papá pueden desbloquearte este juego. 🙂', parents: 'Para padres', back: 'Volver', q: (a, b) => `Pregunta para un adulto: ¿cuánto es ${a} × ${b}?`, ok: 'OK', notAdult: 'Probemos de otra forma. Pide ayuda a un adulto. 🙂',
+    es: { bundle: 'Paquete (los dos)', pname: 'Škôlka', title: 'Este juego es de la versión completa', kid: 'Mamá o papá pueden desbloquearte este juego. 🙂', parents: 'Para padres', back: 'Volver', q: (a, b) => `Pregunta para un adulto: ¿cuánto es ${a} × ${b}?`, ok: 'OK', notAdult: 'Probemos de otra forma. Pide ayuda a un adulto. 🙂',
       ptitle: 'Desbloquea la versión completa', ptext: '¡Gracias por jugar! Los 2 primeros juegos son gratis. La versión completa desbloquea los 6 juegos: sin anuncios, sin temporizador, para siempre en este dispositivo. Con tu compra nos ayudas a crear más juegos para niños.', price: 'Škôlka 1 o Škôlka 2: 3,99 € · los dos juntos: 6 €', shop: 'Puedes conseguir la versión completa en nuestra tienda', shopSoon: 'El enlace a la tienda llegará pronto.', codeL: '¿Tienes un código? Escríbelo aquí:', unlock: 'Desbloquear', bad: 'No reconocemos este código. Revísalo y vuelve a intentarlo, por favor. 🙂', okMsg: '¡Listo! La versión completa está desbloqueada. 🎉', other: 'Este código es para Škôlka 2 y se desbloquea allí. Para este juego necesitas un código de Škôlka 1 o del paquete.', other2: 'Este código es para Škôlka 1 y se desbloquea allí. Para este juego necesitas un código de Škôlka 2 o del paquete.' }
   };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const shopLines = t => [[t.pname + ' ' + (CFG.PRODUCT === 'g1' ? 1 : 2), CFG.SHOP[CFG.PRODUCT]], [t.bundle, CFG.SHOP.bundle]]
+    .map(([n, u]) => `<div class="zl-sl"><b>${esc(n)}:</b> <span>${esc(u[0])}</span><span class="zl-k">${esc(u[1])}</span></div>`).join('');
   let box = null;
   function close() { if (box) { box.remove(); box = null; } }
   function open(lang, onDone, gameImg) {
@@ -78,7 +84,7 @@
     };
     const parentView = () => {
       box.innerHTML = `<div class="zl-card zl-wide"><h2 class="zl-title">🔓 ${esc(t.ptitle)}</h2><p class="zl-text">${esc(t.ptext)}</p><p class="zl-price">${esc(t.price)}</p>
-        <p class="zl-shop">🛍️ ${CFG.SHOP_URL ? esc(t.shop) + ': <b>' + esc(CFG.SHOP_URL) + '</b>' : esc(t.shopSoon)}</p>
+        <div class="zl-shop">🛍️ ${esc(t.shop)}:${shopLines(t)}</div>
         <label class="zl-l" for="zlCode">${esc(t.codeL)}</label><input id="zlCode" class="zl-in zl-code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="MEDVED-7K3P" maxlength="40">
         <p class="zl-msg" id="zlMsg" aria-live="polite"></p>
         <div class="zl-row"><button class="zl-btn zl-back" id="zlBack">🏠 ${esc(t.back)}</button><button class="zl-btn zl-par" id="zlUn">${esc(t.unlock)}</button></div></div>`;
