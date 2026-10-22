@@ -272,3 +272,20 @@ body.s-welcome #btnHome,body.s-welcome #tbStars,body.s-menu #btnHome,body.s-name
 #btnLangGo{background:radial-gradient(circle at 35% 30%,#bff5d9,#7fd8ae);box-shadow:0 6px 0 #5fbf92,0 0 0 5px #fff;animation:pulse 1.8s infinite}
 /* v11b: "First words" 5 word options pushed the progress bar below the fold at 360x640 */
 @media (orientation:portrait) and (max-height:700px){#options .opt:has(.wordopt){min-height:78px;padding:6px}#options:has(.wordopt){gap:10px}}
+
+/* ---------- STEP B: tablets & PC – scale the whole app up (keeps ≥720 css px of height) and center it ---------- */
+@media (orientation:portrait) and (min-width:700px) and (min-height:960px){#app{zoom:1.12}.mybunny .bunny,.order .bunny{max-height:19vh}.wrow .opt{min-height:64px}}
+@media (min-width:1300px) and (min-height:860px){#app{zoom:1.22}}
+@media (min-width:1700px) and (min-height:1000px){#app{zoom:1.45}}
+@media (min-width:1000px){
+ #topbar,#scrGame{width:100%;max-width:1220px;margin-left:auto;margin-right:auto}
+ #scrGame .g-right{justify-content:center}
+ #stage>.emo{font-size:130px}#stage>.emo.huge{font-size:170px}#stage>.bigtxt.let.huge{font-size:150px}#stage>.word.picword{font-size:160px}#stage>.word{font-size:96px}
+ #stage .blob{transform:scale(1.5)}
+}
+@media (min-width:1000px) and (min-height:740px){
+ #options .opt{min-height:120px}
+ #scrMenu,#scrWelcome,#scrName,#scrLang,#scrDone,#scrDiploma{justify-content:center}
+}
+/* QA fix: long ES dress instructions pushed ✔/progress below 640px */
+@media (max-height:700px){#scrGame:has(.mybunny) .bubble{font-size:14px;line-height:1.2;padding:6px 34px 6px 10px}#scrGame:has(.mybunny) #stage{min-height:0;padding:4px}#scrGame:has(.mybunny) .wrow .opt{min-height:40px}#scrGame:has(.mybunny) .donebtn{height:54px}}

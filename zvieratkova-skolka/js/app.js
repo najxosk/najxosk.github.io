@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   const { GAMES, TASKS_PER_GAME, getTask, bunnySVG, itemSVG, num } = window.ZS_GAMES;
-  const VERSION = 'v11';
+  const VERSION = 'v12';
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   const $ = s => document.querySelector(s);
   const KEY = 'zvieratkovaSkolka.v1';
@@ -560,9 +560,9 @@
   $('#btnStart').onclick = () => { unlock(); if (save.name == null) openName(); else openMenu(); };
   document.querySelectorAll('.langbtn').forEach(b => { b.onclick = () => {
     unlock(); save.lang = b.dataset.lang; save.langChosen = true; persist(); loadVoiceMap(save.lang);
-    setTopbar(); markLang(); say(LANGHI[save.lang]);
+    setTopbar(); markLang(); say(LANGHI[save.lang]); swPrefetch();
   }; });
-  $('#btnLangGo').onclick = () => { unlock(); if (!save.langChosen) { save.langChosen = true; persist(); } if (save.name == null) openName(); else openMenu(); };
+  $('#btnLangGo').onclick = () => { unlock(); if (!save.langChosen) { save.langChosen = true; persist(); swPrefetch(); } if (save.name == null) openName(); else openMenu(); };
   $('#btnNameOk').onclick = saveName;
   $('#nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') saveName(); });
   $('#btnEditName').onclick = () => openName();
@@ -577,7 +577,7 @@
   soundBtn('#btnMusic', () => { audioUnlocked = true; setSound(!save.music, save.voice); });
   soundBtn('#btnVoice', () => setSound(save.music, !save.voice));
   $('#btnLang').onclick = () => {
-    save.lang = LANGS[(LANGS.indexOf(save.lang) + 1) % LANGS.length]; persist(); loadVoiceMap(save.lang);
+    save.lang = LANGS[(LANGS.indexOf(save.lang) + 1) % LANGS.length]; persist(); loadVoiceMap(save.lang); swPrefetch();
     const active = document.querySelector('.screen.active').id;
     if (active === 'scrGame' && cur) { setTopbar(cur.game.title[save.lang]); applyScript(); loadTask(); }
     else if (active === 'scrMenu') openMenu();
@@ -612,5 +612,11 @@
     const out = {}; for (const k in G) out[k] = [...G[k]]; return out;
   }
   window.ZS = { version: VERSION, openLang, loadTask: () => loadTask(), allPhrases, clipLog, voiceEl, clipFor: t => clipFor(t), voiceReady: l => !!voiceMaps[l], renderDiplomaPNG, openDiploma, GAMES, TASKS_PER_GAME, getTask, sayLog, get state() { return { save, cur }; } };
+  // ---------- PWA: offline (service worker per game folder caches the app + voice clips of the chosen language) ----------
+  function swPrefetch() { try { const c = navigator.serviceWorker && navigator.serviceWorker.controller; if (c && save.langChosen) c.postMessage({ type: 'voice', lang: save.lang }); } catch (e) { /* no SW */ } }
+  if ('serviceWorker' in navigator && /^(https:|http:\/\/(127\.0\.0\.1|localhost)[:/])/.test(location.href)) {
+    navigator.serviceWorker.register('sw.js').then(() => { if (navigator.serviceWorker.controller) swPrefetch(); else navigator.serviceWorker.addEventListener('controllerchange', swPrefetch, { once: true }); }).catch(() => {});
+  }
+  window.ZS.swPrefetch = swPrefetch;
   if (save.langChosen) openWelcome(); else openLang();
 })();
