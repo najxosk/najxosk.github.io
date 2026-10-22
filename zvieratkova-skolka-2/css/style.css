@@ -303,3 +303,21 @@ body.s-welcome #btnHome,body.s-welcome #tbStars,body.s-menu #btnHome,body.s-name
 }
 /* QA fix: 360px top bar - language button overflowed right edge */
 @media (max-width:400px){#topbar{gap:4px;padding:8px 6px}.tb.snd.mini{width:38px;height:38px}.tb.lang{min-width:0;padding:0 8px;gap:4px}}
+
+/* ---------- language choice (first screen) ---------- */
+.langbox{gap:14px}
+.langbox .bubble{font-size:clamp(17px,4.6vw,22px);text-align:center}
+.langbox .globe{font-size:1.3em;vertical-align:-3px}
+.langgrid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(10px,3vw,16px);width:min(92vw,440px)}
+.langbtn{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:clamp(104px,30vw,140px);border-radius:30px;background:#fff;border:4px solid var(--lc);box-shadow:0 6px 0 var(--ls),0 12px 22px rgba(0,0,0,.08);font-family:inherit;font-weight:900;font-size:clamp(17px,5vw,23px);color:#6b4a5e;cursor:pointer;transition:transform .12s;-webkit-tap-highlight-color:transparent}
+.langbtn .lf{font-size:clamp(42px,13vw,60px);line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.12))}
+.langbtn b{font-weight:900}
+.langbtn.l-sk{--lc:#ffc9dc;--ls:#f4a6c3;background:#fff4f8}
+.langbtn.l-cs{--lc:#c7dcff;--ls:#9fbff0;background:#f3f8ff}
+.langbtn.l-en{--lc:#bfeccf;--ls:#8fd6aa;background:#f1fcf5}
+.langbtn.l-es{--lc:#ffe2a8;--ls:#f2c46e;background:#fffaf0}
+.langbtn:active{transform:translateY(4px)}
+.langbtn.on{transform:scale(1.05);box-shadow:0 6px 0 var(--ls),0 0 0 5px #7fd8ae,0 14px 26px rgba(80,190,140,.3)}
+.langbtn.on::after{content:"✓";position:absolute;top:-10px;right:-8px;width:34px;height:34px;border-radius:50%;background:#7fd8ae;color:#fff;font-size:21px;line-height:34px;text-align:center;box-shadow:0 0 0 3px #fff}
+@media (max-height:600px){.langbtn{min-height:84px}.langbtn .lf{font-size:38px}}
+#btnLangGo{background:radial-gradient(circle at 35% 30%,#bff5d9,#7fd8ae);box-shadow:0 6px 0 #5fbf92,0 0 0 5px #fff;animation:pulse 1.8s infinite}

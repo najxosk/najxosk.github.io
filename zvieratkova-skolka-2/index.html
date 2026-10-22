@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#ffe9f3">
-<meta name="zs-version" content="g2v5">
+<meta name="zs-version" content="g2v6">
 <title>Zvieratková škôlka 2</title>
-<link rel="stylesheet" href="css/style.css?g2v5b">
+<link rel="stylesheet" href="css/style.css?g2v6">
 </head>
 <body>
 <div class="sky" aria-hidden="true"><i class="cloud c1"></i><i class="cloud c2"></i><i class="cloud c3"></i><i class="heart h1"></i><i class="heart h2"></i><i class="heart h3"></i><i class="spark s1"></i><i class="spark s2"></i><i class="spark s3"></i><i class="spark s4"></i></div>
@@ -21,7 +21,20 @@
     <button id="btnLang" class="tb lang" aria-label="Jazyk">SK</button>
   </header>
 
-  <section id="scrWelcome" class="screen active">
+  <section id="scrLang" class="screen">
+    <div class="welcome langbox">
+      <div class="bubble big" id="langText"><span class="globe">🌍</span> Jazyk · Language · Idioma</div>
+      <div class="langgrid">
+        <button class="langbtn l-sk" data-lang="sk"><span class="lf">🇸🇰</span><b>Slovensky</b></button>
+        <button class="langbtn l-cs" data-lang="cs"><span class="lf">🇨🇿</span><b>Česky</b></button>
+        <button class="langbtn l-en" data-lang="en"><span class="lf">🇬🇧</span><b>English</b></button>
+        <button class="langbtn l-es" data-lang="es"><span class="lf">🇪🇸</span><b>Español</b></button>
+      </div>
+      <button id="btnLangGo" class="bigbtn sm" aria-label="OK">▶</button>
+    </div>
+  </section>
+
+  <section id="scrWelcome" class="screen">
     <div class="welcome">
       <img class="teacher" src="assets/animals/ucitelka-a.webp" alt="">
       <div class="bubble big" id="welcomeText"></div>
@@ -85,7 +98,8 @@
   <button id="dlgName" class="dlgname" hidden></button>
   <div class="dlgrow"><button id="dlgYes" class="dlgyes"></button><button id="dlgNo" class="dlgno"></button></div></div></div>
 <audio id="music" loop preload="auto"><source src="assets/audio/music.ogg" type="audio/ogg"><source src="assets/audio/music.mp3" type="audio/mpeg"></audio>
-<script src="js/games.js?g2v5"></script>
-<script src="js/app.js?g2v5"></script>
+<script src="js/cs.js?g2v6"></script>
+<script src="js/games.js?g2v6"></script>
+<script src="js/app.js?g2v6"></script>
 </body>
 </html>

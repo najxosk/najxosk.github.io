@@ -270,3 +270,5 @@ body.s-welcome #btnHome,body.s-welcome #tbStars,body.s-menu #btnHome,body.s-name
 .langbtn.on::after{content:"✓";position:absolute;top:-10px;right:-8px;width:34px;height:34px;border-radius:50%;background:#7fd8ae;color:#fff;font-size:21px;line-height:34px;text-align:center;box-shadow:0 0 0 3px #fff}
 @media (max-height:600px){.langbtn{min-height:84px}.langbtn .lf{font-size:38px}}
 #btnLangGo{background:radial-gradient(circle at 35% 30%,#bff5d9,#7fd8ae);box-shadow:0 6px 0 #5fbf92,0 0 0 5px #fff;animation:pulse 1.8s infinite}
+/* v11b: "First words" 5 word options pushed the progress bar below the fold at 360x640 */
+@media (orientation:portrait) and (max-height:700px){#options .opt:has(.wordopt){min-height:78px;padding:6px}#options:has(.wordopt){gap:10px}}
