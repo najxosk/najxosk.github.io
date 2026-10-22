@@ -1,5 +1,5 @@
 // Zvieratková škôlka – offline service worker (scope = this game folder only)
-const V = 'v12', P = 'zs1-';
+const V = 'v12c', P = 'zs1-';
 const SHELL = P + 'shell-' + V, VOICE = P + 'voice-' + V;
 const FILES = ["./", "assets/animals/chameleon.webp", "assets/animals/liska.webp", "assets/animals/papagaj.webp", "assets/animals/sovicka.webp", "assets/animals/ucitelka-a.webp", "assets/animals/veverica.webp", "assets/animals/zajacik.webp", "assets/audio/music.mp3", "assets/audio/music.ogg", "assets/diplomy/chameleon.webp", "assets/diplomy/liska.webp", "assets/diplomy/papagaj.webp", "assets/diplomy/sovicka.webp", "assets/diplomy/veverica.webp", "assets/diplomy/zajacik.webp", "assets/fonts/nunito.woff2", "assets/fonts/playwrite-sk.woff2", "css/style.css", "icons/apple-touch-icon.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-192.png", "icons/icon-maskable-512.png", "index.html", "js/app.js", "js/cs.js", "js/games.js", "manifest.webmanifest"];
 const busy = new Set();

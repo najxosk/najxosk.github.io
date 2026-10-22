@@ -289,3 +289,6 @@ body.s-welcome #btnHome,body.s-welcome #tbStars,body.s-menu #btnHome,body.s-name
 }
 /* QA fix: long ES dress instructions pushed ✔/progress below 640px */
 @media (max-height:700px){#scrGame:has(.mybunny) .bubble{font-size:14px;line-height:1.2;padding:6px 34px 6px 10px}#scrGame:has(.mybunny) #stage{min-height:0;padding:4px}#scrGame:has(.mybunny) .wrow .opt{min-height:40px}#scrGame:has(.mybunny) .donebtn{height:54px}}
+@media (orientation:portrait) and (min-width:700px) and (min-height:960px){#scrGame:has(.mybunny) .mybunny .bunny,#scrGame:has(.mybunny) .order .bunny{max-height:16vh}#scrGame:has(.mybunny) .wrow .opt{min-height:58px}}
+@media (orientation:portrait) and (min-width:700px) and (min-height:960px){#app:has(.mybunny){zoom:1}}
+@media (orientation:portrait) and (min-width:700px) and (min-height:960px){#scrGame:has(.mybunny) .wrow .opt{min-height:80px;max-width:140px}#scrGame:has(.mybunny) .mybunny .bunny{max-height:20vh}}
