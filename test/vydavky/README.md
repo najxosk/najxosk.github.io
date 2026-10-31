@@ -17,3 +17,9 @@ Jednoduchá webová appka na prehľad výdavkov z PDF výpisu (napr. Prima banka
 ## Parser
 Text z PDF sa zoskupí do riadkov podľa y-pozície a do stĺpcov podľa medzier. Dve stratégie (bloky začínajúce dátumom / jeden riadok = pohyb), vyberie sa lepšia. Znamienko: `-`/`+` pri sume, stĺpce Debet/Kredit podľa hlavičky, inak podľa slov (kredit, mzda…). Ak nič nesedí: ručné mapovanie stĺpcov, ručné pridanie riadku, CSV import a „Nahlás formát“ (čísla maskované).
 Skutočné rozloženie výpisu Prima banky zatiaľ **nebolo otestované**.
+
+## Verzia 2
+- Strom **skupina › podkategória › obchodník** (počet + suma), prepínač *Podľa kategórií / Podľa zdroja/typu*, sekcie *Kam idú* a *Odkiaľ peniaze prichádzajú*.
+- Sekcia **Nezaradené** – protistrany od najväčšej sumy, návrhy, všetky kategórie, vlastná nová kategória; pravidlo platí pre všetky varianty mena (normalizácia).
+- Indikátor „Nezaradené: X % / Y €“ na prehľade. Prevody medzi vlastnými účtami sa nepočítajú.
+- Testy: `node tests/unit_test.mjs`, `python3 tests/e2e_test.py` (živú verziu: `BASE=https://najxosk.github.io/test/vydavky/ python3 tests/e2e_test.py`).

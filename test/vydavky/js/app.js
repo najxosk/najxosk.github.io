@@ -1,28 +1,44 @@
-import * as pdfjsLib from '../vendor/pdfjs/pdf.min.mjs';
-import { extractLines, parseTransactions, parseCSV, csvHeaderMapping, guessMapping, applyMapping, maskLine, parseDate, parseAmount } from './parser.js';
-import { CATEGORIES, CAT, DEFAULT_KEYWORDS, categorize, counterpartyKey } from './categories.js';
-import { totals, byCategory, months, monthKey, monthLabel, recurring, tips, eur } from './analysis.js';
+import * as pdfjsLib from '../vendor/pdfjs/pdf.min.mjs?v=2';
+import { extractLines, parseTransactions, parseCSV, csvHeaderMapping, guessMapping, applyMapping, maskLine, parseDate, parseAmount } from './parser.js?v=2';
+import { allGroups, groupOf, groupInfo, catLabel, catColor, isUnsorted, isTransfer, defaultKeywords, categorize, counterpartyKey, paymentType, counterpartyType, suggest, setCustom, PTYPES, CTYPES } from './categories.js?v=2';
+import { totals, byCategory, months, monthKey, monthLabel, recurring, tips, eur, buildTree, unsortedStats } from './analysis.js?v=2';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('../vendor/pdfjs/pdf.worker.min.mjs', import.meta.url).href;
 
 const $ = s => document.querySelector(s);
 const el = (tag, props = {}, ...kids) => { const e = document.createElement(tag); Object.assign(e, props); for (const k of kids) if (k != null) e.append(k); return e; };
-const LS = { rules: 'vydavky_rules', kw: 'vydavky_keywords', set: 'vydavky_settings', tx: 'vydavky_tx' };
+const LS = { rules: 'vydavky_rules', kw: 'vydavky_keywords', set: 'vydavky_settings', tx: 'vydavky_tx', custom: 'vydavky_custom_cats' };
 const load = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? d; } catch { return d; } };
 const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 
 const state = {
   tx: [], sources: [],
   rules: load(LS.rules, {}),
-  keywords: load(LS.kw, null) || structuredClone(DEFAULT_KEYWORDS),
-  settings: load(LS.set, { rememberTx: false }),
+  keywords: null,
+  settings: load(LS.set, { rememberTx: false, mode: 'cat' }),
   lastPassword: null,
 };
 
+setCustom(load(LS.custom, []));
+function loadKeywords() {
+  const kw = defaultKeywords(), stored = load(LS.kw, null);
+  if (stored && typeof stored === 'object') for (const [k, v] of Object.entries(stored)) if (k.includes('/') && Array.isArray(v)) kw[k] = v;
+  for (const c of load(LS.custom, [])) { const id = c.parent ? `${c.parent}/${c.sub}` : c.id; if (!kw[id]) kw[id] = []; }
+  return kw;
+}
+state.keywords = loadKeywords();
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.remove('hidden'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.add('hidden'), 3200); }
 
 function recategorize() {
-  for (const t of state.tx) if (!t.manual) { const r = categorize(t, state.keywords, state.rules); t.category = r.cat; t.by = r.by; }
+  for (const t of state.tx) {
+    if (!t.manual) { const r = categorize(t, state.keywords, state.rules); t.category = r.cat; t.by = r.by; }
+    t.ptype = paymentType(t); t.ctype = counterpartyType(t, t.ptype); t.key = counterpartyKey(t.counterparty) || '(neznáme)';
+  }
+  // zlúč varianty: „fiktivny obchod nitr“ (orezané mesto) → „fiktivny obchod“, ak taká kratšia protistrana existuje
+  const keys = [...new Set(state.tx.map(t => t.key))].sort((a, b) => a.length - b.length);
+  const alias = {};
+  for (const k of keys) { const base = keys.find(b => b.length < k.length && b.includes(' ') && k.startsWith(b + ' ')); if (base) alias[k] = alias[base] || base; }
+  for (const t of state.tx) if (alias[t.key]) t.key = alias[t.key];
 }
 function persist() {
   if (state.settings.rememberTx) save(LS.tx, state.tx); else localStorage.removeItem(LS.tx);
@@ -42,6 +58,7 @@ function show(view) {
   if (view === 'view-dash') renderDash();
   if (view === 'view-tx') renderTx();
   if (view === 'view-settings') renderSettings();
+  if (view === 'view-unsorted') renderUnsorted();
   window.scrollTo(0, 0);
 }
 document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => show(b.dataset.view)));
@@ -199,6 +216,13 @@ function fillMonthSelect(sel, withAll = 'Všetky mesiace') {
   if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
 }
 function emptyLi(text) { return el('li', { className: 'muted', textContent: text }); }
+function dot(color) { const d = el('span', { className: 'dot' }); d.style.background = color; return d; }
+function curMonth() { return $('#dash-month').value; }
+function dashTx() { const mk = curMonth(); return mk ? state.tx.filter(t => monthKey(t.date) === mk) : state.tx; }
+
+$('#unsorted-ind').addEventListener('click', () => show('view-unsorted'));
+$('#mode-cat').addEventListener('click', () => { state.settings.mode = 'cat'; save(LS.set, state.settings); renderDash(); });
+$('#mode-src').addEventListener('click', () => { state.settings.mode = 'src'; save(LS.set, state.settings); renderDash(); });
 
 function renderDash() {
   const ms = months(state.tx);
@@ -206,34 +230,73 @@ function renderDash() {
   const hadValue = sel.options.length > 0;
   fillMonthSelect(sel);
   if (!hadValue && ms.length) sel.value = ms[ms.length - 1];
-  const mk = sel.value;
-  const tx = mk ? state.tx.filter(t => monthKey(t.date) === mk) : state.tx;
+  const mk = sel.value, tx = dashTx();
   const t = totals(tx);
   $('#k-inc').textContent = eur(t.inc); $('#k-exp').textContent = eur(t.exp); $('#k-bal').textContent = eur(t.bal);
+  const us = unsortedStats(tx);
+  $('#u-pct').textContent = `${us.pct} %`; $('#u-sum').textContent = eur(us.sum);
+  $('#unsorted-ind').classList.toggle('ok', us.count === 0);
+  $('#unsorted-ind .cta').textContent = us.count ? `Zaradiť (${us.keys}) ›` : '✓ všetko zaradené';
+
   const bc = byCategory(tx);
   drawDonut(bc, t.exp);
   $('#legend').replaceChildren(...(bc.length ? bc.map(c => {
-    const dot = el('span', { className: 'dot' }); dot.style.background = CAT[c.cat]?.color || '#888';
-    const a = el('a', { href: '#', textContent: CAT[c.cat]?.label || c.cat });
-    a.addEventListener('click', e => { e.preventDefault(); $('#f-cat').value = c.cat; $('#f-month').value = mk; show('view-tx'); });
-    return el('li', {}, el('span', {}, dot, a), el('b', { textContent: `${eur(c.v)} · ${Math.round(c.v / t.exp * 100)} %` }));
+    const a = el('a', { href: '#', textContent: groupInfo(c.cat).label });
+    a.addEventListener('click', e => { e.preventDefault(); if (c.cat === 'ine') return show('view-unsorted'); $('#f-cat').value = c.cat; $('#f-month').value = mk; show('view-tx'); });
+    return el('li', {}, el('span', {}, dot(catColor(c.cat)), a), el('b', { textContent: `${eur(c.v)} · ${Math.round(c.v / t.exp * 100)} %` }));
   }) : [emptyLi('Zatiaľ žiadne výdavky. Načítaj výpis.')]));
+
+  renderTrees(tx);
+  $('#transfers-note').textContent = tx.some(x => isTransfer(x.category)) ? `Prevody medzi vlastnými účtami (${eur(t.transfers)}) sa nepočítajú do príjmov ani výdavkov.` : '';
 
   const tp = tips(state.tx);
   $('#tips').replaceChildren(...(tp.length ? tp.map(s => el('li', { textContent: s })) : [emptyLi('Na tipy je zatiaľ málo údajov.')]));
 
-  const big = tx.filter(x => x.amount < 0).sort((a, b) => a.amount - b.amount).slice(0, 5);
+  const big = tx.filter(x => x.amount < 0 && !isTransfer(x.category)).sort((a, b) => a.amount - b.amount).slice(0, 5);
   $('#biggest').replaceChildren(...(big.length ? big.map(x => el('li', {}, el('span', { textContent: `${fmtDate(x.date)} · ${x.counterparty}` }), el('b', { textContent: eur(x.amount) }))) : [emptyLi('—')]));
 
   const rec = recurring(state.tx);
-  const subsOnly = state.tx.filter(x => x.amount < 0 && x.category === 'predplatne' && !rec.some(r => r.key === counterpartyKey(x.counterparty)));
-  const recItems = rec.map(r => el('li', {}, el('span', { textContent: `${r.name} (${CAT[r.category]?.label || ''}, ${r.months}× mesačne)` }), el('b', { textContent: `≈ ${eur(r.monthly)}/mes.` })));
-  const subItems = ms.length < 2 ? [...new Map(subsOnly.map(x => [counterpartyKey(x.counterparty), x])).values()].map(x => el('li', {}, el('span', { textContent: `${x.counterparty} (predplatné)` }), el('b', { textContent: eur(x.amount) }))) : [];
-  const items = [...recItems, ...subItems];
+  const recItems = rec.map(r => el('li', {}, el('span', { textContent: `${r.name} (${catLabel(r.category, false)}, ${r.months}× mesačne)` }), el('b', { textContent: `≈ ${eur(r.monthly)}/mes.` })));
+  const subsOnly = ms.length < 2 ? [...new Map(state.tx.filter(x => x.amount < 0 && groupOf(x.category) === 'predplatne').map(x => [x.key, x])).values()] : [];
+  const items = [...recItems, ...subsOnly.map(x => el('li', {}, el('span', { textContent: `${x.counterparty} (predplatné)` }), el('b', { textContent: eur(x.amount) })))];
   $('#recurring').replaceChildren(...(items.length ? items : [emptyLi(ms.length < 2 ? 'Na rozpoznanie pravidelných platieb načítaj výpisy aspoň za 2 mesiace.' : 'Nenašiel som pravidelné platby.')]));
   if (rec.length) $('#recurring').append(el('li', {}, el('span', { textContent: 'Spolu pravidelne' }), el('b', { textContent: `≈ ${eur(rec.reduce((s, r) => s + r.monthly, 0))}/mes.` })));
-
   renderCompare(ms);
+}
+
+function levelsFor(mode) {
+  const merchant = t => [t.key, t.counterparty];
+  if (mode === 'src') return [t => [t.ctype, CTYPES[t.ctype] || t.ctype], t => [t.ptype, PTYPES[t.ptype] || t.ptype], merchant];
+  return [t => [groupOf(t.category), groupInfo(t.category).label], t => { const s = String(t.category).split('/')[1]; return [s || '_', s ? catLabel(t.category, true) : 'Ostatné']; }, merchant];
+}
+function renderTrees(tx) {
+  const mode = state.settings.mode || 'cat';
+  $('#mode-cat').classList.toggle('active', mode === 'cat'); $('#mode-src').classList.toggle('active', mode === 'src');
+  const lv = levelsFor(mode);
+  const outTx = tx.filter(t => t.amount < 0 && !isTransfer(t.category)), inTx = tx.filter(t => t.amount > 0 && !isTransfer(t.category));
+  $('#tree-out').replaceChildren(...treeNodes(buildTree(outTx, lv), 0, mode, Math.abs(buildTree(outTx, lv).sum)));
+  $('#tree-in').replaceChildren(...treeNodes(buildTree(inTx, lv), 0, mode, buildTree(inTx, lv).sum));
+  if (!outTx.length) $('#tree-out').replaceChildren(el('p', { className: 'muted', textContent: 'Žiadne výdavky.' }));
+  if (!inTx.length) $('#tree-in').replaceChildren(el('p', { className: 'muted', textContent: 'Žiadne príjmy v tomto období.' }));
+}
+function treeNodes(node, depth, mode, total) {
+  return node.children.map(ch => {
+    if (depth === 2) {
+      const b = el('button', { className: 'btn small ghost', textContent: 'Zmeniť', type: 'button' });
+      b.addEventListener('click', () => openAssign(ch.key));
+      return el('div', { className: 'leaf' }, el('span', { textContent: `${ch.label} (${ch.count}×)` }), el('span', {}, el('b', { textContent: eur(ch.sum) + ' ' }), b));
+    }
+    const d = el('details');
+    d.dataset.key = ch.key;
+    const color = depth === 0 && mode === 'cat' ? groupInfo(ch.key).color : '#3b82f6';
+    const nm = el('span', { className: 'nm', textContent: ch.label });
+    if (depth === 0 && mode === 'cat') nm.prepend(dot(color));
+    d.append(el('summary', {}, nm, el('span', { className: 'sm' }, eur(ch.sum), el('span', { className: 'cnt', textContent: `${ch.count} ${ch.count === 1 ? 'platba' : ch.count < 5 ? 'platby' : 'platieb'}${total ? ' · ' + Math.round(Math.abs(ch.sum) / total * 100) + ' %' : ''}` }))));
+    if (depth === 0) { const bar = el('div', { className: 'bar' }), i = el('i'); i.style.width = (total ? Math.abs(ch.sum) / total * 100 : 0) + '%'; i.style.background = color; bar.append(i); d.append(bar); }
+    let rendered = false;
+    d.addEventListener('toggle', () => { if (d.open && !rendered) { rendered = true; d.append(...treeNodes(ch, depth + 1, mode, total)); } });
+    return d;
+  });
 }
 function fmtDate(d) { const [y, m, dd] = d.split('-'); return `${+dd}.${+m}.${y}`; }
 
@@ -245,13 +308,12 @@ function renderCompare(ms) {
   const tt = last.map(m => totals(state.tx.filter(t => monthKey(t.date) === m)));
   const row = (label, vals, cls) => el('tr', {}, el('td', { textContent: label }), ...vals.map((v, i) => el('td', { textContent: v, className: cls ? cls(i) : '' })));
   const rows = [row('Príjmy', tt.map(t => eur(t.inc))), row('Výdavky', tt.map(t => eur(t.exp)), i => i && tt[i].exp > tt[i - 1].exp ? 'up' : i ? 'down' : ''), row('Rozdiel', tt.map(t => eur(t.bal)))];
-  const cats = CATEGORIES.filter(c => c.id !== 'prijem');
   const a = last[last.length - 2], b = last[last.length - 1];
   const ca = Object.fromEntries(byCategory(state.tx.filter(t => monthKey(t.date) === a)).map(x => [x.cat, x.v]));
   const cb = Object.fromEntries(byCategory(state.tx.filter(t => monthKey(t.date) === b)).map(x => [x.cat, x.v]));
-  const diffs = cats.map(c => ({ c, d: (cb[c.id] || 0) - (ca[c.id] || 0) })).filter(x => Math.abs(x.d) >= 1).sort((x, y) => Math.abs(y.d) - Math.abs(x.d)).slice(0, 5);
-  const dl = el('ul', { className: 'list' }, ...diffs.map(x => el('li', {}, el('span', { textContent: x.c.label }), el('b', { className: x.d > 0 ? 'up' : 'down', textContent: (x.d > 0 ? '+' : '') + eur(x.d) }))));
-  box.replaceChildren(el('table', { className: 'cmp' }, head, ...rows), el('p', { className: 'muted small', textContent: `Zmena podľa kategórií: ${monthLabel(b)} oproti ${monthLabel(a)}` }), dl);
+  const diffs = [...new Set([...Object.keys(ca), ...Object.keys(cb)])].map(c => ({ c, d: (cb[c] || 0) - (ca[c] || 0) })).filter(x => Math.abs(x.d) >= 1).sort((x, y) => Math.abs(y.d) - Math.abs(x.d)).slice(0, 5);
+  const dl = el('ul', { className: 'list' }, ...diffs.map(x => el('li', {}, el('span', { textContent: groupInfo(x.c).label }), el('b', { className: x.d > 0 ? 'up' : 'down', textContent: (x.d > 0 ? '+' : '') + eur(x.d) }))));
+  box.replaceChildren(el('table', { className: 'cmp' }, head, ...rows), el('p', { className: 'muted small', textContent: `Zmena podľa skupín: ${monthLabel(b)} oproti ${monthLabel(a)}` }), dl);
 }
 
 function drawDonut(bc, total) {
@@ -264,24 +326,118 @@ function drawDonut(bc, total) {
   for (const x of bc) {
     const a1 = a0 + (x.v / total) * Math.PI * 2;
     g.beginPath(); g.moveTo(cx + Math.cos(a0) * ir, cy + Math.sin(a0) * ir); g.arc(cx, cy, r, a0, a1); g.arc(cx, cy, ir, a1, a0, true); g.closePath();
-    g.fillStyle = CAT[x.cat]?.color || '#888'; g.fill(); g.strokeStyle = '#181b22'; g.lineWidth = 2; g.stroke();
+    g.fillStyle = catColor(x.cat); g.fill(); g.strokeStyle = '#181b22'; g.lineWidth = 2; g.stroke();
     a0 = a1;
   }
   g.fillStyle = '#e8eaf0'; g.textAlign = 'center'; g.font = 'bold 18px system-ui,sans-serif'; g.fillText(eur(total), cx, cy + 2);
   g.fillStyle = '#9aa3b2'; g.font = '12px system-ui,sans-serif'; g.fillText('výdavky', cx, cy + 20);
 }
 
+// ---------- Nezaradené ----------
+function unsortedGroups() {
+  const m = new Map();
+  for (const t of state.tx) if (t.amount < 0 && isUnsorted(t)) {
+    if (!m.has(t.key)) m.set(t.key, { key: t.key, name: t.counterparty, tx: [], sum: 0 });
+    const g = m.get(t.key); g.tx.push(t); g.sum += -t.amount;
+  }
+  return [...m.values()].sort((a, b) => b.sum - a.sum);
+}
+function chip(cat, cls, onPick) {
+  const b = el('button', { type: 'button', className: 'chip ' + (cls || '') }, dot(catColor(cat)), catLabel(cat, false));
+  b.addEventListener('click', () => onPick(cat)); return b;
+}
+function allChips(onPick) {
+  const out = [];
+  for (const g of allGroups()) {
+    if (g.id === 'ine' || g.kind === 'inc') continue;
+    out.push(el('div', { className: 'grp-h', textContent: g.label }));
+    if (!g.subs.length) out.push(chip(g.id, '', onPick)); else g.subs.forEach(s => out.push(chip(`${g.id}/${s.id}`, '', onPick)));
+  }
+  return out;
+}
+function assignCard(key, txs, onDone) {
+  const sample = txs[0], s = txs.reduce((a, t) => a + t.amount, 0);
+  const pick = cat => { assignKey(key, cat); onDone && onDone(cat); };
+  const sug = suggest(key, sample, state.keywords, state.tx);
+  const more = el('details', {}, el('summary', { textContent: 'Všetky kategórie…' }));
+  const moreChips = el('div', { className: 'chips' }); more.append(moreChips);
+  more.addEventListener('toggle', () => { if (more.open && !moreChips.childElementCount) moreChips.append(...allChips(pick)); });
+  const nb = el('button', { type: 'button', className: 'chip new', textContent: '➕ Nová kategória' });
+  nb.addEventListener('click', () => newCategory(cat => pick(cat)));
+  const card = el('div', { className: 'ucard' },
+    el('h3', { textContent: sample.counterparty }),
+    el('div', { className: 'meta', textContent: `${txs.length}× · spolu ${eur(s)} · ${PTYPES[sample.ptype] || ''} · napr. ${fmtDate(sample.date)}${sample.description ? ' – ' + sample.description.slice(0, 60) : ''}` }),
+    el('div', { className: 'lbl', textContent: `Zaraď všetky platby tejto protistrane (${txs.length}) do:` }),
+    el('div', { className: 'chips' }, ...sug.map(c => chip(c, 'sug', pick)), nb), more);
+  card.dataset.key = key;
+  return card;
+}
+function assignKey(key, cat) {
+  state.rules[key] = cat; save(LS.rules, state.rules);
+  let n = 0;
+  for (const t of state.tx) if (t.key === key) { t.manual = false; n++; }
+  recategorize(); persist();
+  toast(`Zaradené ${n}× „${key}“ → ${catLabel(cat)}. Zapamätané.`);
+}
+function renderUnsorted() {
+  const gs = unsortedGroups(), list = $('#unsorted-list');
+  const us = unsortedStats(state.tx);
+  $('#unsorted-summary').textContent = state.tx.length ? (gs.length ? `${gs.length} protistrán · ${us.count} platieb · ${eur(us.sum)} (${us.pct} % výdavkov)` : '') : 'Najprv načítaj výpis.';
+  $('#unsorted-summary').className = 'small';
+  if (state.tx.length && !gs.length) { $('#unsorted-summary').textContent = '✓ Všetko je zaradené. Výborne!'; $('#unsorted-summary').className = 'small done'; }
+  list.replaceChildren(...gs.slice(0, 60).map(g => assignCard(g.key, g.tx, () => renderUnsorted())));
+}
+function openAssign(key) {
+  const txs = state.tx.filter(t => t.key === key); if (!txs.length) return;
+  const cur = el('p', { className: 'muted small', textContent: `Teraz: ${catLabel(txs[0].category)}` });
+  $('#assign-body').replaceChildren(cur, assignCard(key, txs, () => { $('#assign-dlg').close(); renderDash(); }));
+  $('#assign-dlg').showModal();
+}
+
+// ---------- Nová kategória ----------
+let ncCallback = null;
+function newCategory(cb) {
+  ncCallback = cb;
+  $('#nc-parent').replaceChildren(el('option', { value: '', textContent: '— nová hlavná skupina —' }), ...allGroups().filter(g => g.id !== 'ine' && g.kind === 'exp').map(g => el('option', { value: g.id, textContent: g.label })));
+  $('#nc-name').value = ''; $('#nc-msg').textContent = '';
+  $('#newcat').showModal(); $('#nc-name').focus();
+}
+$('#newcat-form').addEventListener('submit', e => {
+  if (e.submitter?.value !== 'ok') return;
+  const name = $('#nc-name').value.trim();
+  if (!name) { e.preventDefault(); $('#nc-msg').textContent = 'Zadaj názov.'; return; }
+  const slug = 'c_' + name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '_').slice(0, 24) + '_' + Date.now().toString(36).slice(-3);
+  const parent = $('#nc-parent').value;
+  const palette = ['#facc15', '#a78bfa', '#34d399', '#fb7185', '#38bdf8', '#f97316'];
+  const custom = load(LS.custom, []);
+  const item = parent ? { parent, sub: slug, label: name } : { id: slug, label: name, color: palette[custom.length % palette.length], kind: 'exp' };
+  custom.push(item); save(LS.custom, custom); setCustom(custom);
+  const id = parent ? `${parent}/${slug}` : slug;
+  state.keywords[id] = state.keywords[id] || [];
+  toast(`Vytvorená kategória „${name}“`);
+  const cb = ncCallback; ncCallback = null; cb && cb(id);
+});
+
 // ---------- Pohyby ----------
 function catOptions(withAll) {
-  return [...(withAll ? [el('option', { value: '', textContent: 'Všetky kategórie' })] : []), ...CATEGORIES.map(c => el('option', { value: c.id, textContent: c.label }))];
+  const out = withAll ? [el('option', { value: '', textContent: 'Všetky kategórie' })] : [];
+  for (const g of allGroups()) {
+    const og = el('optgroup', { label: g.label });
+    og.append(el('option', { value: g.id, textContent: withAll ? `${g.label} (všetko)` : g.label }));
+    for (const s of g.subs) og.append(el('option', { value: `${g.id}/${s.id}`, textContent: `${g.label} › ${s.label}` }));
+    out.push(og);
+  }
+  return out;
 }
-$('#f-cat').replaceChildren(...catOptions(true));
+function refreshCatSelects() { const v = $('#f-cat').value; $('#f-cat').replaceChildren(...catOptions(true)); $('#f-cat').value = v; $('#e-cat').replaceChildren(...catOptions(false)); }
+refreshCatSelects();
 ['#f-text', '#f-cat', '#f-month', '#f-type'].forEach(id => $(id).addEventListener('input', renderTx));
 
 function renderTx() {
+  refreshCatSelects();
   fillMonthSelect($('#f-month'));
   const q = $('#f-text').value.trim().toLowerCase(), cat = $('#f-cat').value, mk = $('#f-month').value, ty = $('#f-type').value;
-  const list = state.tx.filter(t => (!cat || t.category === cat) && (!mk || monthKey(t.date) === mk) && (!ty || (ty === 'exp' ? t.amount < 0 : t.amount > 0)) && (!q || `${t.counterparty} ${t.description}`.toLowerCase().includes(q)));
+  const list = state.tx.filter(t => (!cat || t.category === cat || (!cat.includes('/') && groupOf(t.category) === cat)) && (!mk || monthKey(t.date) === mk) && (!ty || (ty === 'exp' ? t.amount < 0 : t.amount > 0)) && (!q || `${t.counterparty} ${t.description}`.toLowerCase().includes(q)));
   const s = list.reduce((a, t) => a + t.amount, 0);
   $('#tx-count').textContent = state.tx.length ? `${list.length} pohybov · spolu ${eur(s)} · ťukni na pohyb pre úpravu` : 'Zatiaľ žiadne pohyby. Načítaj výpis v záložke Načítať.';
   $('#tx-list').replaceChildren(...list.slice(0, 500).map(t => {
@@ -301,21 +457,20 @@ function renderTx() {
 function setCategory(t, cat, remember) {
   t.category = cat; t.manual = true;
   if (remember) {
-    const k = counterpartyKey(t.counterparty);
-    if (k) { state.rules[k] = cat; save(LS.rules, state.rules); recategorize(); toast(`Zapamätané: „${t.counterparty}“ → ${CAT[cat].label}`); }
+    const k = t.key || counterpartyKey(t.counterparty);
+    if (k) { state.rules[k] = cat; save(LS.rules, state.rules); state.tx.forEach(x => { if (x.key === k && x !== t) x.manual = false; }); recategorize(); toast(`Zapamätané: „${t.counterparty}“ → ${catLabel(cat)}`); }
   }
   persist(); if (!$('#view-tx').classList.contains('hidden')) renderTx();
 }
 
 // ---------- Úprava pohybu ----------
 let editing = null;
-$('#e-cat').replaceChildren(...catOptions(false));
 function openEdit(t, draft) {
   editing = t; const d = t || draft;
   $('#edit-title').textContent = t ? 'Upraviť pohyb' : 'Pridať pohyb';
   $('#e-date').value = d.date; $('#e-amount').value = d.amount === '' ? '' : String(d.amount).replace('.', ',');
   $('#e-cp').value = d.counterparty || ''; $('#e-desc').value = d.description || '';
-  $('#e-cat').value = t ? t.category : (Number(d.amount) > 0 ? 'prijem' : 'ine');
+  $('#e-cat').value = t ? t.category : (Number(d.amount) > 0 ? 'prijem/ine' : 'ine');
   $('#e-rule').checked = true; $('#e-del').classList.toggle('hidden', !t); $('#e-msg').textContent = '';
   $('#edit').showModal();
 }
@@ -328,6 +483,7 @@ $('#edit-form').addEventListener('submit', e => {
   const catChanged = !editing || editing.category !== $('#e-cat').value;
   const t = editing || { id: Math.random().toString(36).slice(2, 10), source: 'ručne', strategy: 'ručne' };
   Object.assign(t, { date, amount, counterparty: $('#e-cp').value.trim() || '(neznáme)', description: $('#e-desc').value.trim() });
+  t.key = counterpartyKey(t.counterparty) || '(neznáme)'; t.ptype = paymentType(t); t.ctype = counterpartyType(t, t.ptype);
   if (!editing) { state.tx.push(t); state.tx.sort((a, b) => b.date.localeCompare(a.date)); }
   if (catChanged || $('#e-rule').checked) setCategory(t, $('#e-cat').value, $('#e-rule').checked);
   persist(); renderTx(); toast('Uložené');
@@ -336,26 +492,49 @@ $('#tx-add').addEventListener('click', () => openEdit(null, { date: new Date().t
 
 // ---------- Nastavenia ----------
 function renderSettings() {
-  const entries = Object.entries(state.rules);
+  const entries = Object.entries(state.rules).sort((a, b) => a[0].localeCompare(b[0]));
   $('#rules').replaceChildren(...(entries.length ? entries.map(([k, c]) => {
     const sel = el('select', {}, ...catOptions(false)); sel.value = c;
     sel.addEventListener('change', () => { state.rules[k] = sel.value; save(LS.rules, state.rules); recategorize(); persist(); toast('Pravidlo upravené'); });
     const del = el('button', { className: 'btn small ghost', textContent: '✖', title: 'Zmazať pravidlo' });
-    del.addEventListener('click', () => { delete state.rules[k]; save(LS.rules, state.rules); state.tx.forEach(t => { if (counterpartyKey(t.counterparty) === k) t.manual = false; }); recategorize(); persist(); renderSettings(); });
+    del.addEventListener('click', () => { delete state.rules[k]; save(LS.rules, state.rules); state.tx.forEach(t => { if (t.key === k) t.manual = false; }); recategorize(); persist(); renderSettings(); });
     return el('li', {}, el('span', { textContent: k }), el('span', {}, sel, del));
-  }) : [emptyLi('Zatiaľ žiadne. Zmeň kategóriu niektorého pohybu a pravidlo sa objaví tu.')]));
-  $('#kw').replaceChildren(...CATEGORIES.filter(c => c.id !== 'ine').map(c => el('label', { textContent: c.label }, el('textarea', { rows: 2, value: (state.keywords[c.id] || []).join(', '), name: c.id }))));
+  }) : [emptyLi('Zatiaľ žiadne. Zaraď niektorú protistranu a pravidlo sa objaví tu.')]));
+  const custom = load(LS.custom, []);
+  $('#custom-cats').replaceChildren(...(custom.length ? custom.map((c, i) => {
+    const del = el('button', { className: 'btn small ghost', textContent: '✖', title: 'Zmazať kategóriu' });
+    del.addEventListener('click', () => {
+      if (!confirm(`Zmazať kategóriu „${c.label}“? Platby v nej budú znova nezaradené.`)) return;
+      const id = c.parent ? `${c.parent}/${c.sub}` : c.id;
+      custom.splice(i, 1); save(LS.custom, custom); setCustom(custom);
+      for (const [k, v] of Object.entries(state.rules)) if (v === id) delete state.rules[k];
+      save(LS.rules, state.rules); delete state.keywords[id];
+      state.tx.forEach(t => { if (t.category === id) t.manual = false; }); recategorize(); persist(); renderSettings();
+    });
+    return el('li', {}, el('span', { textContent: c.parent ? `${groupInfo(c.parent).label} › ${c.label}` : c.label }), del);
+  }) : [emptyLi('Žiadne. Vytvoriť ich môžeš aj priamo v sekcii Nezaradené.')]));
+  const kwBox = [];
+  for (const g of allGroups()) {
+    if (g.id === 'ine' || !g.subs.length) continue;
+    const det = el('details', { className: 'kwg' }, el('summary', { textContent: g.label }));
+    for (const s of g.subs) { const id = `${g.id}/${s.id}`; if (s.id === 'ine' && g.id === 'prijem') continue;
+      det.append(el('label', { textContent: s.label }, el('textarea', { rows: 2, value: (state.keywords[id] || []).join(', '), name: id }))); }
+    kwBox.push(det);
+  }
+  $('#kw').replaceChildren(...kwBox);
 }
+$('#custom-add').addEventListener('click', () => newCategory(() => renderSettings()));
 $('#kw-save').addEventListener('click', () => {
-  const kw = {};
-  for (const id of Object.keys(DEFAULT_KEYWORDS)) { const ta = $(`#kw textarea[name="${id}"]`); kw[id] = ta ? ta.value.split(',').map(s => s.trim()).filter(Boolean) : state.keywords[id] || []; }
+  const kw = { ...state.keywords };
+  document.querySelectorAll('#kw textarea').forEach(ta => { kw[ta.name] = ta.value.split(',').map(s => s.trim()).filter(Boolean); });
   state.keywords = kw; save(LS.kw, kw); recategorize(); persist(); toast('Kľúčové slová uložené');
 });
-$('#kw-reset').addEventListener('click', () => { if (!confirm('Obnoviť pôvodné kľúčové slová?')) return; state.keywords = structuredClone(DEFAULT_KEYWORDS); localStorage.removeItem(LS.kw); recategorize(); renderSettings(); });
+$('#kw-reset').addEventListener('click', () => { if (!confirm('Obnoviť pôvodné kľúčové slová?')) return; localStorage.removeItem(LS.kw); state.keywords = loadKeywords(); recategorize(); renderSettings(); });
 $('#wipe').addEventListener('click', () => {
   if (!confirm('Naozaj vymazať všetky dáta? Zmažú sa pohyby, pravidlá aj nastavenia v tomto prehliadači.')) return;
   Object.values(LS).forEach(k => localStorage.removeItem(k));
-  state.tx = []; state.sources = []; state.rules = {}; state.keywords = structuredClone(DEFAULT_KEYWORDS); state.settings = { rememberTx: false }; state.lastPassword = null;
+  setCustom([]);
+  state.tx = []; state.sources = []; state.rules = {}; state.keywords = loadKeywords(); state.settings = { rememberTx: false, mode: 'cat' }; state.lastPassword = null;
   $('#remember-tx').checked = false; $('#file-status').replaceChildren(); $('#report-text').value = ''; renderRaw(); renderSettings();
   toast('Všetko vymazané');
 });
