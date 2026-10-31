@@ -1,0 +1,7 @@
+# Nikdy necommitovať skutočné výpisy ani exporty!
+*.pdf
+*.csv
+# výnimka: iba FALOŠNÉ testovacie súbory
+!tests/fake_*.pdf
+!tests/fake_*.csv
+node_modules/

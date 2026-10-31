@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; worker-src 'self' blob:; child-src 'self' blob:; style-src 'self'; img-src 'self' data: blob:; font-src 'none'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0f1115">
+<title>Moje výdavky</title>
+<link rel="stylesheet" href="./style.css">
+<script type="module" src="./js/app.js"></script>
+</head>
+<body>
+<header class="top">
+  <h1>Moje výdavky</h1>
+  <p class="privacy">🔒 Výpis sa nikam neodosiela – všetko sa spracuje iba v tomto prehliadači.</p>
+</header>
+
+<main>
+<!-- NAČÍTAŤ -->
+<section id="view-import" class="view">
+  <div class="card">
+    <h2>Načítať výpis</h2>
+    <p class="muted">Vyber PDF výpis z banky (môžeš aj viac naraz, napr. za viac mesiacov). Ak nejde PDF, môžeš načítať aj CSV.</p>
+    <label class="btn primary file-btn">📄 Vybrať PDF / CSV
+      <input id="file" type="file" accept=".pdf,.csv,application/pdf,text/csv" multiple>
+    </label>
+    <div id="pw-box" class="pw-box hidden">
+      <label for="pw">Heslo k súboru <b id="pw-file"></b></label>
+      <p id="pw-msg" class="msg"></p>
+      <div class="row">
+        <input id="pw" type="password" autocomplete="off" placeholder="Heslo k PDF">
+        <button id="pw-ok" class="btn primary">Otvoriť</button>
+      </div>
+      <button id="pw-skip" class="btn ghost small">Preskočiť tento súbor</button>
+    </div>
+    <ul id="file-status" class="status"></ul>
+    <label class="check"><input id="remember-tx" type="checkbox"> Zapamätaj si aj pohyby v tomto prehliadači</label>
+    <p class="muted small">Predvolene sa pohyby nikam neukladajú – po zatvorení stránky zmiznú. Pamätajú sa len tvoje pravidlá kategórií.</p>
+  </div>
+
+  <div id="raw-card" class="card hidden">
+    <h2>Nesedí to? Oprav ručne</h2>
+    <p class="muted">Ak program pohyby nenašiel alebo ich načítal zle, nastav, v ktorom stĺpci je dátum, suma, protistrana a popis. Tlačidlom ➕ pridáš jeden riadok ako pohyb.</p>
+    <div class="row wrap">
+      <label>Súbor <select id="map-src"></select></label>
+    </div>
+    <div class="map-grid">
+      <label>Dátum: stĺpec <select id="map-date"></select></label>
+      <label>Suma: stĺpec <select id="map-amount"></select></label>
+      <label>Protistrana: stĺpec <select id="map-cp"></select></label>
+      <label>Popis: stĺpec <select id="map-desc"></select></label>
+      <label>Znamienko sumy <select id="map-sign">
+        <option value="sign">podľa výpisu (− je výdavok)</option>
+        <option value="expense">všetko sú výdavky</option>
+        <option value="invert">opačne</option>
+      </select></label>
+    </div>
+    <button id="map-apply" class="btn primary">Použiť toto nastavenie</button>
+    <div class="raw-wrap"><table id="raw-table" class="raw"></table></div>
+  </div>
+
+  <div class="card">
+    <h2>Parser nepoznal výpis? Nahlás formát</h2>
+    <p class="muted">Ukážeme prvých 15 riadkov textu z výpisu so <b>skrytými číslami</b> (# namiesto číslic). Môžeš ich skopírovať a poslať tomu, kto ti appku upravuje. Nič sa neodosiela automaticky. Pred poslaním skontroluj, že tam nie je tvoje meno alebo adresa.</p>
+    <button id="report-btn" class="btn">Ukázať riadky so skrytými číslami</button>
+    <textarea id="report-text" class="hidden" readonly rows="10"></textarea>
+    <button id="report-copy" class="btn small hidden">Kopírovať</button>
+  </div>
+</section>
+
+<!-- PREHĽAD -->
+<section id="view-dash" class="view hidden">
+  <div class="row wrap">
+    <label>Mesiac <select id="dash-month"></select></label>
+  </div>
+  <div class="kpis">
+    <div class="kpi in"><span>Príjmy</span><b id="k-inc">–</b></div>
+    <div class="kpi out"><span>Výdavky</span><b id="k-exp">–</b></div>
+    <div class="kpi"><span>Rozdiel</span><b id="k-bal">–</b></div>
+  </div>
+  <div class="card"><h2>Na čo išli peniaze</h2>
+    <div class="donut-wrap"><canvas id="donut" width="260" height="260" aria-label="Graf výdavkov podľa kategórií"></canvas><ul id="legend" class="legend"></ul></div>
+  </div>
+  <div class="card"><h2>💡 Tipy na šetrenie</h2><ul id="tips" class="tips"></ul></div>
+  <div class="card"><h2>Najväčšie výdavky</h2><ul id="biggest" class="list"></ul></div>
+  <div class="card"><h2>Pravidelné platby a predplatné</h2><ul id="recurring" class="list"></ul></div>
+  <div class="card"><h2>Porovnanie mesiacov</h2><div id="compare"></div></div>
+</section>
+
+<!-- POHYBY -->
+<section id="view-tx" class="view hidden">
+  <div class="filters">
+    <input id="f-text" type="search" placeholder="Hľadať (napr. Lidl)">
+    <select id="f-cat"></select>
+    <select id="f-month"></select>
+    <select id="f-type"><option value="">Príjmy aj výdavky</option><option value="exp">Len výdavky</option><option value="inc">Len príjmy</option></select>
+  </div>
+  <p id="tx-count" class="muted small"></p>
+  <button id="tx-add" class="btn small">➕ Pridať pohyb ručne</button>
+  <ul id="tx-list" class="txlist"></ul>
+</section>
+
+<!-- NASTAVENIA -->
+<section id="view-settings" class="view hidden">
+  <div class="card"><h2>Zapamätané pravidlá</h2>
+    <p class="muted">Keď zmeníš kategóriu pohybu, appka si zapamätá protistranu a nabudúce ju zaradí rovnako.</p>
+    <ul id="rules" class="list"></ul>
+  </div>
+  <div class="card"><h2>Kľúčové slová kategórií</h2>
+    <p class="muted">Slová oddeľ čiarkou. Na veľkých písmenách a diakritike nezáleží.</p>
+    <div id="kw"></div>
+    <div class="row"><button id="kw-save" class="btn primary">Uložiť slová</button><button id="kw-reset" class="btn ghost">Obnoviť pôvodné</button></div>
+  </div>
+  <div class="card danger"><h2>Vymazať dáta</h2>
+    <p class="muted">Zmaže načítané pohyby, pravidlá aj nastavenia z tohto prehliadača.</p>
+    <button id="wipe" class="btn danger">🗑️ Vymazať všetky dáta</button>
+  </div>
+  <p class="muted small">Moje výdavky – funguje bez internetu, bez reklám a bez sledovania. PDF číta knižnica pdf.js (Mozilla, Apache 2.0) uložená priamo v appke.</p>
+</section>
+</main>
+
+<dialog id="edit">
+  <form method="dialog" id="edit-form">
+    <h2 id="edit-title">Upraviť pohyb</h2>
+    <label>Dátum <input id="e-date" type="date" required></label>
+    <label>Suma (výdavok so znamienkom −) <input id="e-amount" type="text" inputmode="decimal" required></label>
+    <label>Protistrana <input id="e-cp" type="text"></label>
+    <label>Popis <input id="e-desc" type="text"></label>
+    <label>Kategória <select id="e-cat"></select></label>
+    <label class="check"><input id="e-rule" type="checkbox" checked> Zapamätať kategóriu pre túto protistranu</label>
+    <p id="e-msg" class="msg"></p>
+    <div class="row wrap">
+      <button value="save" id="e-save" class="btn primary">Uložiť</button>
+      <button value="cancel" formnovalidate class="btn ghost">Zrušiť</button>
+      <button value="delete" formnovalidate id="e-del" class="btn danger small">Zmazať pohyb</button>
+    </div>
+  </form>
+</dialog>
+<div id="toast" class="toast hidden" role="status"></div>
+
+<nav class="tabs">
+  <button data-view="view-import" class="active">📄<span>Načítať</span></button>
+  <button data-view="view-dash">📊<span>Prehľad</span></button>
+  <button data-view="view-tx">📋<span>Pohyby</span></button>
+  <button data-view="view-settings">⚙️<span>Nastavenia</span></button>
+</nav>
+</body>
+</html>
