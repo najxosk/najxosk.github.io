@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0d0b14">
+<title>Línie hrdinov</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="hud">
+    <div class="hb you">🛡 <span id="hpYou">40</span></div>
+    <div class="hb mid"><span id="waveTxt">Príprava</span> · <span id="timerTxt">0:12</span></div>
+    <div class="hb foe"><span id="hpFoe">40</span> 🛡</div>
+    <div class="hb gold">💰 <span id="goldTxt">0</span> <small>(+<span id="incTxt">0</span>/vlna)</small></div>
+    <div class="hb lvl">Úr. <span id="lvlTxt">1</span> <span id="xpBar"><i></i></span></div>
+  </div>
+  <div id="stage">
+    <canvas id="cv"></canvas>
+    <div id="abil"></div>
+    <div id="respawn" class="hidden"></div>
+  </div>
+  <div id="panel">
+    <div id="tabs">
+      <button data-tab="send" class="on">⚔ Poslať</button>
+      <button data-tab="hero">⬆ Hrdina</button>
+      <button data-tab="shop">🛒 Obchod</button>
+    </div>
+    <div id="tabBody"></div>
+  </div>
+  <div id="startScreen" class="overlay">
+    <div class="card">
+      <h1>Línie hrdinov</h1>
+      <p class="sub">Bráň svoju pevnosť, posielaj vojská na nepriateľa!</p>
+      <ul>
+        <li>Ťukni na mapu (dolná polovica) – tvoj hrdina tam pôjde a sám útočí na nepriateľov.</li>
+        <li>Nepriatelia, ktorí dojdú k tvojej pevnosti, ti uberú životy.</li>
+        <li>Za zlato <b>posielaj vojakov</b> na súpera – každý zvýši tvoj príjem za vlnu.</li>
+        <li>Vylepšuj hrdinu (Sila, Zdravie, Rýchlosť) a kupuj predmety.</li>
+        <li>Používaj schopnosti ⚡ a ✚. Zničíš súperovu pevnosť = výhra!</li>
+      </ul>
+      <div class="opts">
+        <span>Línie:</span>
+        <button class="opt on" data-lanes="1">1</button>
+        <button class="opt" data-lanes="2">2</button>
+      </div>
+      <div class="opts">
+        <span>Obtiažnosť:</span>
+        <button class="opt on" data-diff="0.85">Ľahká</button>
+        <button class="opt" data-diff="1">Normálna</button>
+        <button class="opt" data-diff="1.2">Ťažká</button>
+      </div>
+      <button id="btnStart" class="big">Hrať</button>
+    </div>
+  </div>
+  <div id="endScreen" class="overlay hidden">
+    <div class="card">
+      <h1 id="endTitle">Víťazstvo!</h1>
+      <p id="endInfo"></p>
+      <button id="btnRestart" class="big">Hrať znova</button>
+    </div>
+  </div>
+</div>
+<script src="js/data.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
