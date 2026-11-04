@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Electric Ghost — the dark that swallows the light</title>
+<style>
+  html,body{margin:0;height:100%;background:#070b14;overflow:hidden;font-family:system-ui,Segoe UI,Roboto,sans-serif;cursor:crosshair;touch-action:none;-webkit-user-select:none;user-select:none;overscroll-behavior:none;}
+  canvas{display:block;width:100%;height:100%;}
+  #ui{position:fixed;inset:0;pointer-events:none;color:#e8f6ff;}
+  #hud{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;gap:10px;z-index:2;}
+  .panel{background:rgba(8,14,26,.78);border:1px solid #1f3a5f;border-radius:10px;padding:8px 12px;font-size:14px;line-height:1.45;backdrop-filter:blur(3px);}
+  .panel b{color:#7ff0ff;}
+  #energy{position:absolute;left:12px;bottom:12px;width:260px;z-index:2;}
+  #energy .bar{height:12px;border-radius:6px;background:#0a1422;border:1px solid #1f3a5f;overflow:hidden}
+  #energy .fill{height:100%;width:100%;background:linear-gradient(90deg,#4da6ff,#60d0ff,#c79cff);transition:width .08s linear;box-shadow:0 0 10px #60d0ff}
+  #energy .lbl{font-size:11px;color:#9db6d0;margin-top:4px;}
+  #rangebar{position:absolute;right:12px;bottom:14px;z-index:2;font-size:12px;color:#9db6d0;text-align:right;}
+  #hint{position:absolute;bottom:50px;left:50%;transform:translateX(-50%);background:rgba(8,14,26,.85);border:1px solid #2a4a73;border-radius:10px;padding:8px 16px;font-size:14px;color:#dff1ff;z-index:2;transition:opacity .4s;max-width:86vw;text-align:center;}
+  #overlay,#upgrade{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:radial-gradient(ellipse at center,rgba(10,16,32,.92),rgba(3,5,10,.97));pointer-events:auto;z-index:6;padding:20px;box-sizing:border-box;overflow:auto;}
+  #logo{width:190px;height:190px;animation:pulse 3.2s ease-in-out infinite;filter:drop-shadow(0 0 18px rgba(77,166,255,.55));}
+  @keyframes pulse{0%,100%{filter:drop-shadow(0 0 12px rgba(77,166,255,.45));transform:scale(1)}50%{filter:drop-shadow(0 0 28px rgba(140,120,255,.8));transform:scale(1.03)}}
+  #logo .eye{animation:eye 3.2s ease-in-out infinite}
+  @keyframes eye{0%,100%{opacity:.85}50%{opacity:1}}
+  #overlay h1{font-size:34px;margin:6px 0 0;color:#60d0ff;letter-spacing:2px;text-shadow:0 0 18px rgba(77,166,255,.7);}
+  #overlay h1 small{display:block;font-size:13px;color:#b9a8ff;font-weight:600;letter-spacing:3px;margin-top:6px;text-shadow:none}
+  #overlay .sub{color:#c6d8ee;max-width:460px;font-size:16px;line-height:1.6;margin:16px 0 4px;}
+  #overlay .tip{color:#7f95ad;font-size:13px;max-width:440px;line-height:1.65;margin:10px 0;}
+  #overlay .stage{color:#ffd966;font-size:15px;font-weight:700;margin-top:6px;}
+  .btn{pointer-events:auto;margin-top:16px;padding:14px 32px;font-size:16px;font-weight:800;letter-spacing:1px;color:#04121a;background:linear-gradient(90deg,#4da6ff,#60d0ff,#b9a8ff);border:none;border-radius:999px;cursor:pointer;box-shadow:0 0 24px rgba(77,166,255,.5);}
+  .btn:hover{filter:brightness(1.12)}
+  #upgrade{display:none}
+  #upgrade h2{color:#60d0ff;font-size:26px;margin:0 0 6px;text-shadow:0 0 14px rgba(77,166,255,.6)}
+  #upgrade .sub{color:#bcd4ea;font-size:15px;margin-bottom:18px;}
+  .cards{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;max-width:760px;}
+  .card{pointer-events:auto;background:rgba(10,18,34,.9);border:1px solid #2a4a73;border-radius:14px;padding:18px;width:180px;text-align:center;cursor:pointer;transition:transform .08s,border-color .1s,box-shadow .1s;}
+  .card:hover{border-color:#60d0ff;transform:translateY(-3px);box-shadow:0 0 20px rgba(96,208,255,.35)}
+  .card .ico{font-size:32px;}
+  .card .nm{color:#fff;font-weight:700;margin:8px 0 4px;font-size:16px;}
+  .card .ds{color:#9db6d0;font-size:13px;line-height:1.45;min-height:38px;}
+  .card .now{color:#7ff0ff;font-size:12px;margin-top:8px;}
+  #fault{position:fixed;inset:0;background:radial-gradient(circle,transparent 55%,rgba(255,40,40,.30));opacity:0;pointer-events:none;transition:opacity .15s;z-index:3;}
+  .hb{pointer-events:auto;background:none;border:1px solid #2a4a73;color:#7ff0ff;border-radius:6px;cursor:pointer;font-size:13px;padding:3px 8px;margin-left:6px;}
+  .hb:hover{border-color:#60d0ff;}
+  @media (max-width:600px),(max-height:500px){
+    .panel{font-size:12px;padding:6px 9px}
+    #energy{width:44vw} #rangebar{font-size:11px}
+    #hint{font-size:12px;bottom:44px;padding:6px 10px}
+    #logo{width:120px;height:120px} #overlay h1{font-size:24px}
+    #overlay .sub{font-size:14px} #overlay .tip{font-size:12px}
+    .card{width:140px;padding:12px} .card .ds{font-size:12px}
+  }
+  @media (max-height:500px){ #logo{width:80px;height:80px} #overlay .tip{display:none} #overlay .sub{margin:8px 0} .btn{margin-top:8px;padding:10px 24px} }
+</style>
+</head>
+<body>
+<div id="ui">
+  <div id="hud">
+    <div class="panel"><b id="area">Backyard</b> <span id="lvlno" style="color:#7f95ad"></span><br>Darkened: <b id="lit">0</b> / <b id="total">0</b></div>
+    <div class="panel">⚡ <b id="charge">0</b> stored <button class="hb" id="muteBtn">🔊</button><button class="hb" id="menuBtn">⟲ Menu</button></div>
+  </div>
+  <div id="energy"><div class="bar"><div class="fill" id="efill"></div></div><div class="lbl">ENERGY · rest on a lit building to recharge</div></div>
+  <div id="rangebar">jump range <b id="rng">0</b></div>
+  <div id="hint"></div>
+  <div id="fault"></div>
+  <div id="overlay">
+    <svg id="logo" viewBox="0 0 200 200" aria-label="Electric Ghost logo">
+      <defs>
+        <radialGradient id="lgBg" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#0d1630"/><stop offset="1" stop-color="#000"/></radialGradient>
+        <linearGradient id="lgBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c1733"/><stop offset="1" stop-color="#03060f"/></linearGradient>
+        <radialGradient id="lgEye" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffffff"/><stop offset=".35" stop-color="#8fd8ff"/><stop offset="1" stop-color="#7a5cff"/></radialGradient>
+        <clipPath id="lgClip"><path id="lgShape" d="M100 22 C134 22 156 46 158 78 L178 66 L164 96 L184 104 L160 112 L160 166 L148 152 L138 176 L124 156 L112 182 L100 160 L88 182 L76 156 L62 176 L52 152 L40 166 L40 112 L16 104 L36 96 L22 66 L42 78 C44 46 66 22 100 22 Z"/></clipPath>
+        <filter id="lgGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <rect width="200" height="200" rx="28" fill="url(#lgBg)"/>
+      <use href="#lgShape" fill="url(#lgBody)" stroke="#2c5aa8" stroke-width="2"/>
+      <g clip-path="url(#lgClip)" stroke="#1d3f7a" stroke-width="1.6" fill="none" opacity=".9">
+        <path d="M60 60 H80 V44"/><path d="M140 60 H120 V44"/><path d="M50 120 H74 L84 130 V160"/><path d="M150 120 H126 L116 130 V160"/>
+        <path d="M100 110 V150"/><path d="M70 96 H58 V140"/><path d="M130 96 H142 V140"/><path d="M88 34 V50 H112 V34"/>
+        <g fill="#2a63c0" stroke="none"><circle cx="80" cy="44" r="2.5"/><circle cx="120" cy="44" r="2.5"/><circle cx="84" cy="160" r="2.5"/><circle cx="116" cy="160" r="2.5"/><circle cx="100" cy="150" r="2.5"/><circle cx="58" cy="140" r="2.5"/><circle cx="142" cy="140" r="2.5"/></g>
+      </g>
+      <g filter="url(#lgGlow)" class="eye">
+        <path d="M60 86 Q76 74 92 90 Q76 98 60 86 Z" fill="url(#lgEye)"/>
+        <path d="M140 86 Q124 74 108 90 Q124 98 140 86 Z" fill="url(#lgEye)"/>
+      </g>
+    </svg>
+    <h1>⚡ ELECTRIC GHOST<small>THE DARK THAT SWALLOWS THE LIGHT</small></h1>
+    <p class="sub"></p>
+    <div class="tip"></div>
+    <div class="stage" id="stageInfo"></div>
+    <button class="btn" id="start">DARKEN YOUR FIRST BUILDING</button>
+  </div>
+  <div id="upgrade">
+    <h2>🌑 Region fully darkened!</h2>
+    <div class="sub">Spend stored energy on an upgrade:</div>
+    <div class="cards" id="cards"></div>
+  </div>
+</div>
+<canvas id="c"></canvas>
+<script>
+"use strict";
+const cv=document.getElementById("c"), ctx=cv.getContext("2d");
+let W=0,H=0,DPR=1;
+const TOUCH=matchMedia("(pointer:coarse)").matches||("ontouchstart" in window);
+const TAP=TOUCH?"Tap":"Click";
+function resize(){DPR=Math.min(window.devicePixelRatio||1,2);W=window.innerWidth;H=window.innerHeight;cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);cv.style.width=W+"px";cv.style.height=H+"px";ctx.setTransform(DPR,0,0,DPR,0,0);}
+addEventListener("resize",resize);resize();
+
+const LEVELS=[
+ {name:"Backyard",n:14},{name:"Block",n:22},{name:"District",n:32},{name:"Quarter",n:44},{name:"Borough",n:56},
+ {name:"Metropolis",n:74},{name:"Arcology",n:96},{name:"Megacity",n:122},{name:"Nation",n:150},{name:"World",n:180},
+];
+const TRIAL_LEVELS=3;               // trial: only first 3 levels playable (set to 10 for full game)
+const MAXAREA=Math.min(TRIAL_LEVELS,LEVELS.length);
+const SPREAD_S=20;
+const CAP=56;
+const INTRO_SUB='You are the last remnant of an old power grid that became conscious. Humanity has forgotten what real darkness looks like. You give it back to them — and that is how you feed.';
+function introTip(){return '🏢 Buildings ringed with a <b>pulsing outline</b> are within reach — <b>'+TAP.toLowerCase()+'</b> one to jump and swallow its light.<br>🔋 Resting on a lit building recharges you. Long jumps cost more.<br>✨ No fail state — just darkness, one building at a time.';}
+
+let st=null, idc=1, parts=[];
+function newState(){return {area:0,nodes:[],edges:[],ghost:{x:0,y:0,hopT:0,tx:undefined,ty:0,hp:{x:0,y:0},dest:-1},
+  energy:100,skills:{rangeMul:1,bonus:0,spread:0,energyMax:100},litCount:0,done:false,playing:false,charge:0,fault:0,time:0,box:null,grid:null,range:185,scale:1};}
+function range(){ return st.range*st.skills.rangeMul; }
+function enMax(){ return 60 + st.area*4 + st.skills.bonus; }
+function rangeEff(){ return range()*(0.55+0.45*Math.min(1,st.energy/Math.max(1,enMax()))); }
+function costOf(d){ return 4+Math.ceil(d/st.range*10); }   // scale-independent cost
+function rnd(a,b){return a+Math.random()*(b-a);}
+/* ===================== TVARY MAPY (podľa levelu) =====================
+   null = bežná obdĺžniková mapka; inak zoznam elips [cx,cy,rx,ry] v
+   normalizovanom priestore boxu (0..1). "world" = celá zemeguľa (disk). */
+const SHAPES={
+ 0:null, 1:null, 2:null, 3:null, 4:null, 5:null,
+ 6:{ // Arcology -> Európa: pevninský obrys + ostrovy (sever hore)
+  poly:[
+    [0.02,0.80],[0.04,0.90],[0.08,0.97],[0.12,0.92],[0.14,0.84],[0.18,0.78],
+    [0.22,0.70],[0.18,0.62],[0.22,0.54],[0.26,0.50],[0.32,0.46],[0.40,0.40],
+    [0.34,0.24],[0.40,0.06],[0.52,0.00],[0.62,0.08],[0.70,0.20],[0.60,0.34],
+    [0.54,0.42],[0.46,0.44],[0.42,0.48],[0.36,0.52],[0.30,0.58],[0.26,0.64],
+    [0.22,0.72],[0.10,0.78]
+  ],
+  blobs:[
+    [0.26,0.66,0.055,0.115],   // Taliansko
+    [0.32,0.72,0.06,0.055],    // Grécko
+    [0.16,0.47,0.05,0.09],     // UK
+    [0.07,0.50,0.035,0.05],    // Írsko
+  ],
+ },
+ 7:[ // Megacity -> veľký kontinent
+   [0.50,0.50,0.34,0.30],
+   [0.50,0.28,0.20,0.12],
+   [0.50,0.76,0.12,0.12],
+   [0.28,0.50,0.06,0.09],
+   [0.76,0.50,0.06,0.10],
+ ],
+ 8:null,
+ 9:"world",
+};
+const REAL_CONT=[ // reálne obrysy kontinentov [ [lon,lat], ... ] (zjednodušené)
+ // Afrika
+ [[-17,35],[-6,37],[10,37],[19,31],[27,31],[37,20],[43,12],[40,3],[32,0],[13,0],[4,3],[-4,5],[-11,5],[-16,10],[-19,20]],
+ // Európa + západná Ázia (mainland)
+ [[-9,37],[-9,43],[-2,43.5],[-1,45.5],[-4,48.5],[-1,49.5],[2,51],[4.5,52.5],[8,54],[9,56.5],[6,59],[5.5,63],[12,66],[15,68.8],[24,71.5],[31,69.5],[40,69],[52,72],[65,73],[80,77],[98,76],[115,72],[120,68],[112,60],[105,55],[98,48],[95,42],[92,38],[87,35],[85,28],[80,25],[74,22],[70,20],[68,25],[64,28],[62,30],[60,33],[55,35],[50,38],[45,40],[40,42],[36,45],[33,45],[30,44],[27,44],[26,41],[28,36],[20,35],[12,37],[-5,35.5],[-7,36]],
+ // Arabský polostrov
+ [[38,30],[52,23],[58,14],[45,13],[38,20]],
+ // India
+ [[69,25],[78,20],[89,15],[80,7],[74,10],[69,20]],
+ // JV Ázia / Indočína
+ [[95,15],[105,12],[108,12],[112,9],[103,3],[94,9]],
+ // Severná Amerika
+ [[-165,68],[-150,71],[-120,72],[-95,73],[-82,72],[-72,66],[-62,58],[-60,53],[-58,47],[-68,44],[-70,42],[-76,35],[-81,32],[-80,30],[-82,28],[-90,29],[-97,27],[-101,24],[-106,23],[-113,29],[-118,34],[-124,42],[-125,48],[-129,51],[-133,56],[-139,60],[-148,62],[-160,58],[-165,54],[-175,60]],
+ // Južná Amerika
+ [[-70,12],[-62,10],[-60,8],[-52,-1],[-50,-3],[-40,-8],[-38,-15],[-42,-23],[-48,-28],[-52,-33],[-59,-40],[-65,-47],[-71,-53],[-74,-50],[-73,-37],[-72,-32],[-70,-20],[-77,-13],[-81,-6],[-80,-2],[-79,2],[-75,10]],
+ // Austrália
+ [[113,-22],[122,-17],[132,-12],[137,-16],[143,-12],[147,-19],[152,-24],[153,-28],[149,-34],[146,-38],[140,-37],[132,-34],[124,-33],[115,-33],[113,-26]],
+ // Grónsko
+ [[-55,77],[-47,80],[-40,76],[-44,68],[-53,61],[-60,67],[-52,76]],
+];
+const GLOBE_LON0=12, GLOBE_LAT0=22;
+function gpx(lon,lat,r){
+  const P=Math.PI/180, cl=Math.cos(GLOBE_LAT0*P);
+  const px=Math.cos(lat*P)*Math.cos(lon*P), py=Math.cos(lat*P)*Math.sin(lon*P), pz=Math.sin(lat*P);
+  const ux=-Math.sin(GLOBE_LON0*P), uy=Math.cos(GLOBE_LON0*P), uz=0;
+  const fx=cl*Math.cos(GLOBE_LON0*P), fy=cl*Math.sin(GLOBE_LON0*P), fz=Math.sin(GLOBE_LAT0*P);
+  const vx=-Math.sin(GLOBE_LAT0*P)*Math.cos(GLOBE_LON0*P), vy=-Math.sin(GLOBE_LAT0*P)*Math.sin(GLOBE_LON0*P), vz=cl;
+  const sx=px*ux+py*uy+pz*uz, sy=px*vx+py*vy+pz*vz, dep=px*fx+py*fy+pz*fz;
+  if(dep<0.03) return null;
+  return [sx*r, -sy*r];
+}
+function inPoly(nx,ny,poly){ let c=false; for(let i=0,j=poly.length-1;i<poly.length;j=i++){ const xi=poly[i][0],yi=poly[i][1],xj=poly[j][0],yj=poly[j][1];
+  if(((yi>ny)!==(yj>ny)) && (nx < (xj-xi)*(ny-yi)/(yj-yi)+xi)) c=!c; } return c; }
+function insideShapePix(px,py){
+  const sh=SHAPES[st.area];
+  if(sh===null) return true;
+  const bx=st.box, nx=(px-bx.ox)/bx.w, ny=(py-bx.oy)/bx.h;
+  if(sh==="world"){ const r=Math.min(bx.w,bx.h)/2*0.98;
+    return Math.hypot(px-(bx.ox+bx.w/2), py-(bx.oy+bx.h/2))<=r; }
+  if(Array.isArray(sh)){ // zhluk elips (kontinent)
+    for(const b of sh){ const dx=nx-b[0], dy=ny-b[1]; if(dx*dx/(b[2]*b[2]) + dy*dy/(b[3]*b[3]) <= 1) return true; }
+    return false; }
+  // objekt {poly, blobs} (Európa / pevnina + ostrovy)
+  if(sh.poly && inPoly(nx,ny,sh.poly)) return true;
+  for(const b of (sh.blobs||[])){ const dx=nx-b[0], dy=ny-b[1]; if(dx*dx/(b[2]*b[2]) + dy*dy/(b[3]*b[3]) <= 1) return true; }
+  return false;
+}
+function drawRegionShape(){
+  if(!st||!st.box) return; const bx=st.box, sh=SHAPES[st.area];
+  ctx.save();
+  // --- zemeguľa: realistická planéta s kontinentmi ---
+  if(sh==="world"){
+    const cx=bx.ox+bx.w/2, cy=bx.oy+bx.h/2, r=Math.min(bx.w,bx.h)/2*0.98;
+    const halo=ctx.createRadialGradient(cx,cy,r*0.7,cx,cy,r*1.12);
+    halo.addColorStop(0,"rgba(0,223,255,0)"); halo.addColorStop(1,"rgba(0,150,255,.12)");
+    ctx.fillStyle=halo; ctx.beginPath(); ctx.arc(cx,cy,r*1.12,0,Math.PI*2); ctx.fill();
+    // oceán
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+    const pg=ctx.createRadialGradient(cx-r*0.4,cy-r*0.4,r*0.1,cx,cy,r);
+    pg.addColorStop(0,"rgba(24,70,120,.55)"); pg.addColorStop(0.7,"rgba(6,22,48,.90)"); pg.addColorStop(1,"rgba(2,8,20,.97)");
+    ctx.fillStyle=pg; ctx.fill();
+    ctx.save();
+    // speň: okraj disku
+    ctx.clip();
+    // kontinenty (reálne obrysy, sférická projekcia)
+    for(const c of REAL_CONT){
+      ctx.beginPath(); let moved=false;
+      for(const pt of c){ const p=gpx(pt[0],pt[1],r); if(p){ const x=cx+p[0], y=cy+p[1]; if(!moved){ctx.moveTo(x,y);moved=true;} else ctx.lineTo(x,y); } }
+      ctx.closePath();
+      ctx.fillStyle="rgba(78,150,205,.30)"; ctx.fill();
+      ctx.strokeStyle="rgba(150,240,255,.38)"; ctx.lineWidth=1.3; ctx.stroke();
+    }
+    ctx.restore();
+    // obrys planéty
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+    ctx.strokeStyle="rgba(140,235,255,.45)"; ctx.lineWidth=2; ctx.stroke();
+    // rovník + poludník
+    ctx.strokeStyle="rgba(120,230,255,.12)"; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.ellipse(cx,cy,r,r*0.40,0,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(cx,cy,r*0.40,r,0,0,Math.PI*2); ctx.stroke();
+    ctx.restore(); return;
+  }
+  // --- zóna (Európa / kontinent): svietiace útvary ---
+  if(Array.isArray(sh)){ // kontinent: zhluk elips
+    for(const b of sh){ const cxp=bx.ox+b[0]*bx.w, cyp=bx.oy+b[1]*bx.h, rxp=b[2]*bx.w, ryp=b[3]*bx.h;
+      ctx.beginPath(); ctx.ellipse(cxp,cyp,rxp,ryp,0,0,Math.PI*2);
+      ctx.fillStyle="rgba(40,92,158,.09)"; ctx.fill();
+      ctx.strokeStyle="rgba(0,205,255,"+(0.24+0.14*Math.sin(st.time*2)).toFixed(3)+")";
+      ctx.lineWidth=1.5; ctx.setLineDash([4,7]); ctx.stroke(); }
+  } else if(sh&&sh.poly){ // Európa: súvislý obrys pevniny + ostrovy
+    ctx.beginPath();
+    ctx.moveTo(bx.ox+sh.poly[0][0]*bx.w, bx.oy+sh.poly[0][1]*bx.h);
+    for(let i=1;i<sh.poly.length;i++) ctx.lineTo(bx.ox+sh.poly[i][0]*bx.w, bx.oy+sh.poly[i][1]*bx.h);
+    ctx.closePath();
+    ctx.fillStyle="rgba(45,110,185,.14)"; ctx.fill();
+    ctx.save(); ctx.shadowColor="rgba(0,220,255,.7)"; ctx.shadowBlur=10;
+    ctx.strokeStyle="rgba(80,225,255,"+(0.55+0.20*Math.sin(st.time*2)).toFixed(3)+")";
+    ctx.lineWidth=2.4; ctx.setLineDash([5,7]); ctx.stroke(); ctx.restore();
+    for(const b of (sh.blobs||[])){ const cxp=bx.ox+b[0]*bx.w, cyp=bx.oy+b[1]*bx.h, rxp=b[2]*bx.w, ryp=b[3]*bx.h;
+      ctx.beginPath(); ctx.ellipse(cxp,cyp,rxp,ryp,0,0,Math.PI*2);
+      ctx.fillStyle="rgba(40,92,158,.09)"; ctx.fill();
+      ctx.strokeStyle="rgba(0,205,255,"+(0.22+0.12*Math.sin(st.time*2)).toFixed(3)+")";
+      ctx.lineWidth=1.4; ctx.setLineDash([4,7]); ctx.stroke(); }
+  }
+  ctx.restore();
+}
+
+/* ===================== BUILDINGS (deterministic per node) ===================== */
+const WIN_C=["#ffd966","#ffaa33","#ffe58a"];
+function makeLook(tier,bs){
+  const L={tier,w:bs*2,h:bs*2,wins:[],pts:[]};
+  if(tier<=1){ // detailed (R1-2: 3-6 windows) / medium (R3-4: 1-3 windows)
+    L.w=bs*2*rnd(0.85,1.25); L.h=bs*2*rnd(1.0,1.55);
+    const cols=L.w>bs*2.1?3:2, rows=Math.max(2,Math.round(L.h/(bs*0.75)));
+    const cells=[]; for(let c=0;c<cols;c++)for(let r=0;r<rows;r++)cells.push([c,r]);
+    for(let i=cells.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[cells[i],cells[j]]=[cells[j],cells[i]];}
+    const n=tier===0?3+(Math.random()*4|0):1+(Math.random()*3|0);
+    const cw=L.w/cols, ch=L.h/rows, ww=Math.max(2.5,cw*0.42), wh=Math.max(2.5,ch*0.45);
+    for(const [c,r] of cells.slice(0,Math.min(n,cells.length))) L.wins.push({x:-L.w/2+(c+0.5)*cw-ww/2,y:-L.h/2+(r+0.5)*ch-wh/2,w:ww,h:wh,c:WIN_C[Math.random()*2|0]});
+  } else if(tier===2){ L.w=bs*1.4; L.h=bs*1.4; L.pts.push({x:0,y:0,r:bs*0.28,c:WIN_C[Math.random()*2|0]}); }
+  else if(tier===3){ L.w=L.h=0; L.pts.push({x:0,y:0,r:bs*0.35,c:WIN_C[Math.random()*3|0]}); }
+  else { L.w=L.h=0; const k=3+(Math.random()*3|0); for(let i=0;i<k;i++) L.pts.push({x:rnd(-bs*.8,bs*.8),y:rnd(-bs*.8,bs*.8),r:bs*rnd(.15,.3),c:WIN_C[Math.random()*3|0]}); }
+  return L;
+}
+
+/* ===================== MAP ===================== */
+function layout(){
+  const small=W<700, low=H<500;
+  const padTop=low?54:(small?72:78), padBot=low?40:(small?78:66);
+  const Wd=Math.min(1300, small?W-16:(low?W*0.9:W*0.86)), Hd=Math.min(900, H-padTop-padBot);
+  return {ox:W/2-Wd/2, oy:padTop+(H-padTop-padBot-Hd)/2, w:Wd, h:Hd};
+}
+function buildArea(){
+  const lv=LEVELS[st.area];
+  const bx=layout(); st.box=bx; const ox=bx.ox, oy=bx.oy, Wd=bx.w, Hd=bx.h;
+  st.nodes=[]; st.edges=[]; parts=[];
+  const S=Math.sqrt(Wd*Hd);
+  st.range=Math.max(115,Math.min(290,0.27*S)); st.scale=st.range/260;
+  st.skills.energyMax=enMax();
+  const tier=Math.floor(st.area/2);
+  const bs=Math.max(10,Math.min(17,14*Math.sqrt(st.scale)))*(1-0.06*st.area);
+  const minSep=Math.max(30,bs*3.4);
+  const maxD=st.range*0.72;            // base range: always reachable chain, even after upgrades
+  const mk=(x,y)=>({x,y,lit:true,id:idc++,dt:-9,look:makeLook(tier,bs)});
+  let fx=ox+Wd*0.5, fy=oy+Hd*0.5;
+  for(let k=0;k<80;k++){ fx=ox+Wd*(0.35+Math.random()*0.3); fy=oy+Hd*(0.35+Math.random()*0.3); if(insideShapePix(fx,fy)) break; }
+  st.nodes.push(mk(fx,fy));
+  let guard=0;
+  // best-of-N candidates: pick the one farthest from existing buildings -> map spreads over the whole region
+  while(st.nodes.length<lv.n && guard++<20000){
+    let best=null,bestD=-1,bp=null;
+    for(let tr=0;tr<24;tr++){
+      const p=st.nodes[Math.floor(Math.random()*st.nodes.length)];
+      const ang=Math.random()*Math.PI*2, dist=minSep+Math.random()*(maxD-minSep);
+      const x=p.x+Math.cos(ang)*dist, y=p.y+Math.sin(ang)*dist;
+      if(SHAPES[st.area]){ if(!insideShapePix(x,y)) continue; }
+      else if(x<ox+bs*2||x>ox+Wd-bs*2||y<oy+bs*3+30||y>oy+Hd-bs*2.5) continue;
+      let md=1e9; for(const n of st.nodes){ md=Math.min(md,Math.hypot(n.x-x,n.y-y)); }
+      if(md<minSep) continue;
+      const score=Math.min(md,maxD*0.9)+Math.random()*10;
+      if(score>bestD){bestD=score;best={x,y};bp=p;}
+    }
+    if(!best) continue;
+    const nn=mk(best.x,best.y); st.nodes.push(nn); st.edges.push([bp,nn]);
+  }
+  const cx2=ox+Wd/2, cy2=oy+Hd/2;
+  let start=st.nodes[0],bd=1e9;
+  for(const nd of st.nodes){ const d=Math.hypot(nd.x-cx2,nd.y-cy2); if(d<bd){bd=d;start=nd;} }
+  st.litCount=st.nodes.length;
+  st.ghost.x=start.x; st.ghost.y=start.y; st.ghost.dest=start.id; st.ghost.tx=undefined;
+  st.energy=st.skills.energyMax;
+  buildBg();
+}
+
+/* ===================== BACKGROUND ===================== */
+function buildBg(){
+  const tc=document.createElement("canvas"); tc.width=Math.round(W*DPR); tc.height=Math.round(H*DPR); const t=tc.getContext("2d"); t.scale(DPR,DPR);
+  t.fillStyle="#070b14"; t.fillRect(0,0,W,H);
+  for(let i=0;i<90;i++){ t.fillStyle="rgba(200,220,255,"+(0.03+Math.random()*0.12).toFixed(2)+")"; t.fillRect(Math.random()*W,Math.random()*H,1.2,1.2); }
+  const step=40; t.strokeStyle="rgba(96,160,255,.08)"; t.lineWidth=1;
+  for(let x=(W/2)%step;x<=W;x+=step){ t.beginPath();t.moveTo(x+.5,0);t.lineTo(x+.5,H);t.stroke(); }
+  for(let y=(H/2)%step;y<=H;y+=step){ t.beginPath();t.moveTo(0,y+.5);t.lineTo(W,y+.5);t.stroke(); }
+  if(st&&st.box){ const b=st.box; const g=t.createRadialGradient(b.ox+b.w/2,b.oy+b.h/2,0,b.ox+b.w/2,b.oy+b.h/2,Math.max(b.w,b.h)*0.6);
+    g.addColorStop(0,"rgba(30,60,120,.10)"); g.addColorStop(1,"rgba(30,60,120,0)"); t.fillStyle=g; t.fillRect(b.ox,b.oy,b.w,b.h); }
+  const v=t.createRadialGradient(W/2,H/2,Math.min(W,H)*0.35,W/2,H/2,Math.max(W,H)*0.75);
+  v.addColorStop(0,"rgba(0,0,0,0)"); v.addColorStop(1,"rgba(0,0,0,.6)"); t.fillStyle=v; t.fillRect(0,0,W,H);
+  if(st) st.grid={terr:tc,w:W,h:H};
+}
+
+/* ===================== AUDIO (synthesized Web Audio, no files) ===================== */
+let ac=null, muted=false;
+function initAudio(){ try{ if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)(); if(ac&&ac.state==="suspended") ac.resume(); }catch(e){} }
+function tone(f,dur,type,vol,when=0){ if(!ac||muted) return; try{ const o=ac.createOscillator(),g=ac.createGain(); o.type=type; o.frequency.value=f; o.connect(g); g.connect(ac.destination); const t=ac.currentTime+when; g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.start(t); o.stop(t+dur);}catch(e){} }
+function sJump(){ tone(320,0.06,"square",0.10); tone(540,0.09,"sine",0.10,0.02); }
+function sDark(){ tone(520-(Math.random()*80|0),0.18,"sine",0.13); tone(260,0.22,"triangle",0.07,0.03); }
+function sBlock(){ tone(150,0.14,"sawtooth",0.12); }
+function sLow(){ tone(110,0.12,"sawtooth",0.10); tone(90,0.14,"sawtooth",0.08,0.05); }
+function sComplete(){ [784,660,523,392].forEach((f,i)=>tone(f,0.22,"sine",0.09,i*0.1)); }
+function sLevelUp(){ [392,494,587,784].forEach((f,i)=>tone(f,0.16,"triangle",0.13,i*0.09)); }
+function sWin(){ [523,659,784,1046,784,1046].forEach((f,i)=>tone(f,0.22,"triangle",0.12,i*0.12)); }
+function toggleMute(){ muted=!muted; document.getElementById("muteBtn").textContent=muted?"🔇":"🔊"; }
+
+/* ===================== INPUT (mouse + touch via pointer events) ===================== */
+function onDown(e){
+  if(!st||!st.playing||st.done) return;
+  e.preventDefault();
+  if(st.ghost.tx!==undefined) return;
+  const rect=cv.getBoundingClientRect();
+  const mx=(e.clientX-rect.left)*(W/rect.width), my=(e.clientY-rect.top)*(H/rect.height);
+  let reachBest=null, reachGap=1e9, anyFar=null, farGap=1e9;
+  const cap=TOUCH?CAP+10:CAP;
+  for(const nd of st.nodes){
+    if(nd.id===st.ghost.dest) continue;
+    const dc=Math.hypot(nd.x-mx,nd.y-my), dG=Math.hypot(nd.x-st.ghost.x,nd.y-st.ghost.y);
+    // prefer lit buildings slightly when tapping between two
+    const sc=dc-(nd.lit?8:0);
+    if(dG<=rangeEff()){ if(sc<reachGap){reachGap=sc;reachBest=nd;} }
+    else if(dc<farGap){ farGap=dc; anyFar=nd; }
+  }
+  if(anyFar && farGap<24 && (!reachBest||farGap<reachGap)){ block(anyFar); return; }
+  if(!reachBest||reachGap>cap){ if(anyFar&&farGap<cap) block(anyFar); else flash(); return; }
+  const hopD=Math.hypot(reachBest.x-st.ghost.x, reachBest.y-st.ghost.y);
+  if(st.energy<costOf(hopD)){ lowEnergy(); return; }
+  doHop(reachBest);
+}
+function doHop(nd){ const g=st.ghost, d=Math.hypot(nd.x-g.x,nd.y-g.y); st.energy=Math.max(0,st.energy-costOf(d)); g.hopT=0; g.hp={x:g.x,y:g.y}; g.tx=nd.x; g.ty=nd.y; g.dest=nd.id; st.hops=(st.hops||0)+1; st.totalHops=(st.totalHops||0)+1; sJump();
+  const n=10+(Math.random()*6|0); for(let i=0;i<n;i++){ const k=i/n; parts.push({x:g.x+(nd.x-g.x)*k+rnd(-3,3),y:g.y+(nd.y-g.y)*k+rnd(-3,3),vx:rnd(-12,12),vy:rnd(-18,4),life:0.35+k*0.35,max:0.35+k*0.35,r:rnd(1.4,2.8),delay:k*0.16}); } }
+function block(nd){ st.fault=1; st.blockNode=nd; sBlock(); }
+function flash(){ st.fault=Math.max(st.fault,0.3); st.blockNode=null; }
+function lowEnergy(){ st.fault=Math.max(st.fault,0.4); st.lowFlag=1; sLow(); }
+
+/* ===================== UPDATE ===================== */
+const HOP_TIME=0.18;
+function update(dt){
+  st.time+=dt;
+  for(const p of parts){ if(p.delay>0){p.delay-=dt;continue;} p.life-=dt; p.x+=p.vx*dt; p.y+=p.vy*dt; }
+  parts=parts.filter(p=>p.life>0);
+  if(st.done||!st.playing) return;
+  const g=st.ghost;
+  if(g.tx!==undefined){
+    g.hopT+=dt; const t=Math.min(g.hopT/HOP_TIME,1), e2=0.5-0.5*Math.cos(Math.PI*t);
+    g.x=g.hp.x+(g.tx-g.hp.x)*e2; g.y=g.hp.y+(g.ty-g.hp.y)*e2;
+    if(t>=1){ g.x=g.tx; g.y=g.ty; g.hopT=0; g.tx=undefined; darkenNode(currentNode()); }
+  }
+  const cn=currentNode(), onLit=cn&&cn.lit;
+  st.energy=Math.min(enMax(), st.energy+(onLit?28:20)*dt);
+  if(st.fault>0) st.fault=Math.max(0,st.fault-dt*3);
+  if(st.lowFlag>0) st.lowFlag=Math.max(0,st.lowFlag-dt*1.5);
+  if(st.litCount<=0) stageDone();
+}
+function currentNode(){ return st.nodes.find(n=>n.id===st.ghost.dest); }
+function darkenNode(nd){ if(!nd)return; const sp=st.skills.spread*SPREAD_S*st.scale; let hit=0;
+  for(const n of st.nodes){ if(!n.lit)continue;
+    if(n===nd || Math.hypot(n.x-nd.x,n.y-nd.y)<=sp+1){ n.lit=false; n.dt=st.time; st.litCount--; hit++; } }
+  if(sp>0 && hit>1){ st.energy=Math.max(0,st.energy-(hit-1)*(3+st.skills.spread*1.5)); }
+  if(hit>0) sDark(); }
+
+/* ===================== PROGRESSION ===================== */
+function stageDone(){ st.done=true; st.playing=false; st.reveal=0; st.revealDone=false;
+  st.charge += Math.floor(enMax()*0.1) + Math.floor(st.energy*0.2);
+  sComplete(); setTimeout(afterReveal, 1400); }
+function afterReveal(){ if(st.revealDone) return; st.revealDone=true;
+  if(st.area>=MAXAREA-1) winGame(); else showUpgrade(); }
+function showUpgrade(){
+  const u=document.getElementById("upgrade"); u.style.display="flex";
+  u.querySelector("h2").textContent="🌑 "+LEVELS[st.area].name+" fully darkened!";
+  u.querySelector(".sub").textContent="Choose an upgrade before "+LEVELS[st.area+1].name+":";
+  const cards=document.getElementById("cards"); cards.innerHTML="";
+  const opts=[
+    {ico:"🔭",nm:"Longer Reach",ds:"Jump farther and reach distant buildings.",now:"range "+Math.round(range()),chg:()=>{st.skills.rangeMul+=0.22;}},
+    {ico:"🔋",nm:"Bigger Battery",ds:"More energy for more long jumps before you recharge.",now:enMax()+" energy",chg:()=>{st.skills.bonus+=26;}},
+    {ico:"💫",nm:"Radiance",ds:"Darken a small radius per jump — extra buildings cost a little energy.",now:"radius "+st.skills.spread,chg:()=>{st.skills.spread+=1;}},
+  ];
+  opts.forEach(o=>{const d=document.createElement("div"); d.className="card";
+    d.innerHTML=`<div class="ico">${o.ico}</div><div class="nm">${o.nm}</div><div class="ds">${o.ds}</div><div class="now">now: ${o.now}</div>`;
+    d.addEventListener("pointerdown",e=>{e.stopPropagation(); e.preventDefault(); o.chg(); sLevelUp(); nextArea();}); cards.appendChild(d);});
+}
+function setHudArea(){ document.getElementById("area").textContent=LEVELS[st.area].name; document.getElementById("lvlno").textContent=(st.area+1)+"/"+MAXAREA; }
+function nextArea(){ st.area++; st.done=false; st.playing=true; st.arrive=1; st.hops=0; buildArea(); document.getElementById("upgrade").style.display="none"; setHudArea(); }
+function winGame(){
+  const o=document.getElementById("overlay"); o.style.display="flex";
+  const full=MAXAREA>=LEVELS.length;
+  o.querySelector("h1").innerHTML=full?'🌑 THE WORLD IS DARK':'🌑 TRIAL COMPLETE<small>TO BE CONTINUED…</small>';
+  o.querySelector(".sub").innerHTML=full?'Every last light has been swallowed.':'<b>Backyard</b>, <b>Block</b> and <b>District</b> now sit in real darkness. The city beyond still glows — Quarter, Borough, Metropolis… The ghost is still hungry.';
+  o.querySelector(".tip").innerHTML='Stored energy: <b style="color:#7ff0ff">'+Math.floor(st.charge)+'</b> · Jumps: <b style="color:#7ff0ff">'+(st.totalHops||0)+'</b>';
+  const s=document.getElementById("stageInfo"); s.style.display="block"; s.textContent=full?"":"More regions coming soon";
+  o.querySelector(".btn").textContent="↻ PLAY AGAIN";
+  sWin();
+}
+function fillIntro(){
+  const o=document.getElementById("overlay");
+  o.querySelector("h1").innerHTML='⚡ ELECTRIC GHOST<small>THE DARK THAT SWALLOWS THE LIGHT</small>';
+  o.querySelector(".sub").innerHTML=INTRO_SUB;
+  o.querySelector(".tip").innerHTML=introTip();
+  const s=document.getElementById("stageInfo"); s.style.display="block";
+  s.textContent=(MAXAREA<LEVELS.length?"Trial · ":"")+LEVELS.slice(0,MAXAREA).map(l=>l.name).join(" → ");
+  o.querySelector(".btn").textContent="DARKEN YOUR FIRST BUILDING";
+}
+function goMenu(){ st=newState(); buildArea(); document.getElementById("upgrade").style.display="none"; document.getElementById("overlay").style.display="flex"; fillIntro(); setHudArea(); initAudio(); }
+
+/* ===================== RENDER ===================== */
+const WARM_TEX=(()=>{ const c=document.createElement("canvas"); c.width=128;c.height=128; const g=c.getContext("2d");
+  const r=g.createRadialGradient(64,64,0,64,64,64);
+  r.addColorStop(0,"rgba(255,220,130,0.55)"); r.addColorStop(0.4,"rgba(255,170,60,0.18)"); r.addColorStop(1,"rgba(255,150,40,0)");
+  g.fillStyle=r; g.fillRect(0,0,128,128); return c; })();
+const COOL_TEX=(()=>{ const c=document.createElement("canvas"); c.width=128;c.height=128; const g=c.getContext("2d");
+  const r=g.createRadialGradient(64,64,0,64,64,64);
+  r.addColorStop(0,"rgba(160,225,255,0.7)"); r.addColorStop(0.35,"rgba(96,208,255,0.25)"); r.addColorStop(1,"rgba(77,166,255,0)");
+  g.fillStyle=r; g.fillRect(0,0,128,128); return c; })();
+
+function drawLitBuilding(L,alpha,pulse){
+  const bs=Math.max(L.w,L.h,10);
+  ctx.globalCompositeOperation="lighter"; ctx.globalAlpha=alpha*(0.75+0.1*pulse);
+  const gr=bs*2.6; ctx.drawImage(WARM_TEX,-gr,-gr,gr*2,gr*2);
+  ctx.globalCompositeOperation="source-over"; ctx.globalAlpha=alpha;
+  if(L.w>0){ ctx.fillStyle="#141c30"; ctx.fillRect(-L.w/2,-L.h/2,L.w,L.h);
+    ctx.strokeStyle="rgba(255,217,102,.30)"; ctx.lineWidth=1; ctx.strokeRect(-L.w/2+.5,-L.h/2+.5,L.w-1,L.h-1);
+    ctx.fillStyle="rgba(255,217,102,.18)"; ctx.fillRect(-L.w/2,-L.h/2,L.w,1.5); }
+  ctx.shadowColor="#ffaa33"; ctx.shadowBlur=8;
+  for(const w of L.wins){ ctx.fillStyle=w.c; ctx.fillRect(w.x,w.y,w.w,w.h); }
+  for(const p of L.pts){ ctx.fillStyle=p.c; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,7); ctx.fill(); }
+  ctx.shadowBlur=0; ctx.globalAlpha=1;
+}
+function drawDarkBuilding(L){
+  if(L.w>0){ ctx.fillStyle="#1a1f2e"; ctx.fillRect(-L.w/2,-L.h/2,L.w,L.h); ctx.strokeStyle="rgba(70,90,130,.35)"; ctx.lineWidth=1; ctx.strokeRect(-L.w/2+.5,-L.h/2+.5,L.w-1,L.h-1); }
+  else { ctx.fillStyle="#1a1f2e"; for(const p of L.pts){ ctx.beginPath(); ctx.arc(p.x,p.y,p.r+1,0,7); ctx.fill(); } }
+}
+function ghostPath(r){
+  ctx.beginPath();
+  ctx.moveTo(-r,0); ctx.arc(0,0,r,Math.PI,0);
+  ctx.lineTo(r*1.45,-r*0.35); ctx.lineTo(r*1.05,r*0.25); // side spike
+  ctx.lineTo(r,r*1.25);
+  const n=4; for(let i=1;i<=n*2;i++){ const x=r-(2*r)*i/(n*2); ctx.lineTo(x, i%2? r*0.85 : r*1.3); }
+  ctx.lineTo(-r*1.05,r*0.25); ctx.lineTo(-r*1.45,-r*0.35); ctx.closePath();
+}
+function drawGhost(){
+  const g=st.ghost, bob=g.tx===undefined?Math.sin(st.time*4)*2:0, r=11*Math.max(0.85,Math.min(1.2,st.scale));
+  ctx.save(); ctx.translate(g.x,g.y-r*1.9+bob);
+  ctx.globalCompositeOperation="lighter"; ctx.globalAlpha=0.8; ctx.drawImage(COOL_TEX,-r*3.5,-r*3.5,r*7,r*7); ctx.globalAlpha=1; ctx.globalCompositeOperation="source-over";
+  const gr=ctx.createLinearGradient(0,-r,0,r*1.3); gr.addColorStop(0,"#9fe6ff"); gr.addColorStop(0.45,"#60d0ff"); gr.addColorStop(1,"rgba(77,166,255,.55)");
+  ctx.shadowColor="#60d0ff"; ctx.shadowBlur=22; ctx.fillStyle=gr; ghostPath(r); ctx.fill(); ctx.shadowBlur=0;
+  ctx.strokeStyle="rgba(220,248,255,.7)"; ctx.lineWidth=1; ghostPath(r); ctx.stroke();
+  ctx.fillStyle="#120a36";
+  for(const s of [-1,1]){ ctx.beginPath(); ctx.moveTo(s*r*0.15,-r*0.05); ctx.quadraticCurveTo(s*r*0.45,-r*0.5,s*r*0.72,-r*0.2); ctx.quadraticCurveTo(s*r*0.45,r*0.12,s*r*0.15,-r*0.05); ctx.fill(); }
+  ctx.restore();
+}
+function draw(){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  if(st&&st.grid&&st.grid.terr) ctx.drawImage(st.grid.terr,0,0,W,H); else { ctx.fillStyle="#070b14"; ctx.fillRect(0,0,W,H); }
+  if(!st) return;
+  drawRegionShape();
+  const b=st.box;
+  if(b&&!SHAPES[st.area]){ ctx.save(); ctx.strokeStyle="rgba(96,160,255,.16)"; ctx.lineWidth=1; ctx.setLineDash([10,8]); ctx.strokeRect(b.ox+.5,b.oy+.5,b.w,b.h);
+    ctx.setLineDash([]); ctx.strokeStyle="rgba(96,208,255,.5)"; ctx.lineWidth=2; const k=14;
+    for(const [x,y,dx,dy] of [[b.ox,b.oy,1,1],[b.ox+b.w,b.oy,-1,1],[b.ox,b.oy+b.h,1,-1],[b.ox+b.w,b.oy+b.h,-1,-1]]){ ctx.beginPath(); ctx.moveTo(x+dx*k,y); ctx.lineTo(x,y); ctx.lineTo(x,y+dy*k); ctx.stroke(); }
+    ctx.restore(); }
+  // power lines between buildings
+  ctx.lineCap="round";
+  for(const [a,c] of st.edges){ const on=a.lit&&c.lit; ctx.strokeStyle=on?"rgba(255,200,100,.16)":"rgba(90,120,170,.10)"; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(c.x,c.y); ctx.stroke(); }
+  if(st.playing&&b){ ctx.save(); ctx.font="600 11px ui-monospace,monospace"; ctx.textBaseline="top";
+    ctx.fillStyle="rgba(127,200,255,.55)"; ctx.fillText("REGION 0"+(st.area+1)+" · "+LEVELS[st.area].name.toUpperCase(), b.ox+10, b.oy+9);
+    ctx.fillStyle="rgba(255,217,102,"+(0.35+0.25*Math.sin(st.time*3)).toFixed(3)+")"; ctx.fillText("● LIGHTS ON: "+st.litCount+"/"+st.nodes.length, b.ox+10, b.oy+24); ctx.restore(); }
+  // range circle
+  if(st.playing){ const R=rangeEff(), f=st.fault>0;
+    ctx.save(); ctx.strokeStyle=f?`rgba(255,80,80,${0.35+st.fault*0.4})`:"rgba(96,208,255,.30)"; ctx.lineWidth=1.2; ctx.setLineDash([6,8]); ctx.lineDashOffset=-st.time*10;
+    ctx.beginPath(); ctx.arc(st.ghost.x,st.ghost.y,R,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle=f?"rgba(255,40,40,.06)":"rgba(77,166,255,.018)"; ctx.fill(); ctx.restore(); }
+  const pulse=0.5+0.5*Math.sin(st.time*5), canAct=st.playing&&st.ghost.tx===undefined;
+  for(const nd of st.nodes){
+    const L=nd.look, near=canAct&&nd.id!==st.ghost.dest&&Math.hypot(nd.x-st.ghost.x,nd.y-st.ghost.y)<=rangeEff();
+    ctx.save(); ctx.translate(nd.x,nd.y);
+    if(nd.lit){ drawLitBuilding(L,1,near?pulse:0); }
+    else { drawDarkBuilding(L); const t=st.time-nd.dt;
+      if(t>=0&&t<0.4){ const k=1-t/0.4; ctx.save(); ctx.shadowColor="#bfe9ff"; ctx.shadowBlur=30*k; drawLitBuilding(L,k,0);
+        ctx.globalCompositeOperation="lighter"; ctx.globalAlpha=k*0.8; const rr=Math.max(L.w,L.h,10)*(1.5+2*(1-k)); ctx.drawImage(COOL_TEX,-rr,-rr,rr*2,rr*2); ctx.restore(); } }
+    if(near){ const hw=Math.max(L.w,12)/2+5+pulse*2, hh=Math.max(L.h,12)/2+5+pulse*2;
+      ctx.strokeStyle=nd.lit?`rgba(96,208,255,${(0.45+0.45*pulse).toFixed(2)})`:"rgba(96,208,255,.22)"; ctx.lineWidth=nd.lit?1.6:1; ctx.setLineDash(nd.lit?[]:[3,4]);
+      ctx.strokeRect(-hw,-hh,hw*2,hh*2); ctx.setLineDash([]); }
+    ctx.restore();
+  }
+  // trail particles
+  ctx.save(); ctx.globalCompositeOperation="lighter";
+  for(const p of parts){ if(p.delay>0) continue; const a=Math.max(0,p.life/p.max); ctx.fillStyle=`rgba(${a>0.5?"160,230,255":"120,140,255"},${(a*0.9).toFixed(2)})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.r*(0.5+a*0.5),0,7); ctx.fill(); }
+  ctx.restore();
+  if(st.done&&b&&!st.revealDone){ const a=st.reveal||0; ctx.fillStyle="rgba(2,4,10,"+(0.35*a).toFixed(3)+")"; ctx.fillRect(b.ox,b.oy,b.w,b.h);
+    ctx.save(); ctx.globalAlpha=a; ctx.fillStyle="#60d0ff"; ctx.font="800 "+(W<600?20:30)+"px system-ui"; ctx.textAlign="center"; ctx.shadowColor="#4da6ff"; ctx.shadowBlur=20;
+    ctx.fillText(LEVELS[st.area].name.toUpperCase()+" IS DARK", b.ox+b.w/2, b.oy+b.h/2); ctx.restore(); }
+  if(st.arrive>0){ const a=st.arrive; const rr=Math.max(W,H)*(0.2+(1-a)*0.9);
+    const grd=ctx.createRadialGradient(st.ghost.x,st.ghost.y,rr*0.2,st.ghost.x,st.ghost.y,rr);
+    grd.addColorStop(0,"rgba(160,225,255,"+(a*0.25).toFixed(3)+")"); grd.addColorStop(1,"rgba(77,166,255,0)"); ctx.fillStyle=grd; ctx.fillRect(0,0,W,H); }
+  if(st.blockNode&&st.fault>0){ ctx.save(); ctx.strokeStyle="rgba(255,70,70,.9)"; ctx.lineWidth=2; ctx.shadowColor="#ff4040"; ctx.shadowBlur=12;
+    ctx.beginPath(); ctx.arc(st.blockNode.x,st.blockNode.y,13+st.fault*16,0,7); ctx.stroke(); ctx.restore(); }
+  if(st.playing) drawGhost();
+  // HUD
+  document.getElementById("fault").style.opacity=Math.max(0,st.fault);
+  document.getElementById("lit").textContent=st.nodes.length-st.litCount; document.getElementById("total").textContent=st.nodes.length;
+  document.getElementById("charge").textContent=Math.floor(st.charge); document.getElementById("rng").textContent=Math.round(rangeEff())+" / "+Math.round(range());
+  document.getElementById("efill").style.width=Math.max(0,Math.min(100,st.energy/enMax()*100))+"%";
+  const hint=document.getElementById("hint");
+  if(st.playing&&st.lowFlag>0){ hint.style.opacity=1; hint.textContent="⚡ Low energy — wait a moment to recharge."; }
+  else if(st.playing&&(st.hops||0)<3&&st.area===0){ hint.style.opacity=1; hint.textContent="🏢 "+TAP+" a building with a pulsing outline — the ghost jumps there and swallows its light."; }
+  else hint.style.opacity=0;
+}
+
+/* ===================== START ===================== */
+function startRun(){ st=newState(); st.playing=true; st.arrive=1; buildArea(); document.getElementById("overlay").style.display="none"; document.getElementById("upgrade").style.display="none"; setHudArea(); initAudio(); tone(440,0.08,"triangle",0.12); tone(660,0.08,"triangle",0.12,0.08); }
+let last=0;
+function loop(ts){ const dt=Math.min(0.05,(ts-last)/1000||0.016); last=ts;
+  if(st&&(!st.grid||st.grid.w!==W||st.grid.h!==H)){ if(st.playing&&!st.done){ relayout(); } else buildBg(); }
+  if(st) update(dt);
+  if(st&&st.arrive>0) st.arrive=Math.max(0,st.arrive-dt*1.4);
+  if(st&&st.done&&!st.revealDone) st.reveal=Math.min(1,(st.reveal||0)+dt*0.9);
+  draw(); requestAnimationFrame(loop); }
+// on resize/rotation: rescale existing map to new box (keeps progress)
+function relayout(){ const o=st.box, n=layout(); const sx=n.w/o.w, sy=n.h/o.h, s=Math.sqrt(sx*sy);
+  for(const nd of st.nodes){ nd.x=n.ox+(nd.x-o.ox)*sx; nd.y=n.oy+(nd.y-o.oy)*sy; }
+  const g=st.ghost; g.x=n.ox+(g.x-o.ox)*sx; g.y=n.oy+(g.y-o.oy)*sy; if(g.tx!==undefined){ g.tx=n.ox+(g.tx-o.ox)*sx; g.ty=n.oy+(g.ty-o.oy)*sy; g.hp={x:n.ox+(g.hp.x-o.ox)*sx,y:n.oy+(g.hp.y-o.oy)*sy}; }
+  st.range*=s; st.scale=st.range/260; st.box=n; buildBg(); }
+
+cv.addEventListener("pointerdown",onDown);
+cv.addEventListener("contextmenu",e=>e.preventDefault());
+document.addEventListener("touchmove",e=>e.preventDefault(),{passive:false});
+document.addEventListener("gesturestart",e=>e.preventDefault());
+document.getElementById("start").addEventListener("click",e=>{e.stopPropagation();startRun();});
+document.getElementById("menuBtn").addEventListener("pointerdown",e=>{e.stopPropagation();goMenu();});
+document.getElementById("muteBtn").addEventListener("pointerdown",e=>{e.stopPropagation();toggleMute();initAudio();});
+addEventListener("pointerdown",()=>initAudio(),{once:true});
+
+window.GAME={
+  TRIAL_LEVELS, MAXAREA,
+  get:()=> st? {area:st.area,areaName:LEVELS[st.area].name,lit:st.litCount,total:st.nodes.length,energy:Math.floor(st.energy),energyMax:enMax(),range:Math.round(range()),rangeEff:Math.round(rangeEff()),spread:st.skills.spread,charge:Math.floor(st.charge),playing:st.playing,done:st.done,rev:st.revealDone?1:0,gx:Math.round(st.ghost.x),gy:Math.round(st.ghost.y),hopping:st.ghost.tx!==undefined,box:st.box}:null,
+  scene:()=> st? {nodes:st.nodes.map(n=>({x:n.x,y:n.y,lit:n.lit,id:n.id,cur:n.id===st.ghost.dest})),ghost:{x:st.ghost.x,y:st.ghost.y},range:range(),rangeEff:rangeEff()}:null,
+  start:()=>startRun(),
+  forceDark:()=>{st.nodes.forEach(n=>{if(n.lit){n.lit=false;n.dt=st.time;st.litCount--;}});},
+};
+st=newState(); buildArea(); fillIntro(); setHudArea();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
