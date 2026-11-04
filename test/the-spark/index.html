@@ -14,12 +14,19 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
 .scr h1{font-size:clamp(44px,12vw,92px);margin:0;font-weight:200;letter-spacing:.18em;color:#ffe3a0;text-shadow:0 0 24px #ffaa33,0 0 60px #ff8800}
 .scr p{max-width:30em;line-height:1.6;opacity:.85;margin:.4em}
 .btn{margin-top:28px;background:linear-gradient(#ffcf6a,#ff9a2e);color:#2a1600;border:0;border-radius:40px;padding:16px 44px;font-size:19px;letter-spacing:.1em;box-shadow:0 0 30px #ff9a2e88;cursor:pointer}
-.hide{display:none}
+.hide{display:none!important}
+#modes{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}#modes .btn{padding:16px 30px;min-width:140px}#modes small{display:block;font-size:12px;letter-spacing:0;opacity:.75;margin-top:4px}
+.btn.alt{background:linear-gradient(#9fd0ff,#4a86ff);box-shadow:0 0 30px #4a86ff88;color:#04122e}
+#pbar{position:fixed;left:0;right:0;bottom:max(14px,env(safe-area-inset-bottom));display:flex;gap:10px;justify-content:center}
+#pbar button,#stuck button{background:rgba(20,28,50,.85);border:1px solid #5a6690;color:#f3e6c4;border-radius:24px;padding:11px 20px;font-size:16px;cursor:pointer}
+#stuck{position:fixed;left:50%;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 62px);transform:translateX(-50%);white-space:nowrap;background:rgba(8,12,26,.92);border:1px solid #ffb44a;border-radius:18px;padding:18px 22px;text-align:center;box-shadow:0 0 30px #ff9a2e55}
+#stuck b{display:block;font-size:24px;color:#ffd86b;margin-bottom:4px}#stuck p{margin:0 0 14px;opacity:.85;font-size:14px}#stuck button{margin:0 5px;background:linear-gradient(#ffcf6a,#ff9a2e);color:#2a1600;border:0}
+body.pz #bar{display:none}body.pz #msg{bottom:calc(max(14px,env(safe-area-inset-bottom)) + 58px)}
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="hud" class="hide"><div id="row"><span id="lvl"></span><button id="mute">♪ on</button></div><div id="bar"><div id="fill"></div></div></div>
-<div id="msg"></div>
-<div id="start" class="scr"><h1>THE SPARK</h1><p>The world went dark. One spark remains.</p><p style="opacity:.6">Tap a glowing city to jump. Light every city.</p><button class="btn" id="go">Start</button></div>
+<div id="msg"></div><div id="pbar" class="hide"><button id="undo">↶ Undo</button><button id="hint">💡 Hint 3</button><button id="rst">⟲ Restart</button></div><div id="stuck" class="hide"><b>Stuck</b><p>No road to a new city.</p><button id="undo2">↶ Undo</button><button id="rst2">⟲ Restart</button></div>
+<div id="start" class="scr"><h1>THE SPARK</h1><p>The world went dark. One spark remains.</p><p style="opacity:.6">Light every city.</p><div id="modes"><button class="btn" id="go">Classic<small>jump with energy</small></button><button class="btn alt" id="gop">Puzzle<small>each city only once</small></button></div></div>
 <div id="end" class="scr hide"><h1 style="font-size:clamp(30px,8vw,60px)">Europe is lit.</h1><p>From Bratislava to Gdańsk, windows glow again.<br>People look up. Somewhere far away, another light answers.</p><p style="color:#ffd86b">5 continents to go...</p><button class="btn" id="again">Play again</button></div>
 <script>
 // ---- DATA (lon,lat) ----
@@ -35,10 +42,11 @@ const COUNTRIES=[
 {name:"Hungary",poly:[[22.13,48.41],[22.25,48.41],[22.35,48.26],[22.52,48.21],[22.58,48.13],[22.68,48.1],[22.77,48.11],[22.86,48.03],[22.85,48],[22.88,47.95],[22.61,47.77],[22.49,47.77],[22.29,47.73],[22.11,47.57],[22,47.51],[22,47.4],[21.87,47.3],[21.79,47.14],[21.66,47.04],[21.65,46.96],[21.49,46.79],[21.48,46.75],[21.5,46.7],[21.32,46.61],[21.25,46.49],[21.26,46.41],[21.19,46.39],[21.12,46.28],[21.04,46.24],[20.84,46.26],[20.76,46.25],[20.71,46.17],[20.61,46.13],[20.51,46.17],[20.28,46.13],[20.24,46.11],[20.16,46.14],[19.93,46.16],[19.84,46.15],[19.61,46.17],[19.53,46.16],[19.42,46.06],[19.28,46],[19.15,45.99],[19.09,46.02],[19.02,45.96],[18.93,45.93],[18.72,45.9],[18.67,45.91],[18.53,45.8],[18.36,45.75],[17.81,45.79],[17.64,45.87],[17.61,45.91],[17.53,45.94],[17.41,45.95],[17.31,46],[17.24,46.08],[16.94,46.25],[16.87,46.34],[16.75,46.42],[16.52,46.5],[16.38,46.64],[16.38,46.68],[16.34,46.72],[16.28,46.86],[16.09,46.86],[16.25,46.97],[16.33,47],[16.45,47.01],[16.49,47.12],[16.44,47.15],[16.42,47.22],[16.46,47.27],[16.44,47.4],[16.51,47.4],[16.62,47.45],[16.68,47.54],[16.64,47.61],[16.43,47.66],[16.42,47.67],[16.55,47.75],[16.65,47.74],[16.79,47.68],[17.07,47.71],[17.04,47.87],[17.08,47.9],[17.09,47.96],[17.17,48.01],[17.32,47.99],[17.64,47.81],[17.76,47.77],[18.15,47.76],[18.72,47.79],[18.78,47.85],[18.75,47.94],[18.79,48],[18.91,48.05],[19.27,48.07],[19.47,48.11],[19.56,48.21],[19.63,48.22],[19.9,48.13],[20.33,48.3],[20.49,48.53],[20.64,48.55],[20.87,48.55],[21.07,48.51],[21.45,48.55],[21.56,48.5],[21.67,48.38],[21.77,48.34]],
  cities:[["Budapest",19.04,47.5],["Győr",17.63,47.69],["Pécs",18.23,46.07],["Szeged",20.15,46.25],["Debrecen",21.63,47.53],["Miskolc",20.78,48.1],["Kecskemét",19.69,46.9],["Veszprém",17.91,47.09]]}];
 const MAXE=100, RANGE=2.6, GAIN=14; // range in "km-ish" degrees (lon scaled)
+const PZ={"Slovakia":{"xc":[],"roads":[[6,7],[1,2],[0,1],[3,4],[5,6],[0,2],[2,4],[4,5],[2,3],[3,5],[1,3]]},"Czechia":{"xc":[],"roads":[[5,6],[6,7],[3,4],[0,1],[0,3],[0,4],[1,2],[0,2],[4,6],[4,5],[5,7],[2,5]]},"Poland":{"xc":[["Białystok",23.16,53.13],["Rzeszów",22,50.04]],"roads":[[7,9],[2,3],[1,9],[0,7],[0,8],[2,6],[1,6],[3,6],[3,5],[7,8],[1,7],[1,2],[3,4],[0,4],[4,6]]},"Hungary":{"xc":[["Szombathely",16.62,47.23]],"roads":[[1,7],[3,6],[0,6],[4,5],[1,8],[0,7],[7,8],[0,1],[2,7],[2,6],[2,3],[0,5],[5,6]]}};
 const LONK=0.66;
 function dist(a,b){const dx=(a[1]-b[1])*LONK,dy=a[2]-b[2];return Math.hypot(dx,dy)}
 function costOf(d){return Math.round(10+d*21)}
-if(typeof module!=="undefined"){module.exports={COUNTRIES,MAXE,RANGE,GAIN,dist,costOf};}
+if(typeof module!=="undefined"){module.exports={COUNTRIES,MAXE,RANGE,GAIN,dist,costOf,LONK,PZ};}
 else{
 // ---- GAME ----
 const cv=document.getElementById('c'),cx=cv.getContext('2d');let W,H,DPR,S,OX,OY;
@@ -50,33 +58,51 @@ addEventListener('resize',resize);let st;resize();
 const P=(lon,lat)=>[OX+(lon-B.x0)*LONK*S,OY+(B.y1-lat)*S];
 st={mode:'title',ci:0,lit:[],cur:0,e:MAXE,spark:null,glow:COUNTRIES.map(()=>0),shake:0,parts:[],hopT:1,from:0,doneT:0,trail:[],hover:-1};
 const $=id=>document.getElementById(id);
+function CC(ci=st.ci){const c=COUNTRIES[ci];return st.pz?c.cities.concat(PZ[c.name].xc):c.cities}
+function ADJ(ci=st.ci){const n=CC(ci).length,a=[...Array(n)].map(()=>[]);PZ[COUNTRIES[ci].name].roads.forEach(([x,y])=>{a[x].push(y);a[y].push(x)});return a}
+function solveFrom(path,ci=st.ci){const A=ADJ(ci),n=A.length,v=new Array(n).fill(false);path.forEach(k=>v[k]=true);const p=path.slice();
+ const go=u=>{if(p.length==n)return true;for(const w of A[u])if(!v[w]){v[w]=true;p.push(w);if(go(w))return true;v[w]=false;p.pop()}return false};return go(p[p.length-1])?p:null}
 function msg(t,ms=1800){const m=$('msg');m.textContent=t;m.style.opacity=1;clearTimeout(msg.t);msg.t=setTimeout(()=>m.style.opacity=0,ms)}
-function startCountry(i){st.ci=i;const c=COUNTRIES[i];st.lit=c.cities.map((_,k)=>k==0);st.cur=0;st.from=0;st.hopT=1;st.e=MAXE;st.trail=[];st.mode='play';burst(0,30);hud();
- if(i==0){msg('Tap a pulsing city to jump there.',3000);setTimeout(()=>st.ci==0&&msg('Longer jumps cost more energy.',3000),3300);setTimeout(()=>st.ci==0&&msg('Low? Jump back to a lit city to recharge.',3500),6600)}
+function startCountry(i){st.ci=i;const c=COUNTRIES[i];const cs=CC(i);st.lit=cs.map((_,k)=>k==0);st.adj=st.pz?ADJ(i):[];st.path=[0];st.hints=3;st.hintK=-1;$('stuck').classList.add('hide');st.cur=0;st.from=0;st.hopT=1;st.e=MAXE;st.trail=[];st.mode='play';burst(0,30);hud();
+ if(st.pz){$('hint').textContent='💡 Hint '+st.hints;if(i==0){msg('Follow the roads. Visit every city once.',3500);setTimeout(()=>st.ci==0&&st.path.length<3&&msg('Plan ahead: dead ends trap you!',3500),3800)}else msg(c.name+': '+cs.length+' cities. Plan your route.',2600)}
+ else if(i==0){msg('Tap a pulsing city to jump there.',3000);setTimeout(()=>st.ci==0&&msg('Longer jumps cost more energy.',3000),3300);setTimeout(()=>st.ci==0&&msg('Low? Jump back to a lit city to recharge.',3500),6600)}
  else msg(c.name+' is dark. Light it up.')}
-function hud(){const c=COUNTRIES[st.ci];$('lvl').textContent=c.name+'  '+st.lit.filter(x=>x).length+'/'+c.cities.length;$('fill').style.width=(st.e/MAXE*100)+'%'}
-function cityXY(k,ci=st.ci){const c=COUNTRIES[ci].cities[k];return P(c[1],c[2])}
-function inReach(k){const c=COUNTRIES[st.ci].cities;return k!=st.cur&&dist(c[st.cur],c[k])<=RANGE}
+function hud(){const c=COUNTRIES[st.ci];$('lvl').textContent=c.name+'  '+st.lit.filter(x=>x).length+'/'+st.lit.length;$('fill').style.width=(st.e/MAXE*100)+'%'}
+function cityXY(k,ci=st.ci){const c=CC(ci)[k];return P(c[1],c[2])}
+function inReach(k){if(st.pz)return !st.lit[k]&&st.adj[st.cur].includes(k);const c=CC();return k!=st.cur&&dist(c[st.cur],c[k])<=RANGE}
 function burst(k,n,ci=st.ci){const [x,y]=cityXY(k,ci);for(let i=0;i<n;i++){const a=Math.random()*6.28,v=20+Math.random()*90;st.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:1})}}
-cv.addEventListener('pointermove',ev=>{if(!st||st.mode!='play')return;let b=-1,bd=1e9;COUNTRIES[st.ci].cities.forEach((_,k)=>{const [x,y]=cityXY(k);const d=Math.hypot(x-ev.clientX,y-ev.clientY);if(d<bd){bd=d;b=k}});st.hover=bd<60?b:-1});
-cv.addEventListener('pointerdown',ev=>{audioInit();if(st.mode!='play'||st.hopT<1)return;const c=COUNTRIES[st.ci].cities;
+cv.addEventListener('pointermove',ev=>{if(!st||st.mode!='play')return;let b=-1,bd=1e9;CC().forEach((_,k)=>{const [x,y]=cityXY(k);const d=Math.hypot(x-ev.clientX,y-ev.clientY);if(d<bd){bd=d;b=k}});st.hover=bd<60?b:-1});
+cv.addEventListener('pointerdown',ev=>{audioInit();if(st.mode!='play'||st.hopT<1)return;const c=CC();
  let best=-1,bd=1e9;c.forEach((_,k)=>{const [x,y]=cityXY(k);const d=Math.hypot(x-ev.clientX,y-ev.clientY);if(d<bd){bd=d;best=k}});
  if(bd>Math.min(70,Math.max(44,S*0.6))||best==st.cur)return;
+ if(st.pz){if(st.lit[best]){st.shake=1;blip(110,.25,'sawtooth');msg('Already lit. Each city only once!');return}
+  if(!st.adj[st.cur].includes(best)){st.shake=1;blip(110,.25,'sawtooth');msg('No road there. Follow the lines.');return}
+  st.trail.push([st.cur,best,performance.now()]);st.from=st.cur;st.cur=best;st.hopT=0;st.path.push(best);st.hintK=-1;blip(520,.12,'triangle');st.pend=best;return}
  if(!inReach(best)){st.shake=1;blip(110,.25,'sawtooth');msg('Too far. Get closer first.');return}
  const cost=costOf(dist(c[st.cur],c[best]));
  if(cost>st.e&&!st.lit[best]){st.shake=1;blip(140,.25,'square');msg('Not enough energy. Recharge on a lit city.');checkStuck();return}
  st.trail.push([st.cur,best,performance.now()]);st.from=st.cur;st.cur=best;st.hopT=0;st.e=Math.max(0,st.e-cost);blip(520,.12,'triangle');
  st.pend=best;hud();});
-function land(k){if(!st.lit[k]){st.lit[k]=true;st.e=Math.min(MAXE,st.e+GAIN);burst(k,40);chord([660,830,990]);}
+function land(k){if(st.pz){st.lit[k]=true;burst(k,40);chord([660,830,990]);hud();
+  if(st.lit.every(x=>x)){st.mode='done';st.doneT=0;chord([523,659,784,1046]);msg(COUNTRIES[st.ci].name+' is lit!',2200);setTimeout(next,2600);return}
+  if(!st.adj[k].some(w=>!st.lit[w])){blip(150,.4,'square');$('stuck').classList.remove('hide')}return}
+ if(!st.lit[k]){st.lit[k]=true;st.e=Math.min(MAXE,st.e+GAIN);burst(k,40);chord([660,830,990]);}
  else{st.e=MAXE;blip(880,.2,'sine');msg('Recharged.',900);burst(k,12)}
  hud();const c=COUNTRIES[st.ci];
  if(st.lit.every(x=>x)){st.mode='done';st.doneT=0;chord([523,659,784,1046]);msg(c.name+' is lit!',2200);setTimeout(next,2600);return}
  checkStuck()}
-function checkStuck(){const c=COUNTRIES[st.ci].cities;const ok=c.some((x,k)=>inReach(k)&&(st.lit[k]||costOf(dist(c[st.cur],x))<=st.e));
+function checkStuck(){const c=CC();const ok=c.some((x,k)=>inReach(k)&&(st.lit[k]||costOf(dist(c[st.cur],x))<=st.e));
  if(!ok){msg('The spark fades... a gust of wind helps.',2200);st.e=MAXE;hud()}}
-function next(){st.glow[st.ci]=1;if(st.ci+1<COUNTRIES.length)startCountry(st.ci+1);else{st.mode='end';chord([392,523,659,784,1046]);setTimeout(()=>{$('end').classList.remove('hide');$('hud').classList.add('hide')},2200)}}
-$('go').onclick=()=>{audioInit();$('start').classList.add('hide');$('hud').classList.remove('hide');st.glow=COUNTRIES.map(()=>0);startCountry(0)};
-$('again').onclick=()=>{$('end').classList.add('hide');$('hud').classList.remove('hide');st.glow=COUNTRIES.map(()=>0);startCountry(0)};
+function next(){st.glow[st.ci]=1;if(st.ci+1<COUNTRIES.length)startCountry(st.ci+1);else{st.mode='end';chord([392,523,659,784,1046]);setTimeout(()=>{$('end').classList.remove('hide');$('hud').classList.add('hide');$('pbar').classList.add('hide')},2200)}}
+function undo(){if(st.mode!='play'||st.hopT<1||st.path.length<2)return;$('stuck').classList.add('hide');const k=st.path.pop();st.lit[k]=false;st.trail.pop();st.cur=st.from=st.path[st.path.length-1];st.hintK=-1;blip(330,.15,'triangle');hud()}
+function restart(){if(st.mode!='play')return;startCountry(st.ci)}
+function hint(){if(st.mode!='play'||st.hopT<1)return;if(st.hints<=0){msg('No hints left here.');return}const p=solveFrom(st.path);if(!p){msg('No way from here. Tap Undo.');return}
+ st.hints--;st.hintK=p[st.path.length];st.hintT=performance.now();$('hint').textContent='💡 Hint '+st.hints;blip(990,.2)}
+$('undo').onclick=$('undo2').onclick=undo;$('rst').onclick=$('rst2').onclick=restart;$('hint').onclick=hint;
+function begin(pz){audioInit();st.pz=pz;document.body.classList.toggle('pz',pz);$('pbar').classList.toggle('hide',!pz);$('start').classList.add('hide');$('end').classList.add('hide');$('hud').classList.remove('hide');st.glow=COUNTRIES.map(()=>0);startCountry(0)}
+$('gop').onclick=()=>begin(true);
+$('go').onclick=()=>{st.pz=false;document.body.classList.remove('pz');$('pbar').classList.add('hide');audioInit();$('start').classList.add('hide');$('hud').classList.remove('hide');st.glow=COUNTRIES.map(()=>0);startCountry(0)};
+$('again').onclick=()=>{if(st.pz)return begin(true);$('end').classList.add('hide');$('hud').classList.remove('hide');st.glow=COUNTRIES.map(()=>0);startCountry(0)};
 // ---- AUDIO ----
 let AC,master,muted=false;
 function audioInit(){if(AC)return;try{AC=new(window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=.5;master.connect(AC.destination);pad()}catch(e){}}
@@ -104,24 +130,27 @@ function frame(t){const dt=Math.min(.05,(t-last)/1000);last=t;const T=tgt(),k=1-
   poly(ci);cx.lineJoin='round';cx.lineWidth=act?1.8:1.1;cx.strokeStyle=g>.5?`rgba(255,215,130,${.5+.4*g})`:(act?'rgba(170,195,255,.8)':'rgba(150,170,230,.42)');cx.stroke();
   if(g>.3){cx.save();cx.shadowColor='#ffaa33';cx.shadowBlur=30*g;cx.stroke();cx.restore()}
   // done-country city dots
-  if(ci!=st.ci||!play)c.cities.forEach((q,k)=>{const [px,py]=P(q[1],q[2]);cx.fillStyle=g>.5?'#ffd98a':'rgba(120,140,200,.35)';cx.beginPath();cx.arc(px,py,g>.5?3:2,0,7);cx.fill()})});
+  if(ci!=st.ci||!play)CC(ci).forEach((q,k)=>{const [px,py]=P(q[1],q[2]);cx.fillStyle=g>.5?'#ffd98a':'rgba(120,140,200,.35)';cx.beginPath();cx.arc(px,py,g>.5?3:2,0,7);cx.fill()})});
  cx.globalCompositeOperation='lighter';
- if(play){const c=COUNTRIES[st.ci].cities;
+ if(play){const c=CC();
+  if(st.pz){cx.save();cx.lineCap='round';PZ[COUNTRIES[st.ci].name].roads.forEach(([i,j])=>{const [x1,y1]=cityXY(i),[x2,y2]=cityXY(j);cx.strokeStyle='rgba(20,26,48,.9)';cx.lineWidth=5;cx.beginPath();cx.moveTo(x1,y1);cx.lineTo(x2,y2);cx.stroke();cx.strokeStyle='rgba(185,200,240,.55)';cx.lineWidth=1.6;cx.stroke()});cx.restore()}
   // links
-  c.forEach((a,i)=>c.forEach((b,j)=>{if(j>i&&st.lit[i]&&st.lit[j]&&dist(a,b)<=RANGE){const [x1,y1]=cityXY(i),[x2,y2]=cityXY(j);cx.strokeStyle='rgba(255,180,80,.28)';cx.lineWidth=2.5;cx.beginPath();cx.moveTo(x1,y1);cx.lineTo(x2,y2);cx.stroke()}}));
+  if(!st.pz)c.forEach((a,i)=>c.forEach((b,j)=>{if(j>i&&st.lit[i]&&st.lit[j]&&dist(a,b)<=RANGE){const [x1,y1]=cityXY(i),[x2,y2]=cityXY(j);cx.strokeStyle='rgba(255,180,80,.28)';cx.lineWidth=2.5;cx.beginPath();cx.moveTo(x1,y1);cx.lineTo(x2,y2);cx.stroke()}}));
   // travelled route: glowing gold, older segments fade to a floor
   const now=performance.now(),N=st.trail.length;st.trail.forEach((s,i)=>{const [x1,y1]=cityXY(s[0]),[x2,y2]=cityXY(s[1]);let f=Math.max(.35,1-(N-1-i)*.09);if(i==N-1&&st.hopT<1)f*=st.hopT;
    cx.save();cx.lineCap='round';cx.shadowColor='rgba(255,170,40,.9)';cx.shadowBlur=14;cx.strokeStyle=`rgba(255,190,70,${.55*f})`;cx.lineWidth=7;cx.beginPath();cx.moveTo(x1,y1);cx.lineTo(x2,y2);cx.stroke();cx.restore();
    cx.lineCap='round';cx.strokeStyle=`rgba(255,240,180,${.95*f})`;cx.lineWidth=3;cx.beginPath();cx.moveTo(x1,y1);cx.lineTo(x2,y2);cx.stroke();
    const a=Math.atan2(y2-y1,x2-x1),mx=(x1+x2)/2,my=(y1+y2)/2;cx.fillStyle=`rgba(255,235,170,${f})`;cx.beginPath();cx.moveTo(mx+Math.cos(a)*7,my+Math.sin(a)*7);cx.lineTo(mx+Math.cos(a+2.5)*7,my+Math.sin(a+2.5)*7);cx.lineTo(mx+Math.cos(a-2.5)*7,my+Math.sin(a-2.5)*7);cx.fill()});
   // dashed preview to reachable cities (brighter to hovered)
-  if(st.mode=='play'&&st.hopT>=1){const [x0,y0]=cityXY(st.cur);cx.save();cx.setLineDash([6,6]);cx.lineDashOffset=-t/40;c.forEach((q,k)=>{if(!inReach(k))return;const okE=costOf(dist(c[st.cur],q))<=st.e||st.lit[k];const h=k==st.hover;const [x,y]=cityXY(k);
+  if(st.mode=='play'&&st.hopT>=1){const [x0,y0]=cityXY(st.cur);cx.save();cx.setLineDash([6,6]);cx.lineDashOffset=-t/40;c.forEach((q,k)=>{if(!inReach(k))return;const okE=st.pz||costOf(dist(c[st.cur],q))<=st.e||st.lit[k];const h=k==st.hover;const [x,y]=cityXY(k);
    cx.strokeStyle=okE?`rgba(255,225,150,${h?.95:.4})`:`rgba(255,100,80,${h?.8:.25})`;cx.lineWidth=h?2.5:1.5;cx.beginPath();cx.moveTo(x0,y0);cx.lineTo(x,y);cx.stroke()});cx.restore()}
   c.forEach((q,k)=>{const [x,y]=cityXY(k);
    if(st.lit[k]){const r=Math.min(S*1.1,120);const gr=cx.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,'rgba(255,200,90,.55)');gr.addColorStop(1,'rgba(255,120,20,0)');cx.fillStyle=gr;cx.beginPath();cx.arc(x,y,r,0,7);cx.fill();cx.fillStyle='#fff3c8';cx.beginPath();cx.arc(x,y,5,0,7);cx.fill()}
    else{cx.fillStyle='rgba(130,150,210,.6)';cx.beginPath();cx.arc(x,y,4,0,7);cx.fill()}
-   if(st.mode=='play'&&st.hopT>=1&&inReach(k)){const cost=costOf(dist(c[st.cur],q));const okE=cost<=st.e||st.lit[k];const p=(t/700+k*.3)%1;cx.strokeStyle=okE?`rgba(255,220,130,${1-p})`:`rgba(255,90,70,${(1-p)*.6})`;cx.lineWidth=2;cx.beginPath();cx.arc(x,y,8+p*16,0,7);cx.stroke()}
+   if(st.mode=='play'&&st.hopT>=1&&inReach(k)){const cost=costOf(dist(c[st.cur],q));const okE=st.pz||cost<=st.e||st.lit[k];const p=(t/700+k*.3)%1;cx.strokeStyle=okE?`rgba(255,220,130,${1-p})`:`rgba(255,90,70,${(1-p)*.6})`;cx.lineWidth=2;cx.beginPath();cx.arc(x,y,8+p*16,0,7);cx.stroke()}
    });
+  if(st.pz){const [x,y]=cityXY(0);cx.strokeStyle='rgba(255,230,160,.9)';cx.lineWidth=2;cx.beginPath();cx.rect(x-9,y-9,18,18);cx.stroke();
+   if(st.hintK>=0){const [hx,hy]=cityXY(st.hintK);const p=(t/500)%1;cx.strokeStyle=`rgba(120,255,170,${1-p})`;cx.lineWidth=4;cx.beginPath();cx.arc(hx,hy,10+p*26,0,7);cx.stroke();cx.fillStyle='rgba(120,255,170,.9)';cx.beginPath();cx.arc(hx,hy,6,0,7);cx.fill()}}
   cx.globalCompositeOperation='source-over';const fs=Math.max(10,Math.min(14,S*.16));cx.font=`${fs}px system-ui`;cx.textAlign='center';const boxes=[];
   c.map((q,k)=>k).sort((a,b)=>(b==st.cur)-(a==st.cur)||(st.lit[b]-st.lit[a])).forEach(k=>{const q=c[k];const [x,y]=cityXY(k);const w=cx.measureText(q[0]).width;let placed=null;
    for(const [dx,dy] of [[0,-11],[0,fs+9],[w/2+9,fs/2-1],[-w/2-9,fs/2-1]]){const bx={x:x+dx-w/2,y:y+dy-fs,w,h:fs+2};if(!boxes.some(o=>bx.x<o.x+o.w&&o.x<bx.x+bx.w&&bx.y<o.y+o.h&&o.y<bx.y+bx.h)){placed=[x+dx,y+dy];boxes.push(bx);break}}
@@ -137,6 +166,6 @@ function frame(t){const dt=Math.min(.05,(t-last)/1000);last=t;const T=tgt(),k=1-
  if(st.parts.length>400)st.parts.splice(0,st.parts.length-400);
  cx.globalCompositeOperation='source-over';cx.restore();requestAnimationFrame(frame)}
 requestAnimationFrame(frame);
-window.__spark={st,COUNTRIES,cityXY,inReach,costOf,dist,RANGE};
+window.__spark={st,COUNTRIES,cityXY,inReach,costOf,dist,RANGE,PZ,CC,ADJ,solveFrom,undo,hint};
 }
 </script></body></html>
