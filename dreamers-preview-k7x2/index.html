@@ -1,0 +1,56 @@
+<!DOCTYPE html><html lang="sk"><head><meta charset="utf-8"><meta name="robots" content="noindex"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Until I Wake – mockup</title><style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{margin:0;background:#120f18;color:#f3e9d8;font-family:Georgia,serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;touch-action:none;user-select:none}
+#top{width:100%;max-width:900px;display:flex;justify-content:space-between;padding:8px 12px;font-size:15px}
+button{background:#2a2333;color:#f3e9d8;border:1px solid #6b5a7a;border-radius:10px;min-height:44px;min-width:44px;padding:0 14px;font:inherit}
+#frame{width:100%;max-width:900px;overflow:hidden;border-radius:12px;position:relative}
+#scene{position:relative;width:100%;aspect-ratio:4/3;transition:transform 2.5s ease,filter 2.5s ease;filter:brightness(.8) saturate(.75) blur(.6px)}
+#scene img.bg{width:100%;height:100%;display:block}
+.zone{position:absolute;transform:translate(-50%,-50%);border-radius:50%}
+#slot{left:11.5%;top:35.5%;width:13%;aspect-ratio:1;background:radial-gradient(rgba(255,240,200,.55),rgba(255,240,200,.15) 60%,transparent 72%);animation:pulse 2.5s infinite}
+#slot.hint,#sun.hint{box-shadow:0 0 0 4px #ffd98a,0 0 30px #ffd98a}
+#slot .placed{font-size:min(9vw,70px);display:flex;align-items:center;justify-content:center;height:100%}
+#sun{left:83.8%;top:17.6%;width:10%;aspect-ratio:1;min-width:44px}
+#sun.gone{animation:fade 1.2s forwards}#sunGlow{position:absolute;inset:0;border-radius:50%}
+@keyframes fade{to{opacity:0}}#sun.cover{background:radial-gradient(#9aa6c8 0,#9aa6c8cc 45%,transparent 70%)}
+@keyframes pulse{50%{opacity:.5}}
+#tray{display:flex;gap:14px;justify-content:center;padding:14px;width:100%;max-width:900px}
+.item{width:72px;height:72px;font-size:44px;background:#2a2333;border:2px solid #6b5a7a;border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none}
+.item.sel{border-color:#ffd98a;box-shadow:0 0 12px #ffd98a}.item.used{visibility:hidden}
+.shake{animation:shake .4s}@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+#drag{position:fixed;font-size:50px;pointer-events:none;transform:translate(-50%,-50%);z-index:9;display:none}
+#mem{position:absolute;inset:auto 0 8% 0;text-align:center;font-size:clamp(17px,4vw,26px);font-style:italic;opacity:0;transition:opacity 2s;text-shadow:0 2px 8px #000;padding:0 16px;pointer-events:none}
+#next{display:none;margin-top:10px}#status{font-size:14px;opacity:.75;text-align:center;padding:0 12px}
+</style></head><body>
+<div id="top"><span>Until I Wake – sen 1</span><span><button id="snd">🔈</button> <button id="lang">EN</button></span></div>
+<div id="frame"><div id="scene"><img class="bg" src="dream.jpg" alt=""><div id="slot" class="zone"></div><div id="sun" class="zone"></div></div><div id="mem"></div></div>
+<div id="tray"><div class="item" data-ok="1">🧸</div><div class="item">📱</div><div class="item">🔑</div><div class="item">☕</div></div>
+<div id="status"></div><button id="next"></button><div id="drag"></div>
+<script>
+const T={sk:{s:"Niečo na polici chýba… a niečo v obraze nepatrí.",h:"Nápoveda: pozri na prázdne miesto na polici a na oblohu.",m:"„Mama mi spievala, kým som nezaspal. Môj macko vždy sedel na polici.“",n:"Ďalší sen ›",e:"Koniec ukážky."},
+en:{s:"Something is missing on the shelf… and something doesn't belong.",h:"Hint: look at the empty spot on the shelf and at the sky.",m:"“Mom sang to me until I fell asleep. My teddy always sat on the shelf.”",n:"Next dream ›",e:"End of demo."}};
+let L="sk",placed=false,removed=false,sel=null,done=false;const $=q=>document.querySelector(q);
+function txt(){$('#status').textContent=done?"":T[L].s;$('#mem').textContent=T[L].m;$('#next').textContent=T[L].n;$('#lang').textContent=L=="sk"?"EN":"SK"}txt();
+$('#lang').onclick=()=>{L=L=="sk"?"en":"sk";txt()};
+function shake(el){el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');navigator.vibrate&&navigator.vibrate(60)}
+// audio
+let ac,on=false;function beep(){if(!on)return;const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=880;o.type="sine";g.gain.setValueAtTime(0,ac.currentTime);g.gain.linearRampToValueAtTime(.05,ac.currentTime+.02);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+.25);o.connect(g).connect(ac.destination);o.start();o.stop(ac.currentTime+.3)}
+setInterval(beep,1300);function startAudio(){if(!ac)ac=new (window.AudioContext||window.webkitAudioContext)();ac.resume();on=true;$('#snd').textContent="🔊"}
+$('#snd').onclick=()=>{if(on){on=false;$('#snd').textContent="🔈"}else startAudio()};document.addEventListener('pointerdown',()=>{if(!ac)startAudio()},{once:true});
+function inside(el,x,y){const r=el.getBoundingClientRect(),p=12;return x>r.left-p&&x<r.right+p&&y>r.top-p&&y<r.bottom+p}
+function place(it){if(it.dataset.ok){placed=true;it.classList.add('used');$('#slot').innerHTML='<div class="placed">'+it.textContent+'</div>';$('#slot').style.animation='none';$('#slot').style.background='none';check()}else shake(it)}
+document.querySelectorAll('.item').forEach(it=>{it.addEventListener('pointerdown',e=>{if(done)return;e.preventDefault();let moved=false,sx=e.clientX,sy=e.clientY;const d=$('#drag');
+ const mv=ev=>{if(Math.hypot(ev.clientX-sx,ev.clientY-sy)>8){moved=true;d.style.display='block';d.textContent=it.textContent;d.style.left=ev.clientX+'px';d.style.top=ev.clientY+'px'}};
+ const up=ev=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);d.style.display='none';
+  if(moved){if(inside($('#slot'),ev.clientX,ev.clientY))place(it);else if(inside($('#scene'),ev.clientX,ev.clientY))shake($('#frame'))}
+  else{document.querySelectorAll('.item').forEach(i=>i.classList.remove('sel'));sel=it;it.classList.add('sel')}};
+ addEventListener('pointermove',mv);addEventListener('pointerup',up)})});
+$('#scene').addEventListener('click',e=>{if(done)return;const x=e.clientX,y=e.clientY;
+ if(!removed&&inside($('#sun'),x,y)){removed=true;$('#sun').classList.add('cover');check();return}
+ if(sel&&!placed&&inside($('#slot'),x,y)){sel.classList.remove('sel');place(sel);sel=null;return}
+ shake($('#frame'))});
+function check(){if(!(placed&&removed))return;done=true;$('#status').textContent="";const s=$('#scene');s.style.filter="brightness(1.15) saturate(1.1)";s.style.transform="scale(1.6)";s.style.transformOrigin="35% 50%";
+ setTimeout(()=>$('#mem').style.opacity=1,1500);setTimeout(()=>$('#next').style.display='block',3000)}
+$('#next').onclick=()=>{$('#status').textContent=T[L].e;$('#next').style.display='none'};
+setTimeout(()=>{if(done)return;$('#status').textContent=T[L].h;if(!placed)$('#slot').classList.add('hint');if(!removed)$('#sun').classList.add('hint')},45000);
+</script></body></html>
