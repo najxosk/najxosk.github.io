@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#7fd3ff">
+<meta name="mobile-web-app-capable" content="yes">
+<title>DoodleAlive – oživ svoju kresbu</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- DOMOV -->
+  <section id="home" class="screen">
+    <div class="homeInner">
+      <h1 class="logo"><span>D</span><span>o</span><span>o</span><span>d</span><span>l</span><span>e</span><span>A</span><span>l</span><span>i</span><span>v</span><span>e</span></h1>
+      <p class="tag">Nakresli. Odfoť. Oživ!</p>
+      <button id="btnResume" class="big green hidden"><canvas id="resumeThumb" width="64" height="64"></canvas><span>Moja postavička</span></button>
+      <label class="big orange" for="fileCam" id="lblCam">📷 Odfotiť kresbu</label>
+      <label class="big blue" for="fileGal" id="lblGal">🖼️ Vybrať z galérie</label>
+      <input id="fileCam" class="hiddenInput" type="file" accept="image/*" capture="environment">
+      <input id="fileGal" class="hiddenInput" type="file" accept="image/*">
+      <p class="or">Alebo vyskúšaj ukážku:</p>
+      <div id="samples"></div>
+    </div>
+  </section>
+
+  <!-- ÚPRAVA / VYSTRIHNUTIE -->
+  <section id="edit" class="screen hidden">
+    <div class="editTop"><button id="btnEditBack" class="pill">← Späť</button><h2>Vystrihnutie</h2><span class="spacer"></span></div>
+    <div class="editBody">
+      <div class="box" id="photoBox">
+        <canvas id="photoCv"></canvas>
+        <div class="hint">Ťahom prsta môžeš označiť len kresbu (nepovinné)</div>
+      </div>
+      <div class="box checker" id="prevBox">
+        <canvas id="prevCv"></canvas>
+        <div id="prevMsg" class="hidden">Nič som nenašiel. Skús posunúť citlivosť alebo označiť kresbu.</div>
+      </div>
+    </div>
+    <div class="editCtl">
+      <div class="sliderRow"><span>Citlivosť</span><input id="sens" type="range" min="0" max="100" value="50" aria-label="Citlivosť"></div>
+      <div class="btnRow"><button id="btnFull" class="pill">Celá fotka</button><button id="btnGo" class="big green slim">Oživiť! ✨</button></div>
+    </div>
+  </section>
+
+  <!-- ODER -->
+  <section id="stage" class="screen hidden">
+    <div class="stageTop">
+      <button id="btnNew" class="pill" aria-label="Nová kresba">← Nová kresba</button>
+      <span class="spacer"></span>
+      <button id="btnEdit" class="round small" aria-label="Upraviť vystrihnutie">✂️</button>
+      <button id="btnSave" class="round small" aria-label="Uložiť obrázok">💾</button>
+      <button id="btnMute" class="round small" aria-label="Zvuk zap/vyp">🔊</button>
+    </div>
+    <div id="arena">
+      <canvas id="bgCv"></canvas><canvas id="glCv"></canvas><canvas id="fxCv"></canvas>
+      <div id="toast" class="hidden"></div>
+    </div>
+    <nav id="actions">
+      <button class="act pink" data-act="dance"><i>💃</i><b>Tancuj</b></button>
+      <button class="act green" data-act="jump"><i>🦘</i><b>Skoč</b></button>
+      <button class="act purple" data-act="spin"><i>🌀</i><b>Točenie</b></button>
+      <button class="act orange" data-act="sound"><i>🎺</i><b>Zvuk</b></button>
+    </nav>
+  </section>
+</div>
+<script src="js/cutout.js"></script>
+<script src="js/samples.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/rig.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
