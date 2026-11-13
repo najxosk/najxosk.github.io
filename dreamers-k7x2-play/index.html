@@ -59,7 +59,7 @@ button.big{font-size:20px;padding:0 28px;min-height:52px;background:rgba(120,90,
 @keyframes rip{to{width:90px;height:90px;opacity:0}}
 #mem{position:absolute;left:0;right:0;bottom:0;padding:30px 18px 14px;text-align:center;font-style:italic;font-size:clamp(16px,3.6vw,24px);line-height:1.4;background:linear-gradient(transparent,#000c 60%);opacity:0;transition:opacity 1.6s;pointer-events:none;text-shadow:0 2px 8px #000}
 #mem.v{opacity:1}
-#panel{position:absolute;display:flex;flex-direction:column;align-items:center;gap:8px}
+#panel{position:absolute;display:flex;flex-direction:column;align-items:center;gap:8px;overflow:hidden}
 #task{font-size:clamp(13px,3.2vw,16px);opacity:.85;text-align:center;line-height:1.35;min-height:2.7em;padding:0 8px;transition:opacity .5s}
 #tray{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:100%}
 .item{position:relative;aspect-ratio:1;background:rgba(42,35,51,.75);border:2px solid #4d4060;border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none;min-width:44px;min-height:44px;transition:opacity .6s,transform .3s,border-color .3s}
@@ -199,7 +199,7 @@ const T={
  en:{series:"Dreamers · Story I",title1:"Until I Wake",title2:"Kým sa zobudím",
   intro:"Rain. Headlights. Then silence. Elena has been in a coma for eleven days. Somewhere deep inside, she is still dreaming — walking back through every stage of her life. Help her put each memory back together, and find her way home.",
   start:"Begin the dream",cont:"Continue",stage:"Stage",
-  task:"Drag the missing memory from below into the picture — and tap what doesn't belong.",
+  task:"Drag the missing memory from the tray into the picture — and tap what doesn't belong.",
   wrongItem:"That belongs to another stage of her life.",
   placed:"It's back. Now — what doesn't belong here?",removed:"Now give the memory back what it lost.",
   next:"Next stage ›",wake:"Open your eyes",
@@ -211,7 +211,7 @@ const T={
  sk:{series:"Snílkovia · Príbeh I",title1:"Kým sa zobudím",title2:"Until I Wake",
   intro:"Dážď. Svetlá áut. Potom ticho. Elena je už jedenásť dní v kóme. Niekde hlboko vo vnútri stále sníva a prechádza späť každou etapou svojho života. Pomôž jej poskladať každú spomienku a nájsť cestu domov.",
   start:"Začať sen",cont:"Pokračovať",stage:"Etapa",
-  task:"Pretiahni chýbajúcu spomienku zdola do obrazu a ťukni na to, čo tam nepatrí.",
+  task:"Pretiahni chýbajúcu spomienku z lišty do obrazu a ťukni na to, čo tam nepatrí.",
   wrongItem:"To patrí do inej etapy jej života.",
   placed:"Je to späť. A čo sem nepatrí?",removed:"Teraz vráť spomienke, čo stratila.",
   next:"Ďalšia etapa ›",wake:"Otvor oči",
@@ -282,11 +282,11 @@ function layout(){
   const land=W>H*1.15;
   const wrap=$('#sceneWrap'),panel=$('#panel');
   if(land){
-    const pw=Math.min(300,Math.max(200,W*.28));
+    const pw=Math.min(420,Math.max(280,W*.36));
     let sw=W-pw-pad*3,sh=sw*3/4; if(sh>H-top-pad){sh=H-top-pad;sw=sh*4/3}
     wrap.style.cssText=`left:${pad}px;top:${top}px;width:${sw}px;height:${sh}px`;
     panel.style.cssText=`left:${sw+pad*2}px;top:${top}px;width:${W-sw-pad*3}px;height:${H-top-pad}px;justify-content:center`;
-    $('#tray').style.gridTemplateColumns='repeat(3,1fr)';
+    $('#tray').style.gridTemplateColumns='repeat(5,1fr)';
   } else {
     const tw=Math.min(W-pad*2,520),trayH=(tw-32)/5*2+8,panelH=trayH+130;
     let sw=W-pad*2,sh=sw*3/4; if(sh>H-top-panelH-pad){sh=H-top-panelH-pad;sw=sh*4/3}
