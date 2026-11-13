@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0d0b14">
+<title>Until I Wake · Kým sa zobudím</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#0d0b14;color:#f3e9d8;font-family:Georgia,'Times New Roman',serif;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:none}
+button{font:inherit;color:#f3e9d8;background:rgba(42,35,51,.85);border:1px solid #6b5a7a;border-radius:12px;min-height:44px;min-width:44px;padding:0 16px;cursor:pointer}
+button:active{transform:scale(.97)}
+button.big{font-size:20px;padding:0 28px;min-height:52px;background:rgba(120,90,40,.55);border-color:#e8c37a}
+.screen{position:fixed;inset:0;display:none}
+.screen.on{display:block}
+/* title */
+#title{background:#0d0b14 url(assets/title.webp) center/cover no-repeat}
+#title .inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:7vh 20px 20px;text-align:center;background:linear-gradient(#0d0b14cc,#0d0b1444 45%,#0d0b14aa)}
+#title h1{font-weight:normal;font-size:clamp(34px,8vw,68px);margin:0;letter-spacing:.04em;text-shadow:0 0 30px #e8c37a88}
+#title h2{font-weight:normal;font-style:italic;font-size:clamp(18px,4vw,28px);margin:.2em 0 .6em;opacity:.85}
+#title .series{font-size:13px;letter-spacing:.35em;text-transform:uppercase;opacity:.7;margin-bottom:10px}
+#title p{max-width:560px;font-size:clamp(15px,3.4vw,19px);line-height:1.5;opacity:.92;text-shadow:0 1px 6px #000}
+#title .btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:auto;margin-bottom:6vh}
+/* card (black interludes) */
+#card{background:#000;display:none;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:24px;z-index:20}
+#card.on{display:flex}
+#card .k{font-size:13px;letter-spacing:.3em;text-transform:uppercase;opacity:.6;margin-bottom:10px}
+#card .t{font-size:clamp(26px,6vw,46px);margin-bottom:22px}
+#card .l{font-style:italic;font-size:clamp(17px,4vw,24px);max-width:640px;line-height:1.5;opacity:0;transition:opacity 1.6s;margin:8px 0}
+#card .l.v{opacity:1}#card .l.out{color:#9fb4c8;font-style:normal;font-family:system-ui,sans-serif;font-size:clamp(15px,3.4vw,19px)}
+/* game */
+#game{background:#0d0b14}
+#top{position:absolute;left:0;right:0;top:0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:4px 10px;gap:8px;z-index:5}
+#stageLbl{font-size:clamp(13px,3.3vw,17px);opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#stageLbl b{color:#e8c37a;font-weight:normal}
+#top .r{display:flex;gap:6px;flex-shrink:0}
+#top button{padding:0 10px;font-size:15px}
+#sceneWrap{position:absolute;overflow:hidden;border-radius:10px;box-shadow:0 10px 40px #000a;background:#000}
+#scene{position:absolute;inset:0;transform-origin:50% 50%;transition:transform 2.6s cubic-bezier(.4,0,.2,1)}
+#pics{position:absolute;inset:0;transition:filter 2.2s}
+#scene img.bg{position:absolute;inset:0;width:100%;height:100%;display:block}
+#bgc{opacity:0;transition:opacity 1.8s ease}
+#vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 45%,#000 100%);transition:opacity 2s}
+#rain{position:absolute;inset:0;pointer-events:none;width:100%;height:100%}
+#flash{position:absolute;inset:0;pointer-events:none;background:#fff;opacity:0}
+.zone{position:absolute;transform:translate(-50%,-50%);min-width:44px;min-height:44px}
+#slot{border-radius:50%;background:radial-gradient(rgba(255,236,190,.45),rgba(255,236,190,.12) 55%,transparent 72%);animation:pulse 2.6s ease-in-out infinite}
+#slot.filled{animation:none;background:none}
+#slot.hint,#intr.hint{box-shadow:0 0 0 3px #ffd98a,0 0 28px 6px #ffd98a;animation:pulse 1.2s infinite;border-radius:50%}
+#intr{border-radius:40%}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+.placed{position:absolute;transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;filter:drop-shadow(0 6px 8px #0008) sepia(.15);transition:transform .8s cubic-bezier(.2,1.6,.4,1),opacity .6s}
+.placed.in{transform:translate(-50%,-50%) scale(1);opacity:1}
+.vanish{position:absolute;transform:translate(-50%,-50%);pointer-events:none;border-radius:50%;-webkit-backdrop-filter:blur(16px) saturate(.5) brightness(1.08);backdrop-filter:blur(16px) saturate(.5) brightness(1.08);-webkit-mask:radial-gradient(closest-side,#000 62%,transparent);mask:radial-gradient(closest-side,#000 62%,transparent);opacity:0;transition:opacity 1.4s}
+.vanish.in{opacity:1}
+.spark{position:absolute;width:8px;height:8px;border-radius:50%;background:#fff6d8;box-shadow:0 0 10px 3px #ffd98a;pointer-events:none;transform:translate(-50%,-50%);animation:spark 1.2s ease-out forwards}
+@keyframes spark{to{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.2);opacity:0}}
+.ripple{position:absolute;width:40px;height:40px;border:2px solid #fff8;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;animation:rip .6s ease-out forwards}
+@keyframes rip{to{width:90px;height:90px;opacity:0}}
+#mem{position:absolute;left:0;right:0;bottom:0;padding:30px 18px 14px;text-align:center;font-style:italic;font-size:clamp(16px,3.6vw,24px);line-height:1.4;background:linear-gradient(transparent,#000c 60%);opacity:0;transition:opacity 1.6s;pointer-events:none;text-shadow:0 2px 8px #000}
+#mem.v{opacity:1}
+#panel{position:absolute;display:flex;flex-direction:column;align-items:center;gap:8px}
+#task{font-size:clamp(13px,3.2vw,16px);opacity:.85;text-align:center;line-height:1.35;min-height:2.7em;padding:0 8px;transition:opacity .5s}
+#tray{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:100%}
+.item{position:relative;aspect-ratio:1;background:rgba(42,35,51,.75);border:2px solid #4d4060;border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none;min-width:44px;min-height:44px;transition:opacity .6s,transform .3s,border-color .3s}
+.item img{width:82%;height:82%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 3px 4px #0009)}
+.item.sel{border-color:#ffd98a;box-shadow:0 0 14px #ffd98a;transform:translateY(-3px)}
+.item.hint{border-color:#ffd98a;animation:pulse 1.2s infinite}
+.item.used{pointer-events:none;border-style:dashed;border-color:#3a3048;background:rgba(42,35,51,.25)}
+.item.used img{opacity:0;transform:scale(.3);transition:opacity .6s,transform .6s}
+.shake{animation:shake .45s}@keyframes shake{20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+#ghost{position:fixed;width:84px;height:84px;pointer-events:none;transform:translate(-50%,-60%);z-index:50;display:none;filter:drop-shadow(0 8px 10px #000a)}
+#next{display:none}
+#dbg{position:fixed;left:6px;bottom:6px;background:#000c;color:#0f0;font:12px monospace;padding:4px 6px;z-index:99;pointer-events:none;white-space:pre}
+.dbgz{outline:2px dashed #0f0 !important;background:rgba(0,255,0,.12)}
+#intr.dbgz{outline-color:#f0f !important;background:rgba(255,0,255,.12)}
+/* final */
+#end{background:#0d0b14;overflow:auto;touch-action:pan-y}
+#end .inner{max-width:640px;margin:0 auto;padding:8vh 22px 60px;text-align:center;line-height:1.6}
+#end h1{font-weight:normal;font-size:clamp(28px,6vw,44px);margin:0 0 4px}
+#end h3{font-weight:normal;color:#e8c37a;letter-spacing:.2em;text-transform:uppercase;font-size:13px;margin:26px 0 6px}
+#end p{margin:4px 0;opacity:.9}
+#end .small{font-size:13px;opacity:.65}
+</style>
+</head><body>
+
+<!-- TITLE -->
+<div id="title" class="screen on"><div class="inner">
+  <div class="series" data-t="series"></div>
+  <h1 data-t="title1"></h1><h2 data-t="title2"></h2>
+  <p data-t="intro"></p>
+  <div class="btns">
+    <button class="big" id="bStart" data-t="start"></button>
+    <button class="big" id="bCont" style="display:none" data-t="cont"></button>
+  </div>
+  <div style="display:flex;gap:8px"><button id="bLangT">SK / EN</button></div>
+</div></div>
+
+<!-- BLACK CARD -->
+<div id="card" class="screen"></div>
+
+<!-- GAME -->
+<div id="game" class="screen">
+  <div id="top"><div id="stageLbl"></div><div class="r"><button id="bSnd" aria-label="sound">🔊</button><button id="bLang">SK</button><button id="bMenu" aria-label="menu">☰</button></div></div>
+  <div id="sceneWrap"><div id="scene">
+    <div id="pics"><img class="bg" id="bg" alt=""><img class="bg" id="bgc" alt=""></div>
+    <canvas id="rain"></canvas>
+    <div id="vignette"></div>
+    <div id="slot" class="zone"></div>
+    <div id="intr" class="zone"></div>
+  </div><div id="flash"></div><div id="mem"></div></div>
+  <div id="panel"><div id="task"></div><div id="tray"></div><button class="big" id="next"></button></div>
+</div>
+
+<!-- END -->
+<div id="end" class="screen"><div class="inner" id="endInner"></div></div>
+<img id="ghost" alt="">
+
+<script type="application/json" id="scenesData">
+{
+ "items":[
+  {"id":"teddy","img":"assets/item_teddy.webp","en":"teddy bear","sk":"macko"},
+  {"id":"crayon","img":"assets/item_crayon.webp","en":"crayon","sk":"pastelka"},
+  {"id":"backpack","img":"assets/item_backpack.webp","en":"school bag","sk":"školská taška"},
+  {"id":"diary","img":"assets/item_diary.webp","en":"diary","sk":"denník"},
+  {"id":"letter","img":"assets/item_letter.webp","en":"love letter","sk":"ľúbostný list"},
+  {"id":"key","img":"assets/item_key.webp","en":"key","sk":"kľúč"},
+  {"id":"coffee","img":"assets/item_coffee.webp","en":"coffee","sk":"káva"},
+  {"id":"ring","img":"assets/item_ring.webp","en":"ring","sk":"prsteň"},
+  {"id":"drawing","img":"assets/item_drawing.webp","en":"drawing","sk":"kresba"},
+  {"id":"umbrella","img":"assets/item_umbrella.webp","en":"umbrella","sk":"dáždnik"}
+ ],
+ "stages":[
+  {"img":"assets/s01.webp","item":"teddy","slot":{"x":26,"y":23,"r":14,"size":13},"intr":{"x":89.5,"y":22,"w":13,"h":17},"mood":{"b":1.0,"v":0.35},
+   "t":{"en":"The Cradle","sk":"Kolíska"},
+   "in":{"en":"Someone is singing. I don't know the words yet.","sk":"Niekto spieva. Slová ešte nepoznám."},
+   "out":{"en":"Mom sang until I fell asleep. My teddy watched over me from the shelf.","sk":"Mama spievala, kým som nezaspala. Môj macko ma strážil z police."},
+   "hint":{"en":"The shelf is empty… and what is wrong with the night sky?","sk":"Polica je prázdna… a čo nesedí na nočnej oblohe?"}},
+  {"img":"assets/s02.webp","item":"crayon","slot":{"x":44.5,"y":76,"r":18,"size":11},"intr":{"x":79.5,"y":48,"w":18,"h":36},"mood":{"b":1.0,"v":0.35},
+   "t":{"en":"Kindergarten","sk":"Škôlka"},
+   "in":{"en":"The world was a blank page, and I wanted all the colours.","sk":"Svet bol prázdny papier a ja som chcela všetky farby."},
+   "out":{"en":"I drew a sun in every picture. Even the ones at night.","sk":"Do každého obrázka som kreslila slnko. Aj do tých nočných."},
+   "hint":{"en":"Her paper is still empty… and who would build that indoors in summer?","sk":"Jej papier je ešte prázdny… a kto by to staval v lete v triede?"}},
+  {"img":"assets/s03.webp","item":"backpack","slot":{"x":19,"y":38,"r":14,"size":12},"intr":{"x":75,"y":53,"w":34,"h":40},"mood":{"b":0.98,"v":0.4},
+   "t":{"en":"First Day of School","sk":"Prvý deň v škole"},
+   "in":{"en":"Mom let go of my hand at the door. I was so small.","sk":"Mama ma pri dverách pustila za ruku. Bola som taká malá."},
+   "out":{"en":"I hung my bag on the hook and stayed. I was brave.","sk":"Zavesila som tašku na háčik a zostala. Bola som statočná."},
+   "hint":{"en":"One hook is waiting… and something big doesn't go to school.","sk":"Jeden háčik čaká… a niekto veľký do školy nepatrí."}},
+  {"img":"assets/s04.webp","item":"diary","slot":{"x":66,"y":38,"r":12,"size":9},"intr":{"x":76,"y":72,"w":36,"h":40},"mood":{"b":0.95,"v":0.45},
+   "t":{"en":"Growing Up","sk":"Dospievanie"},
+   "in":{"en":"Some nights I wrote down what I couldn't say out loud.","sk":"Niektoré noci som si zapisovala, čo som nevedela povedať nahlas."},
+   "out":{"en":"My secrets had a little lock. My heart didn't.","sk":"Moje tajomstvá mali malý zámok. Moje srdce nie."},
+   "hint":{"en":"The desk is waiting for something… and she is too old for one toy.","sk":"Stôl na niečo čaká… a na jednu hračku je už priveľká."}},
+  {"img":"assets/s05.webp","item":"letter","slot":{"x":53,"y":59,"r":14,"size":11},"intr":{"x":89,"y":67,"w":11,"h":26},"mood":{"b":0.93,"v":0.5},
+   "outside":{"en":"“…no change today. Keep talking to her.”","sk":"„…dnes bez zmeny. Hovorte na ňu.“"},
+   "t":{"en":"First Love","sk":"Prvá láska"},
+   "in":{"en":"He was late. I waited anyway.","sk":"Meškal. Aj tak som čakala."},
+   "out":{"en":"He wrote what he never dared to say. I kept that letter for twenty years.","sk":"Napísal, čo sa nikdy neodvážil povedať. Ten list som si nechala dvadsať rokov."},
+   "hint":{"en":"The seat beside her is empty… and someone on the path is far from home.","sk":"Miesto vedľa nej je prázdne… a niekto na chodníku je ďaleko od domova."}},
+  {"img":"assets/s06.webp","item":"key","slot":{"x":30.5,"y":40,"r":12,"size":9},"intr":{"x":54,"y":12.5,"w":15,"h":14},"mood":{"b":0.9,"v":0.55},
+   "outside":{"en":"“Mommy, I made you something. Can she hear me?”","sk":"„Mami, niečo som ti urobila. Počuje ma?“"},
+   "t":{"en":"Leaving Home","sk":"Odchod z domu"},
+   "in":{"en":"Four empty walls. Mine.","sk":"Štyri prázdne steny. Moje."},
+   "out":{"en":"The first key that was only mine. I was scared and happy at once.","sk":"Prvý kľúč, ktorý bol len môj. Bála som sa a tešila zároveň."},
+   "hint":{"en":"The hooks by the door are empty… and look up.","sk":"Háčiky pri dverách sú prázdne… a pozri hore."}},
+  {"img":"assets/s07.webp","item":"coffee","slot":{"x":49.5,"y":71,"r":12,"size":11},"intr":{"x":16,"y":60,"w":22,"h":30},"mood":{"b":0.88,"v":0.55},
+   "t":{"en":"Meeting Adam","sk":"Stretnutie s Adamom"},
+   "in":{"en":"A rainy Tuesday. A café. A stranger with kind eyes.","sk":"Daždivý utorok. Kaviareň. Cudzinec s láskavými očami."},
+   "out":{"en":"He spilled my coffee and bought me another. We talked until they closed.","sk":"Vylial mi kávu a kúpil mi novú. Rozprávali sme sa, až kým nezatvorili."},
+   "hint":{"en":"Her saucer is empty… and one guest flew in from the sea.","sk":"Jej tanierik je prázdny… a jeden hosť priletel od mora."}},
+  {"img":"assets/s08.webp","item":"ring","slot":{"x":22.5,"y":78,"r":12,"size":7},"intr":{"x":20,"y":18,"w":28,"h":30},"mood":{"b":0.85,"v":0.6},
+   "outside":{"en":"“Elena, it's Adam. I'm here. I'm always here.”","sk":"„Elena, to som ja, Adam. Som tu. Vždy som tu.“"},
+   "t":{"en":"The Wedding","sk":"Svadba"},
+   "in":{"en":"Everyone I loved, in one garden.","sk":"Všetci, ktorých som ľúbila, v jednej záhrade."},
+   "out":{"en":"“Forever,” he said. I believed him. I still do.","sk":"„Navždy,“ povedal. Verila som mu. Stále verím."},
+   "hint":{"en":"The ring box is empty… and only one part of the sky is crying.","sk":"Krabička je prázdna… a plače len jeden kúsok neba."}},
+  {"img":"assets/s09.webp","item":"drawing","slot":{"x":19,"y":31,"r":15,"size":13},"intr":{"x":90,"y":25,"w":13,"h":40},"mood":{"b":0.8,"v":0.7},
+   "outside":{"en":"“Her pulse is changing. Call the family.”","sk":"„Mení sa jej pulz. Zavolajte rodinu.“"},
+   "t":{"en":"Ema and Tom","sk":"Ema a Tomi"},
+   "in":{"en":"Two small voices. Sticky hands. Home.","sk":"Dva malé hlásky. Lepkavé ruky. Domov."},
+   "out":{"en":"Ema drew us holding hands. “So nobody gets lost,” she said.","sk":"Ema nás nakreslila, ako sa držíme za ruky. „Aby sa nikto nestratil,“ povedala."},
+   "hint":{"en":"The magnets hold nothing… and something from a hospital stands in the corner.","sk":"Magnetky nič nedržia… a v kúte stojí niečo z nemocnice."}},
+  {"img":"assets/s10.webp","item":"umbrella","slot":{"x":39,"y":15,"r":14,"size":17},"intr":{"x":71,"y":57,"w":28,"h":26},"mood":{"b":0.78,"v":0.85},"rain":true,
+   "outside":{"en":"“…Mom? Please wake up.”","sk":"„…Mami? Prosím, zobuď sa.“"},
+   "t":{"en":"The Rain","sk":"Dážď"},
+   "in":{"en":"Just a little rain. Almost home. I left my umbrella at work.","sk":"Len trochu dažďa. Skoro doma. Dáždnik som nechala v práci."},
+   "out":{"en":"Headlights. A sound like the whole sky tearing apart. Then—","sk":"Svetlá. Zvuk, akoby sa trhalo celé nebo. A potom—"},
+   "hint":{"en":"She has nothing over her head… and something in the street is waiting for her.","sk":"Nad hlavou nemá nič… a niečo na ulici na ňu čaká."}}
+ ],
+ "final":{"img":"assets/s11.webp"}
+}
+</script>
+
+<script>
+const D=JSON.parse(document.getElementById('scenesData').textContent);
+const $=q=>document.querySelector(q);
+const DEBUG=/[?&]debug=1/.test(location.search);
+const T={
+ en:{series:"Dreamers · Story I",title1:"Until I Wake",title2:"Kým sa zobudím",
+  intro:"Rain. Headlights. Then silence. Elena has been in a coma for eleven days. Somewhere deep inside, she is still dreaming — walking back through every stage of her life. Help her put each memory back together, and find her way home.",
+  start:"Begin the dream",cont:"Continue",stage:"Stage",
+  task:"Drag the missing memory from below into the picture — and tap what doesn't belong.",
+  wrongItem:"That belongs to another stage of her life.",
+  placed:"It's back. Now — what doesn't belong here?",removed:"Now give the memory back what it lost.",
+  next:"Next stage ›",wake:"Open your eyes",
+  pro1:"Rain. Headlights. Then silence.",pro2:"Elena, 38. Wife of Adam. Mother of Ema and Tom.",pro3:"Her body sleeps in room 214. Her mind is still walking home.",
+  fin:"Final Stage",finT:"Waking Up",
+  v1:"“…her pulse is rising…”",v2:"“Mommy? It's Ema. I brought your teddy.”",v3:"“Elena… we're all here. Come back to us.”",
+  last:"I'm awake. You're all here. Every stage of my life was leading me back to you.",
+  credits:"The End",again:"Play again",menuQ:"Return to the title screen? Your progress is saved."},
+ sk:{series:"Snílkovia · Príbeh I",title1:"Kým sa zobudím",title2:"Until I Wake",
+  intro:"Dážď. Svetlá áut. Potom ticho. Elena je už jedenásť dní v kóme. Niekde hlboko vo vnútri stále sníva a prechádza späť každou etapou svojho života. Pomôž jej poskladať každú spomienku a nájsť cestu domov.",
+  start:"Začať sen",cont:"Pokračovať",stage:"Etapa",
+  task:"Pretiahni chýbajúcu spomienku zdola do obrazu a ťukni na to, čo tam nepatrí.",
+  wrongItem:"To patrí do inej etapy jej života.",
+  placed:"Je to späť. A čo sem nepatrí?",removed:"Teraz vráť spomienke, čo stratila.",
+  next:"Ďalšia etapa ›",wake:"Otvor oči",
+  pro1:"Dážď. Svetlá áut. Potom ticho.",pro2:"Elena, 38 rokov. Manželka Adama. Mama Emy a Tomiho.",pro3:"Jej telo spí v izbe 214. Jej myseľ ešte kráča domov.",
+  fin:"Posledná etapa",finT:"Prebudenie",
+  v1:"„…pulz jej stúpa…“",v2:"„Mami? To som ja, Ema. Priniesla som ti macka.“",v3:"„Elena… sme tu všetci. Vráť sa k nám.“",
+  last:"Som hore. Ste tu všetci. Každá etapa môjho života ma viedla späť k vám.",
+  credits:"Koniec",again:"Hrať znova",menuQ:"Vrátiť sa na úvod? Postup je uložený."}
+};
+let L=localStorage.getItem('uiw_lang')||((navigator.language||'').toLowerCase().startsWith('sk')||(navigator.language||'').toLowerCase().startsWith('cs')?'sk':'en');
+let cur=0,placed=false,removed=false,sel=null,busy=false,hintTimer=null,hinted=false;
+const t=k=>T[L][k];
+function saveProg(n){localStorage.setItem('uiw_stage',String(n))}
+function getProg(){return parseInt(localStorage.getItem('uiw_stage')||'0',10)||0}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id))}
+function applyLang(){
+  document.documentElement.lang=L;
+  document.querySelectorAll('[data-t]').forEach(e=>e.textContent=t(e.dataset.t));
+  $('#bLang').textContent=L==='sk'?'EN':'SK';
+  $('#bCont').style.display=(getProg()>0&&getProg()<=D.stages.length)?'':'none';
+  if($('#game').classList.contains('on')&&D.stages[cur]){stageLabel();setTask();if(placed&&removed)$('#mem').textContent=D.stages[cur].out[L];$('#next').textContent=cur===D.stages.length-1?t('next'):t('next')}
+}
+function toggleLang(){L=L==='sk'?'en':'sk';localStorage.setItem('uiw_lang',L);applyLang()}
+$('#bLangT').onclick=toggleLang;$('#bLang').onclick=toggleLang;
+
+/* ---------- AUDIO (WebAudio, all synthesized) ---------- */
+let ac=null,master=null,muted=localStorage.getItem('uiw_mute')==='1',beepTO=null,beepLevel=0,beepRate=1400,pad=null,rainNode=null,lullTO=null;
+function initAudio(){
+  if(ac){ac.resume();return}
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+  ac=new AC();master=ac.createGain();master.gain.value=muted?0:1;master.connect(ac.destination);
+  beepLoop();
+}
+function updSnd(){$('#bSnd').textContent=muted?'🔈':'🔊'}
+$('#bSnd').onclick=()=>{muted=!muted;localStorage.setItem('uiw_mute',muted?'1':'0');initAudio();if(master)master.gain.setTargetAtTime(muted?0:1,ac.currentTime,.05);updSnd()};updSnd();
+function tone(f,dur,vol,type='sine',when=0,dest){if(!ac)return;const o=ac.createOscillator(),g=ac.createGain(),t0=ac.currentTime+when;o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol,t0+.015);g.gain.exponentialRampToValueAtTime(.0001,t0+dur);o.connect(g).connect(dest||master);o.start(t0);o.stop(t0+dur+.05)}
+function beepLoop(){clearTimeout(beepTO);if(ac&&beepLevel>0)tone(880,.22,beepLevel,'sine');beepTO=setTimeout(beepLoop,beepRate)}
+function setBeep(level,rate){beepLevel=level;beepRate=rate}
+function setPad(stageIdx){ // soft drone: bright early, darker later
+  if(!ac)return;
+  const roots=[[261.6,329.6,392],[261.6,329.6,392],[293.7,370,440],[293.7,349.2,440],[246.9,311.1,370],[220,261.6,329.6],[220,261.6,329.6],[196,233.1,293.7],[174.6,207.7,261.6],[164.8,196,246.9]];
+  const ch=roots[Math.min(stageIdx,roots.length-1)];
+  if(pad){const old=pad;old.g.gain.setTargetAtTime(0,ac.currentTime,.8);setTimeout(()=>old.o.forEach(o=>o.stop()),4000)}
+  const g=ac.createGain();g.gain.value=0;const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=900-stageIdx*50;g.connect(lp).connect(master);
+  const os=ch.map((f,i)=>{const o=ac.createOscillator();o.type='triangle';o.frequency.value=f/2;o.detune.value=(i-1)*6;o.connect(g);o.start();return o});
+  g.gain.setTargetAtTime(.025,ac.currentTime,1.5);pad={o:os,g};
+}
+function stopPad(){if(pad&&ac){const old=pad;old.g.gain.setTargetAtTime(0,ac.currentTime,.6);setTimeout(()=>old.o.forEach(o=>o.stop()),3000);pad=null}}
+function noiseBuf(){const b=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;return b}
+function setRain(on,vol=.12){if(!ac)return;if(on&&!rainNode){const s=ac.createBufferSource();s.buffer=noiseBuf();s.loop=true;const f=ac.createBiquadFilter();f.type='bandpass';f.frequency.value=1800;f.Q.value=.6;const g=ac.createGain();g.gain.value=0;s.connect(f).connect(g).connect(master);s.start();g.gain.setTargetAtTime(vol,ac.currentTime,1);rainNode={s,g}}else if(!on&&rainNode){const r=rainNode;r.g.gain.setTargetAtTime(0,ac.currentTime,.3);setTimeout(()=>r.s.stop(),2000);rainNode=null}}
+function sfx(k){if(!ac)return;
+  if(k==='good'){tone(784,.6,.12,'sine');tone(1175,.9,.09,'sine',.12);tone(1568,1.2,.05,'sine',.24)}
+  if(k==='bad'){tone(140,.25,.15,'sine');tone(110,.3,.1,'sine',.05)}
+  if(k==='vanish'){for(let i=0;i<7;i++)tone(900+i*180,.5,.04,'sine',i*.05)}
+  if(k==='solve'){[523,659,784,1047].forEach((f,i)=>tone(f,1.6,.07,'sine',i*.18))}
+  if(k==='pick'){tone(660,.12,.05,'triangle')}
+  if(k==='crash'){const s=ac.createBufferSource();s.buffer=noiseBuf();const g=ac.createGain(),f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=2500;g.gain.setValueAtTime(.5,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+1.6);s.connect(f).connect(g).connect(master);s.start();s.stop(ac.currentTime+1.7);
+    const o=ac.createOscillator(),og=ac.createGain();o.type='sawtooth';o.frequency.setValueAtTime(1400,ac.currentTime-0.8);o.frequency.setValueAtTime(1300,ac.currentTime);o.frequency.exponentialRampToValueAtTime(600,ac.currentTime+.7);og.gain.setValueAtTime(.05,ac.currentTime);og.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.8);o.connect(og).connect(master);o.start();o.stop(ac.currentTime+.9)}
+}
+// lullaby (Brahms, public domain) as a music box
+const LUL=[[659,1],[659,1],[784,3],[659,1],[659,1],[784,3],[659,1],[784,1],[1047,2],[988,2],[880,2],[880,2],[784,2],[587,1],[659,1],[698,2],[587,2],[587,1],[659,1],[698,4]];
+function lullaby(vol=.05,loop=false){if(!ac)return;clearTimeout(lullTO);let tm=0;const u=.32;LUL.forEach(([f,d])=>{tone(f,1.4,vol,'sine',tm);tone(f*2,.6,vol*.25,'sine',tm);tm+=d*u});if(loop)lullTO=setTimeout(()=>lullaby(vol,loop),(tm+1.5)*1000)}
+function stopLullaby(){clearTimeout(lullTO)}
+
+/* ---------- LAYOUT ---------- */
+function layout(){
+  const W=innerWidth,H=innerHeight,top=52,pad=8;
+  const land=W>H*1.15;
+  const wrap=$('#sceneWrap'),panel=$('#panel');
+  if(land){
+    const pw=Math.min(300,Math.max(200,W*.28));
+    let sw=W-pw-pad*3,sh=sw*3/4; if(sh>H-top-pad){sh=H-top-pad;sw=sh*4/3}
+    wrap.style.cssText=`left:${pad}px;top:${top}px;width:${sw}px;height:${sh}px`;
+    panel.style.cssText=`left:${sw+pad*2}px;top:${top}px;width:${W-sw-pad*3}px;height:${H-top-pad}px;justify-content:center`;
+    $('#tray').style.gridTemplateColumns='repeat(3,1fr)';
+  } else {
+    const tw=Math.min(W-pad*2,520),trayH=(tw-32)/5*2+8,panelH=trayH+130;
+    let sw=W-pad*2,sh=sw*3/4; if(sh>H-top-panelH-pad){sh=H-top-panelH-pad;sw=sh*4/3}
+    const y0=top+Math.max(0,(H-top-sh-panelH)/2.4);
+    wrap.style.cssText=`left:${(W-sw)/2}px;top:${y0}px;width:${sw}px;height:${sh}px`;
+    panel.style.cssText=`left:${(W-tw)/2}px;top:${y0+sh+10}px;width:${tw}px;height:${panelH}px;justify-content:flex-start`;
+    $('#tray').style.gridTemplateColumns='repeat(5,1fr)';
+  }
+  const rc=$('#rain');rc.width=wrap.clientWidth;rc.height=wrap.clientHeight;
+}
+addEventListener('resize',layout);
+
+/* ---------- TRAY ---------- */
+function buildTray(){
+  const tr=$('#tray');tr.innerHTML='';
+  D.items.forEach((it,i)=>{const d=document.createElement('div');d.className='item';d.dataset.id=it.id;d.title=it[L];d.innerHTML=`<img src="${it.img}" alt="${it.en}">`;
+    if(D.stages.findIndex(s=>s.item===it.id)<cur)d.classList.add('used');
+    attachDrag(d);tr.appendChild(d)});
+}
+function attachDrag(el){
+  el.addEventListener('pointerdown',e=>{
+    if(busy||el.classList.contains('used'))return;e.preventDefault();initAudio();
+    let moved=false;const sx=e.clientX,sy=e.clientY,g=$('#ghost');
+    const mv=ev=>{if(!moved&&Math.hypot(ev.clientX-sx,ev.clientY-sy)>8){moved=true;g.src=el.querySelector('img').src;g.style.display='block';el.style.opacity=.35}
+      if(moved){g.style.left=ev.clientX+'px';g.style.top=ev.clientY+'px'}};
+    const up=ev=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);removeEventListener('pointercancel',up);g.style.display='none';el.style.opacity='';
+      if(moved){
+        if(!placed&&hit($('#slot'),ev.clientX,ev.clientY,24))tryPlace(el);
+        else if(hit($('#sceneWrap'),ev.clientX,ev.clientY,0)){shake(el);ripple(ev.clientX,ev.clientY)}
+      } else {
+        const was=sel===el;document.querySelectorAll('.item').forEach(i=>i.classList.remove('sel'));sel=was?null:el;if(sel){el.classList.add('sel');sfx('pick')}
+      }};
+    addEventListener('pointermove',mv);addEventListener('pointerup',up);addEventListener('pointercancel',up);
+  });
+}
+function hit(el,x,y,p){const r=el.getBoundingClientRect();return x>r.left-p&&x<r.right+p&&y>r.top-p&&y<r.bottom+p}
+function shake(el){el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');if(navigator.vibrate)try{navigator.vibrate(40)}catch(e){}}
+function ripple(x,y){const w=$('#sceneWrap').getBoundingClientRect(),r=document.createElement('div');r.className='ripple';r.style.left=(x-w.left)+'px';r.style.top=(y-w.top)+'px';$('#sceneWrap').appendChild(r);setTimeout(()=>r.remove(),700)}
+function sparks(x,y,n=14){const sc=$('#scene');for(let i=0;i<n;i++){const s=document.createElement('div');s.className='spark';s.style.left=x+'%';s.style.top=y+'%';const a=Math.random()*6.28,d=30+Math.random()*60;s.style.setProperty('--dx',Math.cos(a)*d+'px');s.style.setProperty('--dy',Math.sin(a)*d+'px');sc.appendChild(s);setTimeout(()=>s.remove(),1300)}}
+
+/* ---------- STAGE ---------- */
+function stageLabel(){const s=D.stages[cur];$('#stageLbl').innerHTML=`<b>${t('stage')} ${cur+1}/10</b> · ${s.t[L]}`}
+function setTask(){$('#task').textContent=placed&&removed?'':placed?t('placed'):removed?t('removed'):(hinted?D.stages[cur].hint[L]:t('task'))}
+function setZones(s){
+  const sl=$('#slot'),it=$('#intr');
+  sl.style.left=s.slot.x+'%';sl.style.top=s.slot.y+'%';sl.style.width=s.slot.r+'%';sl.style.aspectRatio='1';
+  it.style.left=s.intr.x+'%';it.style.top=s.intr.y+'%';it.style.width=s.intr.w+'%';it.style.height=s.intr.h+'%';
+  [sl,it].forEach(z=>{z.classList.remove('hint','filled');z.classList.toggle('dbgz',DEBUG)});
+}
+function dreamFilter(s,solved){const b=s.mood.b;return solved?`brightness(${b+0.12}) saturate(1.1)`:`brightness(${b*0.85}) saturate(.7) blur(.7px)`}
+function loadStage(i){
+  cur=i;placed=false;removed=false;sel=null;busy=false;hinted=false;
+  const s=D.stages[i];
+  document.querySelectorAll('.placed,.vanish,.spark').forEach(e=>e.remove());
+  const sc=$('#scene');sc.style.transition='none';sc.style.transform='scale(1.08)';void sc.offsetWidth;sc.style.transition='';
+  $('#bg').src=s.img;$('#bgc').style.transition='none';$('#bgc').style.opacity=0;$('#bgc').src=s.img.replace('.webp','_clean.webp');void $('#bgc').offsetWidth;$('#bgc').style.transition='';$('#pics').style.filter=dreamFilter(s,false);
+  $('#vignette').style.opacity=s.mood.v;
+  $('#mem').classList.remove('v');$('#mem').textContent='';$('#next').style.display='none';$('#task').style.display='';
+  setZones(s);buildTray();stageLabel();setTask();
+  rainOn(!!s.rain);
+  if(i+1<D.stages.length){new Image().src=D.stages[i+1].img;new Image().src=D.stages[i+1].img.replace('.webp','_clean.webp')}else{new Image().src=D.final.img}
+  requestAnimationFrame(()=>{sc.style.transform='scale(1)'});
+  // audio: beep grows with every stage
+  setBeep(.006+i*.0075,1500-i*70);setPad(i);setRain(!!s.rain,.14);
+  if(i===0)lullaby(.035,false);
+  clearTimeout(hintTimer);hintTimer=setTimeout(showHint,45000);
+  saveProg(i);
+}
+function showHint(){if(placed&&removed)return;hinted=true;setTask();
+  if(!placed){$('#slot').classList.add('hint');const it=document.querySelector(`.item[data-id="${D.stages[cur].item}"]`);it&&it.classList.add('hint')}
+  if(!removed)$('#intr').classList.add('hint')}
+function tryPlace(el){
+  const s=D.stages[cur];
+  if(el.dataset.id!==s.item){shake(el);sfx('bad');flashTask(t('wrongItem'));return}
+  placed=true;el.classList.add('used');el.classList.remove('sel','hint');sel=null;
+  const p=document.createElement('img');p.className='placed';p.src=el.querySelector('img').src;p.style.left=s.slot.x+'%';p.style.top=s.slot.y+'%';p.style.width=s.slot.size+'%';
+  $('#scene').appendChild(p);requestAnimationFrame(()=>requestAnimationFrame(()=>p.classList.add('in')));
+  $('#slot').classList.add('filled');$('#slot').classList.remove('hint');sparks(s.slot.x,s.slot.y);sfx('good');setTask();check();
+}
+let ftTO;function flashTask(msg){$('#task').textContent=msg;clearTimeout(ftTO);ftTO=setTimeout(setTask,2200)}
+$('#sceneWrap').addEventListener('pointerup',e=>{
+  if(!$('#game').classList.contains('on')||busy||(placed&&removed))return;initAudio();
+  const x=e.clientX,y=e.clientY;
+  if(DEBUG&&$('#dbg')){const r=$('#scene').getBoundingClientRect();$('#dbg').textContent=`x:${((x-r.left)/r.width*100).toFixed(1)}% y:${((y-r.top)/r.height*100).toFixed(1)}%`}
+  if(!removed&&hit($('#intr'),x,y,10)){removeIntruder();return}
+  if(sel&&!placed&&hit($('#slot'),x,y,16)){tryPlace(sel);return}
+  if(sel&&!placed){shake($('#sceneWrap'));ripple(x,y);return}
+  ripple(x,y);
+});
+function removeIntruder(){
+  const s=D.stages[cur];removed=true;$('#intr').classList.remove('hint');
+  $('#bgc').style.opacity=1;
+  sparks(s.intr.x,s.intr.y,18);sfx('vanish');setTask();check();
+}
+function check(){
+  if(!(placed&&removed))return;busy=true;clearTimeout(hintTimer);
+  const s=D.stages[cur];document.querySelectorAll('.item.hint').forEach(i=>i.classList.remove('hint'));
+  setTimeout(()=>{
+    sfx('solve');$('#pics').style.filter=dreamFilter(s,true);
+    const sc=$('#scene');sc.style.transformOrigin=`${s.slot.x}% ${s.slot.y}%`;sc.style.transform='scale(1.45)';
+    $('#task').textContent='';
+    setTimeout(()=>{$('#mem').textContent=s.out[L];$('#mem').classList.add('v')},1400);
+    setTimeout(()=>{$('#next').textContent=t('next');$('#next').style.display='inline-block';busy=false;if(cur===D.stages.length-1){crash()}},3600);
+  },500);
+}
+$('#next').onclick=()=>{initAudio();const n=cur+1;
+  if(n>=D.stages.length)return;
+  saveProg(n);
+  const o=D.stages[n].outside;
+  fadeCard([{k:`${t('stage')} ${n+1}`,tt:D.stages[n].t[L]},...(o?[{out:o[L]}]:[]),{l:D.stages[n].in[L]}],()=>{show('game');loadStage(n)});
+};
+/* black interlude card */
+function fadeCard(lines,cb,stepMs=1900){
+  const c=$('#card');c.innerHTML='';show('card');
+  lines.forEach(x=>{if(x.k){c.insertAdjacentHTML('beforeend',`<div class="k">${x.k}</div><div class="t">${x.tt}</div>`)}else{const d=document.createElement('div');d.className='l'+(x.out?' out':'');d.textContent=x.out||x.l;c.appendChild(d)}});
+  const ls=[...c.querySelectorAll('.l')];ls.forEach((d,i)=>setTimeout(()=>d.classList.add('v'),400+i*stepMs));
+  const total=600+ls.length*stepMs+1200;let done=false;const go=()=>{if(done)return;done=true;c.onpointerup=null;cb()};
+  setTimeout(()=>{c.onpointerup=go},700);setTimeout(go,total+800);
+}
+/* rain particles */
+let rainRAF=null;function rainOn(on){cancelAnimationFrame(rainRAF);const cv=$('#rain'),cx=cv.getContext('2d');cx.clearRect(0,0,cv.width,cv.height);if(!on)return;
+  const drops=Array.from({length:140},()=>({x:Math.random(),y:Math.random(),v:.012+Math.random()*.015,l:8+Math.random()*16}));
+  const f=()=>{cx.clearRect(0,0,cv.width,cv.height);cx.strokeStyle='rgba(200,215,235,.45)';cx.lineWidth=1.2;cx.beginPath();
+    drops.forEach(d=>{d.y+=d.v;d.x-=d.v*.15;if(d.y>1){d.y=-.05;d.x=Math.random()*1.1}const X=d.x*cv.width,Y=d.y*cv.height;cx.moveTo(X,Y);cx.lineTo(X-d.l*.15,Y+d.l)});cx.stroke();rainRAF=requestAnimationFrame(f)};f()}
+/* climax */
+function crash(){
+  $('#next').style.display='none';busy=true;
+  setTimeout(()=>{const fl=$('#flash');fl.style.transition='opacity .25s';fl.style.background='#fff7e0';fl.style.opacity=1;sfx('crash');setRain(false);stopPad();setBeep(0,1500);
+    setTimeout(()=>{fl.style.transition='opacity 1.5s';fl.style.background='#000';
+      setTimeout(()=>{fl.style.opacity=0;fl.style.transition='';rainOn(false);hospital()},1600)},600)},1200);
+}
+function hospital(){
+  saveProg(D.stages.length);
+  setBeep(.06,700);
+  fadeCard([{out:t('v1')},{out:t('v2')},{out:t('v3')}],()=>{
+    setBeep(.05,900);
+    const c=$('#card');c.innerHTML=`<div class="k">${t('fin')}</div><div class="t">${t('finT')}</div><button class="big" id="bWake">${t('wake')}</button>`;show('card');
+    $('#bWake').onclick=wake;
+  },2600);
+}
+function wake(){
+  initAudio();setBeep(0,1500);sfx('solve');setTimeout(()=>lullaby(.07,true),900);
+  show('game');$('#task').style.display='none';$('#tray').innerHTML='';$('#next').style.display='none';
+  $('#stageLbl').innerHTML=`<b>${t('fin')}</b> · ${t('finT')}`;
+  document.querySelectorAll('.placed,.vanish,.spark').forEach(e=>e.remove());$('#slot').style.display='none';$('#intr').style.display='none';
+  const fl=$('#flash');fl.style.transition='none';fl.style.background='#fff';fl.style.opacity=1;
+  $('#bg').src=D.final.img;$('#bgc').style.opacity=0;$('#pics').style.filter='brightness(1.05) saturate(1.05)';$('#vignette').style.opacity=.2;const sc=$('#scene');sc.style.transformOrigin='50% 40%';sc.style.transform='scale(1.25)';
+  $('#mem').classList.remove('v');
+  setTimeout(()=>{fl.style.transition='opacity 4s';fl.style.opacity=0;sc.style.transform='scale(1)'},120);
+  setTimeout(()=>{$('#mem').textContent=t('last');$('#mem').classList.add('v')},4200);
+  setTimeout(()=>{const b=$('#next');b.textContent='♥';b.style.display='inline-block';b.onclick=credits},8000);
+}
+function credits(){
+  localStorage.setItem('uiw_stage','0');
+  const sk=L==='sk';
+  $('#endInner').innerHTML=`<h1>${t('title1')}</h1><p style="font-style:italic;opacity:.8">${t('title2')} · ${t('series')}</p>
+  <h3>${sk?'Nápad a príbeh':'Idea & story'}</h3><p>Stefan</p>
+  <h3>${sk?'Témy jamu':'Jam themes'}</h3><p>DREAM + STAGE — ${sk?'sen v kóme a desať životných etáp':'a coma dream and ten stages of a life'}</p>
+  <h3>${sk?'Použitie AI (povinné uvedenie)':'AI disclosure'}</h3>
+  <p>${sk?'Všetky obrazy a predmety: generované AI (Grok Bot – generovanie obrázkov), odstránenie pozadia predmetov: rembg (AI).':'All paintings and items: AI-generated (Grok Bot image generation); item background removal: rembg (AI).'}</p>
+  <p>${sk?'Kód hry (HTML/JavaScript) a syntetizované zvuky (WebAudio): napísané s AI asistentom (Grok Bot).':'Game code (HTML/JavaScript) and synthesized sounds (WebAudio): written with an AI assistant (Grok Bot).'}</p>
+  <p>${sk?'Človek: nápad, príbeh, postava Eleny, výber a schválenie obrazov, smerovanie hry.':'Human: concept, story, Elena’s character, selection and approval of images, game direction.'}</p>
+  <p class="small">${sk?'Uspávanka: J. Brahms, Wiegenlied (voľné dielo), syntetizovaná.':'Lullaby: J. Brahms, Wiegenlied (public domain), synthesized.'}</p>
+  <h3>Ultimate AI-Powered Game Jam #7</h3><p class="small">13.–16. 11. 2026</p>
+  <p style="margin-top:28px;font-style:italic">${sk?'Ďakujeme, že ste snívali s nami.':'Thank you for dreaming with us.'}</p>
+  <p style="margin-top:20px"><button class="big" id="bAgain">${t('again')}</button></p>`;
+  show('end');$('#bAgain').onclick=()=>{stopLullaby();location.reload()};
+}
+/* start / menu */
+function begin(n){initAudio();stopLullaby();layout();
+  if(n>=D.stages.length){hospital();return}
+  const s=D.stages[n];
+  const intro=n===0?[{l:t('pro1')},{l:t('pro2')},{l:t('pro3')}]:[];
+  fadeCard([...intro,{k:`${t('stage')} ${n+1}`,tt:s.t[L]},{l:s.in[L]}],()=>{show('game');layout();loadStage(n)},n===0?2300:1900);
+}
+$('#bStart').onclick=()=>{saveProg(0);begin(0)};
+$('#bCont').onclick=()=>begin(getProg());
+$('#bMenu').onclick=()=>{if(confirm(t('menuQ'))){clearTimeout(hintTimer);setBeep(0,1500);stopPad();setRain(false);rainOn(false);show('title');applyLang()}};
+if(DEBUG){const d=document.createElement('div');d.id='dbg';d.textContent='debug: tap scene for %';document.body.appendChild(d);
+  addEventListener('keydown',e=>{if(e.key==='n'&&$('#game').classList.contains('on')){placed=removed=true;check()}})}
+// debug jump: ?debug=1&stage=5
+const qs=new URLSearchParams(location.search);
+applyLang();layout();
+if(DEBUG&&qs.get('stage')){const n=parseInt(qs.get('stage'),10)-1;show('game');layout();loadStage(n);if(qs.get('solve'))setTimeout(()=>{document.querySelector(`.item[data-id="${D.stages[n].item}"]`)&&tryPlace(document.querySelector(`.item[data-id="${D.stages[n].item}"]`));removeIntruder()},300)}
+if(DEBUG&&qs.get('final')){wake()}
+</script>
+</body></html>
