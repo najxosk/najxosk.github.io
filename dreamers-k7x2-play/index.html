@@ -44,13 +44,13 @@ button.big{font-size:20px;padding:0 28px;min-height:52px;background:rgba(120,90,
 #rain{position:absolute;inset:0;pointer-events:none;width:100%;height:100%}
 #flash{position:absolute;inset:0;pointer-events:none;background:#fff;opacity:0}
 .zone{position:absolute;transform:translate(-50%,-50%);min-width:44px;min-height:44px}
-#slot{border-radius:50%;background:radial-gradient(rgba(255,236,190,.45),rgba(255,236,190,.12) 55%,transparent 72%);animation:pulse 2.6s ease-in-out infinite}
+#slot{border-radius:50%;background:none;animation:none}
 #slot.filled{animation:none;background:none}
 #slot.hint,#intr.hint{box-shadow:0 0 0 3px #ffd98a,0 0 28px 6px #ffd98a;animation:pulse 1.2s infinite;border-radius:50%}
 #intr{border-radius:40%}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
-.placed{position:absolute;transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;filter:drop-shadow(0 6px 8px #0008) sepia(.15);transition:transform .8s cubic-bezier(.2,1.6,.4,1),opacity .6s}
-.placed.in{transform:translate(-50%,-50%) scale(1);opacity:1}
+.placed{position:absolute;--ax:-50%;--ay:-50%;transform:translate(var(--ax),var(--ay)) scale(.2);opacity:0;pointer-events:none;filter:drop-shadow(0 6px 8px #0008) sepia(.15);transition:transform .8s cubic-bezier(.2,1.6,.4,1),opacity .6s}
+.placed.in{transform:translate(var(--ax),var(--ay)) scale(1);opacity:1}
 .vanish{position:absolute;transform:translate(-50%,-50%);pointer-events:none;border-radius:50%;-webkit-backdrop-filter:blur(16px) saturate(.5) brightness(1.08);backdrop-filter:blur(16px) saturate(.5) brightness(1.08);-webkit-mask:radial-gradient(closest-side,#000 62%,transparent);mask:radial-gradient(closest-side,#000 62%,transparent);opacity:0;transition:opacity 1.4s}
 .vanish.in{opacity:1}
 .spark{position:absolute;width:8px;height:8px;border-radius:50%;background:#fff6d8;box-shadow:0 0 10px 3px #ffd98a;pointer-events:none;transform:translate(-50%,-50%);animation:spark 1.2s ease-out forwards}
@@ -61,8 +61,8 @@ button.big{font-size:20px;padding:0 28px;min-height:52px;background:rgba(120,90,
 #mem.v{opacity:1}
 #panel{position:absolute;display:flex;flex-direction:column;align-items:center;gap:8px;overflow:hidden}
 #task{font-size:clamp(13px,3.2vw,16px);opacity:.85;text-align:center;line-height:1.35;min-height:2.7em;padding:0 8px;transition:opacity .5s}
-#tray{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:100%}
-.item{position:relative;aspect-ratio:1;background:rgba(42,35,51,.75);border:2px solid #4d4060;border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none;min-width:44px;min-height:44px;transition:opacity .6s,transform .3s,border-color .3s}
+#tray{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;width:100%}
+.item{position:relative;aspect-ratio:1;border-radius:12px !important;background:rgba(42,35,51,.75);border:2px solid #4d4060;border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none;min-width:44px;min-height:44px;transition:opacity .6s,transform .3s,border-color .3s}
 .item img{width:82%;height:82%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 3px 4px #0009)}
 .item.sel{border-color:#ffd98a;box-shadow:0 0 14px #ffd98a;transform:translateY(-3px)}
 .item.hint{border-color:#ffd98a;animation:pulse 1.2s infinite}
@@ -118,76 +118,473 @@ button.big{font-size:20px;padding:0 28px;min-height:52px;background:rgba(120,90,
 
 <script type="application/json" id="scenesData">
 {
- "items":[
-  {"id":"teddy","img":"assets/item_teddy.webp","en":"teddy bear","sk":"macko"},
-  {"id":"crayon","img":"assets/item_crayon.webp","en":"crayon","sk":"pastelka"},
-  {"id":"backpack","img":"assets/item_backpack.webp","en":"school bag","sk":"školská taška"},
-  {"id":"diary","img":"assets/item_diary.webp","en":"diary","sk":"denník"},
-  {"id":"letter","img":"assets/item_letter.webp","en":"love letter","sk":"ľúbostný list"},
-  {"id":"key","img":"assets/item_key.webp","en":"key","sk":"kľúč"},
-  {"id":"coffee","img":"assets/item_coffee.webp","en":"coffee","sk":"káva"},
-  {"id":"ring","img":"assets/item_ring.webp","en":"ring","sk":"prsteň"},
-  {"id":"drawing","img":"assets/item_drawing.webp","en":"drawing","sk":"kresba"},
-  {"id":"umbrella","img":"assets/item_umbrella.webp","en":"umbrella","sk":"dáždnik"}
+ "items": [
+  {
+   "id": "teddy",
+   "img": "assets/item_teddy.webp",
+   "en": "teddy bear",
+   "sk": "macko"
+  },
+  {
+   "id": "crayon",
+   "img": "assets/item_crayon.webp",
+   "en": "crayon",
+   "sk": "pastelka"
+  },
+  {
+   "id": "backpack",
+   "img": "assets/item_backpack.webp",
+   "en": "school bag",
+   "sk": "školská taška"
+  },
+  {
+   "id": "diary",
+   "img": "assets/item_diary.webp",
+   "en": "diary",
+   "sk": "denník"
+  },
+  {
+   "id": "letter",
+   "img": "assets/item_letter.webp",
+   "en": "love letter",
+   "sk": "ľúbostný list"
+  },
+  {
+   "id": "key",
+   "img": "assets/item_key.webp",
+   "en": "key",
+   "sk": "kľúč"
+  },
+  {
+   "id": "coffee",
+   "img": "assets/item_coffee.webp",
+   "en": "coffee",
+   "sk": "káva"
+  },
+  {
+   "id": "ring",
+   "img": "assets/item_ring.webp",
+   "en": "ring",
+   "sk": "prsteň"
+  },
+  {
+   "id": "drawing",
+   "img": "assets/item_drawing.webp",
+   "en": "drawing",
+   "sk": "kresba"
+  },
+  {
+   "id": "umbrella",
+   "img": "assets/item_umbrella.webp",
+   "en": "umbrella",
+   "sk": "dáždnik"
+  },
+  {
+   "id": "rattle",
+   "img": "assets/item_rattle.webp",
+   "en": "rattle",
+   "sk": "hrkálka",
+   "decoy": true
+  },
+  {
+   "id": "rose",
+   "img": "assets/item_rose.webp",
+   "en": "rose",
+   "sk": "ruža",
+   "decoy": true
+  },
+  {
+   "id": "polaroid",
+   "img": "assets/item_polaroid.webp",
+   "en": "photo",
+   "sk": "fotka",
+   "decoy": true
+  }
  ],
- "stages":[
-  {"img":"assets/s01.webp","item":"teddy","slot":{"x":26,"y":23,"r":14,"size":13},"intr":{"x":89.5,"y":22,"w":13,"h":17},"mood":{"b":1.0,"v":0.35},
-   "t":{"en":"The Cradle","sk":"Kolíska"},
-   "in":{"en":"Someone is singing. I don't know the words yet.","sk":"Niekto spieva. Slová ešte nepoznám."},
-   "out":{"en":"Mom sang until I fell asleep. My teddy watched over me from the shelf.","sk":"Mama spievala, kým som nezaspala. Môj macko ma strážil z police."},
-   "hint":{"en":"The shelf is empty… and what is wrong with the night sky?","sk":"Polica je prázdna… a čo nesedí na nočnej oblohe?"}},
-  {"img":"assets/s02.webp","item":"crayon","slot":{"x":44.5,"y":76,"r":18,"size":11},"intr":{"x":79.5,"y":48,"w":18,"h":36},"mood":{"b":1.0,"v":0.35},
-   "t":{"en":"Kindergarten","sk":"Škôlka"},
-   "in":{"en":"The world was a blank page, and I wanted all the colours.","sk":"Svet bol prázdny papier a ja som chcela všetky farby."},
-   "out":{"en":"I drew a sun in every picture. Even the ones at night.","sk":"Do každého obrázka som kreslila slnko. Aj do tých nočných."},
-   "hint":{"en":"Her paper is still empty… and who would build that indoors in summer?","sk":"Jej papier je ešte prázdny… a kto by to staval v lete v triede?"}},
-  {"img":"assets/s03.webp","item":"backpack","slot":{"x":19,"y":38,"r":14,"size":12},"intr":{"x":75,"y":53,"w":34,"h":40},"mood":{"b":0.98,"v":0.4},
-   "t":{"en":"First Day of School","sk":"Prvý deň v škole"},
-   "in":{"en":"Mom let go of my hand at the door. I was so small.","sk":"Mama ma pri dverách pustila za ruku. Bola som taká malá."},
-   "out":{"en":"I hung my bag on the hook and stayed. I was brave.","sk":"Zavesila som tašku na háčik a zostala. Bola som statočná."},
-   "hint":{"en":"One hook is waiting… and something big doesn't go to school.","sk":"Jeden háčik čaká… a niekto veľký do školy nepatrí."}},
-  {"img":"assets/s04.webp","item":"diary","slot":{"x":66,"y":38,"r":12,"size":9},"intr":{"x":76,"y":72,"w":36,"h":40},"mood":{"b":0.95,"v":0.45},
-   "t":{"en":"Growing Up","sk":"Dospievanie"},
-   "in":{"en":"Some nights I wrote down what I couldn't say out loud.","sk":"Niektoré noci som si zapisovala, čo som nevedela povedať nahlas."},
-   "out":{"en":"My secrets had a little lock. My heart didn't.","sk":"Moje tajomstvá mali malý zámok. Moje srdce nie."},
-   "hint":{"en":"The desk is waiting for something… and she is too old for one toy.","sk":"Stôl na niečo čaká… a na jednu hračku je už priveľká."}},
-  {"img":"assets/s05.webp","item":"letter","slot":{"x":53,"y":59,"r":14,"size":11},"intr":{"x":89,"y":67,"w":11,"h":26},"mood":{"b":0.93,"v":0.5},
-   "outside":{"en":"“…no change today. Keep talking to her.”","sk":"„…dnes bez zmeny. Hovorte na ňu.“"},
-   "t":{"en":"First Love","sk":"Prvá láska"},
-   "in":{"en":"He was late. I waited anyway.","sk":"Meškal. Aj tak som čakala."},
-   "out":{"en":"He wrote what he never dared to say. I kept that letter for twenty years.","sk":"Napísal, čo sa nikdy neodvážil povedať. Ten list som si nechala dvadsať rokov."},
-   "hint":{"en":"The seat beside her is empty… and someone on the path is far from home.","sk":"Miesto vedľa nej je prázdne… a niekto na chodníku je ďaleko od domova."}},
-  {"img":"assets/s06.webp","item":"key","slot":{"x":30.5,"y":40,"r":12,"size":9},"intr":{"x":54,"y":12.5,"w":15,"h":14},"mood":{"b":0.9,"v":0.55},
-   "outside":{"en":"“Mommy, I made you something. Can she hear me?”","sk":"„Mami, niečo som ti urobila. Počuje ma?“"},
-   "t":{"en":"Leaving Home","sk":"Odchod z domu"},
-   "in":{"en":"Four empty walls. Mine.","sk":"Štyri prázdne steny. Moje."},
-   "out":{"en":"The first key that was only mine. I was scared and happy at once.","sk":"Prvý kľúč, ktorý bol len môj. Bála som sa a tešila zároveň."},
-   "hint":{"en":"The hooks by the door are empty… and look up.","sk":"Háčiky pri dverách sú prázdne… a pozri hore."}},
-  {"img":"assets/s07.webp","item":"coffee","slot":{"x":49.5,"y":71,"r":12,"size":11},"intr":{"x":16,"y":60,"w":22,"h":30},"mood":{"b":0.88,"v":0.55},
-   "t":{"en":"Meeting Adam","sk":"Stretnutie s Adamom"},
-   "in":{"en":"A rainy Tuesday. A café. A stranger with kind eyes.","sk":"Daždivý utorok. Kaviareň. Cudzinec s láskavými očami."},
-   "out":{"en":"He spilled my coffee and bought me another. We talked until they closed.","sk":"Vylial mi kávu a kúpil mi novú. Rozprávali sme sa, až kým nezatvorili."},
-   "hint":{"en":"Her saucer is empty… and one guest flew in from the sea.","sk":"Jej tanierik je prázdny… a jeden hosť priletel od mora."}},
-  {"img":"assets/s08.webp","item":"ring","slot":{"x":22.5,"y":78,"r":12,"size":7},"intr":{"x":20,"y":18,"w":28,"h":30},"mood":{"b":0.85,"v":0.6},
-   "outside":{"en":"“Elena, it's Adam. I'm here. I'm always here.”","sk":"„Elena, to som ja, Adam. Som tu. Vždy som tu.“"},
-   "t":{"en":"The Wedding","sk":"Svadba"},
-   "in":{"en":"Everyone I loved, in one garden.","sk":"Všetci, ktorých som ľúbila, v jednej záhrade."},
-   "out":{"en":"“Forever,” he said. I believed him. I still do.","sk":"„Navždy,“ povedal. Verila som mu. Stále verím."},
-   "hint":{"en":"The ring box is empty… and only one part of the sky is crying.","sk":"Krabička je prázdna… a plače len jeden kúsok neba."}},
-  {"img":"assets/s09.webp","item":"drawing","slot":{"x":19,"y":31,"r":15,"size":13},"intr":{"x":90,"y":25,"w":13,"h":40},"mood":{"b":0.8,"v":0.7},
-   "outside":{"en":"“Her pulse is changing. Call the family.”","sk":"„Mení sa jej pulz. Zavolajte rodinu.“"},
-   "t":{"en":"Ema and Tom","sk":"Ema a Tomi"},
-   "in":{"en":"Two small voices. Sticky hands. Home.","sk":"Dva malé hlásky. Lepkavé ruky. Domov."},
-   "out":{"en":"Ema drew us holding hands. “So nobody gets lost,” she said.","sk":"Ema nás nakreslila, ako sa držíme za ruky. „Aby sa nikto nestratil,“ povedala."},
-   "hint":{"en":"The magnets hold nothing… and something from a hospital stands in the corner.","sk":"Magnetky nič nedržia… a v kúte stojí niečo z nemocnice."}},
-  {"img":"assets/s10.webp","item":"umbrella","slot":{"x":39,"y":15,"r":14,"size":17},"intr":{"x":71,"y":57,"w":28,"h":26},"mood":{"b":0.78,"v":0.85},"rain":true,
-   "outside":{"en":"“…Mom? Please wake up.”","sk":"„…Mami? Prosím, zobuď sa.“"},
-   "t":{"en":"The Rain","sk":"Dážď"},
-   "in":{"en":"Just a little rain. Almost home. I left my umbrella at work.","sk":"Len trochu dažďa. Skoro doma. Dáždnik som nechala v práci."},
-   "out":{"en":"Headlights. A sound like the whole sky tearing apart. Then—","sk":"Svetlá. Zvuk, akoby sa trhalo celé nebo. A potom—"},
-   "hint":{"en":"She has nothing over her head… and something in the street is waiting for her.","sk":"Nad hlavou nemá nič… a niečo na ulici na ňu čaká."}}
+ "stages": [
+  {
+   "img": "assets/s01.webp",
+   "item": "teddy",
+   "slot": {
+    "x": 26,
+    "y": 23,
+    "r": 14,
+    "size": 13
+   },
+   "intr": {
+    "x": 89.5,
+    "y": 22,
+    "w": 13,
+    "h": 17
+   },
+   "mood": {
+    "b": 1.0,
+    "v": 0.35
+   },
+   "t": {
+    "en": "The Cradle",
+    "sk": "Kolíska"
+   },
+   "in": {
+    "en": "Someone is singing. Something soft watches over me from the shelf.",
+    "sk": "Niekto spieva. Niečo mäkké ma stráži z police."
+   },
+   "out": {
+    "en": "Mom sang until I fell asleep. My teddy watched over me from the shelf.",
+    "sk": "Mama spievala, kým som nezaspala. Môj macko ma strážil z police."
+   },
+   "hint": {
+    "en": "Something soft belongs on the shelf… and the night sky has one light too many.",
+    "sk": "Na policu patrí niečo mäkké… a nočná obloha má o jedno svetlo navyše."
+   }
+  },
+  {
+   "img": "assets/s02.webp",
+   "item": "crayon",
+   "slot": {
+    "x": 44.5,
+    "y": 76,
+    "r": 18,
+    "size": 11
+   },
+   "intr": {
+    "x": 71.8,
+    "y": 25.4,
+    "w": 12,
+    "h": 13
+   },
+   "mood": {
+    "b": 1.0,
+    "v": 0.35
+   },
+   "t": {
+    "en": "Kindergarten",
+    "sk": "Škôlka"
+   },
+   "in": {
+    "en": "The world was a blank page, and I wanted all the colours.",
+    "sk": "Svet bol prázdny papier a ja som chcela všetky farby."
+   },
+   "out": {
+    "en": "I drew a sun in every picture. Even the ones at night.",
+    "sk": "Do každého obrázka som kreslila slnko. Aj do tých nočných."
+   },
+   "hint": {
+    "en": "Her paper is still empty… and one picture on the wall wasn't drawn by a child. It beeps.",
+    "sk": "Jej papier je ešte prázdny… a jeden obrázok na stene nekreslilo dieťa. Pípa."
+   }
+  },
+  {
+   "img": "assets/s03.webp",
+   "item": "backpack",
+   "slot": {
+    "x": 19,
+    "y": 38,
+    "r": 14,
+    "size": 12
+   },
+   "intr": {
+    "x": 60.5,
+    "y": 90,
+    "w": 14,
+    "h": 12
+   },
+   "mood": {
+    "b": 0.98,
+    "v": 0.4
+   },
+   "t": {
+    "en": "First Day of School",
+    "sk": "Prvý deň v škole"
+   },
+   "in": {
+    "en": "Mom let go of my hand at the door. I was so small.",
+    "sk": "Mama ma pri dverách pustila za ruku. Bola som taká malá."
+   },
+   "out": {
+    "en": "I hung my bag on the hook and stayed. I was brave.",
+    "sk": "Zavesila som tašku na háčik a zostala. Bola som statočná."
+   },
+   "hint": {
+    "en": "Her hook is the low one… and grown-up shoes stand among the little ones. Quiet shoes that walk around a bed at night.",
+    "sk": "Jej háčik je ten nízky… a medzi malými topánkami stoja dospelé. Tiché topánky, čo v noci chodia okolo postele."
+   }
+  },
+  {
+   "img": "assets/s04.webp",
+   "item": "diary",
+   "slot": {
+    "x": 66,
+    "y": 38,
+    "r": 12,
+    "size": 9
+   },
+   "intr": {
+    "x": 33,
+    "y": 75,
+    "w": 18,
+    "h": 30
+   },
+   "mood": {
+    "b": 0.95,
+    "v": 0.45
+   },
+   "t": {
+    "en": "Growing Up",
+    "sk": "Dospievanie"
+   },
+   "in": {
+    "en": "Some nights I wrote down what I couldn't say out loud, and hid it under a little lock.",
+    "sk": "Niektoré noci som si zapisovala, čo som nevedela povedať nahlas, a skryla to pod malý zámok."
+   },
+   "out": {
+    "en": "My secrets had a little lock. My heart didn't.",
+    "sk": "Moje tajomstvá mali malý zámok. Moje srdce nie."
+   },
+   "hint": {
+    "en": "Secrets need a lock… and her bed feels cold and metal, like another bed far away.",
+    "sk": "Tajomstvá potrebujú zámok… a jej posteľ je studená a kovová, ako iná posteľ ďaleko odtiaľto."
+   }
+  },
+  {
+   "img": "assets/s05.webp",
+   "item": "letter",
+   "slot": {
+    "x": 47,
+    "y": 60,
+    "r": 12,
+    "size": 10
+   },
+   "intr": {
+    "x": 58,
+    "y": 52,
+    "w": 13,
+    "h": 25
+   },
+   "mood": {
+    "b": 0.93,
+    "v": 0.5
+   },
+   "outside": {
+    "en": "“…no change today. Keep talking to her.”",
+    "sk": "„…dnes bez zmeny. Hovorte na ňu.“"
+   },
+   "t": {
+    "en": "First Love",
+    "sk": "Prvá láska"
+   },
+   "in": {
+    "en": "He was late. He never knew how to say what he felt, only how to write it.",
+    "sk": "Meškal. Nikdy nevedel povedať, čo cíti, vedel to len napísať."
+   },
+   "out": {
+    "en": "He wrote what he never dared to say. I kept that letter for twenty years.",
+    "sk": "Napísal, čo sa nikdy neodvážil povedať. Ten list som si nechala dvadsať rokov."
+   },
+   "hint": {
+    "en": "Something he wrote belongs beside her… and someone brought flowers, the way visitors do.",
+    "sk": "Vedľa nej patrí niečo, čo napísal… a niekto priniesol kvety, ako to robia návštevy."
+   }
+  },
+  {
+   "img": "assets/s06.webp",
+   "item": "key",
+   "slot": {
+    "x": 30.5,
+    "y": 40,
+    "r": 12,
+    "size": 9
+   },
+   "intr": {
+    "x": 53,
+    "y": 16,
+    "w": 18,
+    "h": 22
+   },
+   "mood": {
+    "b": 0.9,
+    "v": 0.55
+   },
+   "outside": {
+    "en": "“Mommy, I made you something. Can she hear me?”",
+    "sk": "„Mami, niečo som ti urobila. Počuje ma?“"
+   },
+   "t": {
+    "en": "Leaving Home",
+    "sk": "Odchod z domu"
+   },
+   "in": {
+    "en": "Four empty walls. And a door that only I can unlock.",
+    "sk": "Štyri prázdne steny. A dvere, ktoré odomykám len ja."
+   },
+   "out": {
+    "en": "The first key that was only mine. I was scared and happy at once.",
+    "sk": "Prvý kľúč, ktorý bol len môj. Bála som sa a tešila zároveň."
+   },
+   "hint": {
+    "en": "The hooks by the door are empty… and look up: that light is too cold for a home.",
+    "sk": "Háčiky pri dverách sú prázdne… a pozri hore: to svetlo je na domov príliš studené."
+   }
+  },
+  {
+   "img": "assets/s07.webp",
+   "item": "coffee",
+   "slot": {
+    "x": 49.5,
+    "y": 71,
+    "r": 12,
+    "size": 11
+   },
+   "intr": {
+    "x": 14.5,
+    "y": 80,
+    "w": 15,
+    "h": 14
+   },
+   "mood": {
+    "b": 0.88,
+    "v": 0.55
+   },
+   "t": {
+    "en": "Meeting Adam",
+    "sk": "Stretnutie s Adamom"
+   },
+   "in": {
+    "en": "A rainy Tuesday. A café. The smell of fresh coffee. A stranger with kind eyes.",
+    "sk": "Daždivý utorok. Kaviareň. Vôňa čerstvej kávy. Cudzinec s láskavými očami."
+   },
+   "out": {
+    "en": "He spilled my coffee and bought me another. We talked until they closed.",
+    "sk": "Vylial mi kávu a kúpil mi novú. Rozprávali sme sa, až kým nezatvorili."
+   },
+   "hint": {
+    "en": "Her saucer is empty… and on the next table, someone is calling for a nurse.",
+    "sk": "Jej tanierik je prázdny… a na vedľajšom stolíku niekto volá sestričku."
+   }
+  },
+  {
+   "img": "assets/s08.webp",
+   "item": "ring",
+   "slot": {
+    "x": 22.5,
+    "y": 78,
+    "r": 12,
+    "size": 7
+   },
+   "intr": {
+    "x": 26.5,
+    "y": 59,
+    "w": 12,
+    "h": 28
+   },
+   "mood": {
+    "b": 0.85,
+    "v": 0.6
+   },
+   "outside": {
+    "en": "“Elena, it's Adam. I'm here. I'm always here.”",
+    "sk": "„Elena, to som ja, Adam. Som tu. Vždy som tu.“"
+   },
+   "t": {
+    "en": "The Wedding",
+    "sk": "Svadba"
+   },
+   "in": {
+    "en": "Everyone I loved, in one garden.",
+    "sk": "Všetci, ktorých som ľúbila, v jednej záhrade."
+   },
+   "out": {
+    "en": "“Forever,” he said. I believed him. I still do.",
+    "sk": "„Navždy,“ povedal. Verila som mu. Stále verím."
+   },
+   "hint": {
+    "en": "The ring box is empty… and one guest wasn't invited. She came from room 214.",
+    "sk": "Krabička je prázdna… a jeden hosť nebol pozvaný. Prišla z izby 214."
+   }
+  },
+  {
+   "img": "assets/s09.webp",
+   "item": "drawing",
+   "slot": {
+    "x": 19,
+    "y": 31,
+    "r": 15,
+    "size": 13
+   },
+   "intr": {
+    "x": 89,
+    "y": 21,
+    "w": 12,
+    "h": 28
+   },
+   "mood": {
+    "b": 0.8,
+    "v": 0.7
+   },
+   "outside": {
+    "en": "“Her pulse is changing. Call the family.”",
+    "sk": "„Mení sa jej pulz. Zavolajte rodinu.“"
+   },
+   "t": {
+    "en": "Ema and Tom",
+    "sk": "Ema a Tomi"
+   },
+   "in": {
+    "en": "Two small voices. Sticky hands. Home.",
+    "sk": "Dva malé hlásky. Lepkavé ruky. Domov."
+   },
+   "out": {
+    "en": "Ema drew us holding hands. “So nobody gets lost,” she said.",
+    "sk": "Ema nás nakreslila, ako sa držíme za ruky. „Aby sa nikto nestratil,“ povedala."
+   },
+   "hint": {
+    "en": "The magnets hold nothing… and a tube runs from the corner all the way to her hand.",
+    "sk": "Magnetky nič nedržia… a z kúta vedie hadička až k jej ruke."
+   }
+  },
+  {
+   "img": "assets/s10.webp",
+   "item": "umbrella",
+   "slot": {
+    "x": 39,
+    "y": 18,
+    "r": 14,
+    "size": 27,
+    "pimg": "assets/item_umbrella_open.webp",
+    "ax": 0.45,
+    "ay": 0.72
+   },
+   "intr": {"x": 71, "y": 57, "w": 18, "h": 17},
+   "mood": {
+    "b": 0.78,
+    "v": 0.85
+   },
+   "rain": true,
+   "outside": {
+    "en": "“…Mom? Please wake up.”",
+    "sk": "„…Mami? Prosím, zobuď sa.“"
+   },
+   "t": {
+    "en": "The Rain",
+    "sk": "Dážď"
+   },
+   "in": {
+    "en": "Just a little rain. Almost home.",
+    "sk": "Len trochu dažďa. Skoro doma."
+   },
+   "out": {
+    "en": "Headlights. A sound like the whole sky tearing apart. Then—",
+    "sk": "Svetlá. Zvuk, akoby sa trhalo celé nebo. A potom—"
+   },
+   "hint": {
+    "en": "She has nothing over her head… and something in the street is waiting for her.",
+    "sk": "Nad hlavou nemá nič… a niečo na ulici na ňu čaká."
+   }
+  }
  ],
- "final":{"img":"assets/s11.webp"}
+ "final": {
+  "img": "assets/s11.webp"
+ }
 }
 </script>
 
@@ -200,29 +597,29 @@ const T={
   intro:"Rain. Headlights. Then silence. Elena has been in a coma for eleven days. Somewhere deep inside, she is still dreaming — walking back through every stage of her life. Help her put each memory back together, and find her way home.",
   start:"Begin the dream",cont:"Continue",stage:"Stage",
   task:"Drag the missing memory from the tray into the picture — and tap what doesn't belong.",
-  wrongItem:"That belongs to another stage of her life.",
+  wrongItem:"That doesn’t belong to this memory.",
   placed:"It's back. Now — what doesn't belong here?",removed:"Now give the memory back what it lost.",
   next:"Next stage ›",wake:"Open your eyes",
   pro1:"Rain. Headlights. Then silence.",pro2:"Elena, 38. Wife of Adam. Mother of Ema and Tom.",pro3:"Her body sleeps in room 214. Her mind is still walking home.",
   fin:"Final Stage",finT:"Waking Up",
   v1:"“…her pulse is rising…”",v2:"“Mommy? It's Ema. I brought your teddy.”",v3:"“Elena… we're all here. Come back to us.”",
   last:"I'm awake. You're all here. Every stage of my life was leading me back to you.",
-  credits:"The End",again:"Play again",menuQ:"Return to the title screen? Your progress is saved."},
+  credits:"The End",fading:"The dream is fading…",again:"Play again",menuQ:"Return to the title screen? Your progress is saved."},
  sk:{series:"Snílkovia · Príbeh I",title1:"Kým sa zobudím",title2:"Until I Wake",
   intro:"Dážď. Svetlá áut. Potom ticho. Elena je už jedenásť dní v kóme. Niekde hlboko vo vnútri stále sníva a prechádza späť každou etapou svojho života. Pomôž jej poskladať každú spomienku a nájsť cestu domov.",
   start:"Začať sen",cont:"Pokračovať",stage:"Etapa",
   task:"Pretiahni chýbajúcu spomienku z lišty do obrazu a ťukni na to, čo tam nepatrí.",
-  wrongItem:"To patrí do inej etapy jej života.",
+  wrongItem:"To do tejto spomienky nepatrí.",
   placed:"Je to späť. A čo sem nepatrí?",removed:"Teraz vráť spomienke, čo stratila.",
   next:"Ďalšia etapa ›",wake:"Otvor oči",
   pro1:"Dážď. Svetlá áut. Potom ticho.",pro2:"Elena, 38 rokov. Manželka Adama. Mama Emy a Tomiho.",pro3:"Jej telo spí v izbe 214. Jej myseľ ešte kráča domov.",
   fin:"Posledná etapa",finT:"Prebudenie",
   v1:"„…pulz jej stúpa…“",v2:"„Mami? To som ja, Ema. Priniesla som ti macka.“",v3:"„Elena… sme tu všetci. Vráť sa k nám.“",
   last:"Som hore. Ste tu všetci. Každá etapa môjho života ma viedla späť k vám.",
-  credits:"Koniec",again:"Hrať znova",menuQ:"Vrátiť sa na úvod? Postup je uložený."}
+  credits:"Koniec",fading:"Sen sa rozplýva…",again:"Hrať znova",menuQ:"Vrátiť sa na úvod? Postup je uložený."}
 };
 let L=localStorage.getItem('uiw_lang')||((navigator.language||'').toLowerCase().startsWith('sk')||(navigator.language||'').toLowerCase().startsWith('cs')?'sk':'en');
-let cur=0,placed=false,removed=false,sel=null,busy=false,hintTimer=null,hinted=false;
+let dragging=false,misses=0,baseBeep=[0,1500],missTO=null,cur=0,placed=false,removed=false,sel=null,busy=false,hintTimer=null,hinted=false;
 const t=k=>T[L][k];
 function saveProg(n){localStorage.setItem('uiw_stage',String(n))}
 function getProg(){return parseInt(localStorage.getItem('uiw_stage')||'0',10)||0}
@@ -232,7 +629,7 @@ function applyLang(){
   document.querySelectorAll('[data-t]').forEach(e=>e.textContent=t(e.dataset.t));
   $('#bLang').textContent=L==='sk'?'EN':'SK';
   $('#bCont').style.display=(getProg()>0&&getProg()<=D.stages.length)?'':'none';
-  if($('#game').classList.contains('on')&&D.stages[cur]){stageLabel();setTask();if(placed&&removed)$('#mem').textContent=D.stages[cur].out[L];$('#next').textContent=cur===D.stages.length-1?t('next'):t('next')}
+  if($('#game').classList.contains('on')&&D.stages[cur]){stageLabel();setTask();if(placed&&removed)$('#mem').textContent=D.stages[cur].out[L];$('#next').textContent=t('next')}
 }
 function toggleLang(){L=L==='sk'?'en':'sk';localStorage.setItem('uiw_lang',L);applyLang()}
 $('#bLangT').onclick=toggleLang;$('#bLang').onclick=toggleLang;
@@ -286,14 +683,14 @@ function layout(){
     let sw=W-pw-pad*3,sh=sw*3/4; if(sh>H-top-pad){sh=H-top-pad;sw=sh*4/3}
     wrap.style.cssText=`left:${pad}px;top:${top}px;width:${sw}px;height:${sh}px`;
     panel.style.cssText=`left:${sw+pad*2}px;top:${top}px;width:${W-sw-pad*3}px;height:${H-top-pad}px;justify-content:center`;
-    $('#tray').style.gridTemplateColumns='repeat(5,1fr)';
+    $('#tray').style.gridTemplateColumns='repeat(7,1fr)';
   } else {
-    const tw=Math.min(W-pad*2,520),trayH=(tw-32)/5*2+8,panelH=trayH+130;
+    const tw=Math.min(W-pad*2,520),trayH=(tw-36)/7*2+6,panelH=trayH+130;
     let sw=W-pad*2,sh=sw*3/4; if(sh>H-top-panelH-pad){sh=H-top-panelH-pad;sw=sh*4/3}
     const y0=top+Math.max(0,(H-top-sh-panelH)/2.4);
     wrap.style.cssText=`left:${(W-sw)/2}px;top:${y0}px;width:${sw}px;height:${sh}px`;
     panel.style.cssText=`left:${(W-tw)/2}px;top:${y0+sh+10}px;width:${tw}px;height:${panelH}px;justify-content:flex-start`;
-    $('#tray').style.gridTemplateColumns='repeat(5,1fr)';
+    $('#tray').style.gridTemplateColumns='repeat(7,1fr)';
   }
   const rc=$('#rain');rc.width=wrap.clientWidth;rc.height=wrap.clientHeight;
 }
@@ -302,20 +699,20 @@ addEventListener('resize',layout);
 /* ---------- TRAY ---------- */
 function buildTray(){
   const tr=$('#tray');tr.innerHTML='';
-  D.items.forEach((it,i)=>{const d=document.createElement('div');d.className='item';d.dataset.id=it.id;d.title=it[L];d.innerHTML=`<img src="${it.img}" alt="${it.en}">`;
-    if(D.stages.findIndex(s=>s.item===it.id)<cur)d.classList.add('used');
+  const arr=D.items.slice();for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}
+  arr.forEach(it=>{const d=document.createElement('div');d.className='item';d.dataset.id=it.id;d.title=it[L];d.innerHTML=`<img src="${it.img}" alt="${it.en}">`;
     attachDrag(d);tr.appendChild(d)});
 }
 function attachDrag(el){
   el.addEventListener('pointerdown',e=>{
     if(busy||el.classList.contains('used'))return;e.preventDefault();initAudio();
-    let moved=false;const sx=e.clientX,sy=e.clientY,g=$('#ghost');
-    const mv=ev=>{if(!moved&&Math.hypot(ev.clientX-sx,ev.clientY-sy)>8){moved=true;g.src=el.querySelector('img').src;g.style.display='block';el.style.opacity=.35}
+    let moved=false;dragging=false;const sx=e.clientX,sy=e.clientY,g=$('#ghost');
+    const mv=ev=>{if(!moved&&Math.hypot(ev.clientX-sx,ev.clientY-sy)>8){moved=true;dragging=true;g.src=el.querySelector('img').src;g.style.display='block';el.style.opacity=.35}
       if(moved){g.style.left=ev.clientX+'px';g.style.top=ev.clientY+'px'}};
-    const up=ev=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);removeEventListener('pointercancel',up);g.style.display='none';el.style.opacity='';
+    const up=ev=>{setTimeout(()=>{dragging=false},0);removeEventListener('pointermove',mv);removeEventListener('pointerup',up);removeEventListener('pointercancel',up);g.style.display='none';el.style.opacity='';
       if(moved){
         if(!placed&&hit($('#slot'),ev.clientX,ev.clientY,24))tryPlace(el);
-        else if(hit($('#sceneWrap'),ev.clientX,ev.clientY,0)){shake(el);ripple(ev.clientX,ev.clientY)}
+        else if(hit($('#sceneWrap'),ev.clientX,ev.clientY,0)){shake(el);ripple(ev.clientX,ev.clientY);miss()}
       } else {
         const was=sel===el;document.querySelectorAll('.item').forEach(i=>i.classList.remove('sel'));sel=was?null:el;if(sel){el.classList.add('sel');sfx('pick')}
       }};
@@ -350,7 +747,7 @@ function loadStage(i){
   if(i+1<D.stages.length){new Image().src=D.stages[i+1].img;new Image().src=D.stages[i+1].img.replace('.webp','_clean.webp')}else{new Image().src=D.final.img}
   requestAnimationFrame(()=>{sc.style.transform='scale(1)'});
   // audio: beep grows with every stage
-  setBeep(.006+i*.0075,1500-i*70);setPad(i);setRain(!!s.rain,.14);
+  baseBeep=[.006+i*.0075,1500-i*70];misses=0;setBeep(baseBeep[0],baseBeep[1]);setPad(i);setRain(!!s.rain,.14);
   if(i===0)lullaby(.035,false);
   clearTimeout(hintTimer);hintTimer=setTimeout(showHint,45000);
   saveProg(i);
@@ -360,21 +757,29 @@ function showHint(){if(placed&&removed)return;hinted=true;setTask();
   if(!removed)$('#intr').classList.add('hint')}
 function tryPlace(el){
   const s=D.stages[cur];
-  if(el.dataset.id!==s.item){shake(el);sfx('bad');flashTask(t('wrongItem'));return}
+  if(el.dataset.id!==s.item){shake(el);sfx('bad');flashTask(t('wrongItem'));miss();return}
   placed=true;el.classList.add('used');el.classList.remove('sel','hint');sel=null;
-  const p=document.createElement('img');p.className='placed';p.src=el.querySelector('img').src;p.style.left=s.slot.x+'%';p.style.top=s.slot.y+'%';p.style.width=s.slot.size+'%';
+  const p=document.createElement('img');p.className='placed';p.src=s.slot.pimg||el.querySelector('img').src;p.style.left=s.slot.x+'%';p.style.top=s.slot.y+'%';p.style.width=s.slot.size+'%';if(s.slot.ax!=null)p.style.setProperty('--ax',(-s.slot.ax*100)+'%'),p.style.setProperty('--ay',(-s.slot.ay*100)+'%');
   $('#scene').appendChild(p);requestAnimationFrame(()=>requestAnimationFrame(()=>p.classList.add('in')));
   $('#slot').classList.add('filled');$('#slot').classList.remove('hint');sparks(s.slot.x,s.slot.y);sfx('good');setTask();check();
 }
+function miss(){
+  if(placed&&removed)return;misses++;const s=D.stages[cur];
+  setBeep(Math.min(.12,Math.max(baseBeep[0],.012)*1.6),Math.max(380,baseBeep[1]*0.55));
+  $('#vignette').style.opacity=Math.min(1,s.mood.v+0.12*Math.min(misses,3));
+  clearTimeout(missTO);missTO=setTimeout(()=>{if(cur<D.stages.length&&!(placed&&removed)){setBeep(baseBeep[0],baseBeep[1]);$('#vignette').style.opacity=s.mood.v}},3000);
+  if(misses>=3){misses=0;const pc=$('#pics');pc.style.transition='filter .4s';pc.style.filter='blur(4px) brightness(.5) saturate(.5)';flashTask(t('fading'));
+    setTimeout(()=>{pc.style.transition='';if(!(placed&&removed))pc.style.filter=dreamFilter(s,false)},1500)}
+}
 let ftTO;function flashTask(msg){$('#task').textContent=msg;clearTimeout(ftTO);ftTO=setTimeout(setTask,2200)}
 $('#sceneWrap').addEventListener('pointerup',e=>{
-  if(!$('#game').classList.contains('on')||busy||(placed&&removed))return;initAudio();
+  if(dragging||!$('#game').classList.contains('on')||busy||(placed&&removed))return;initAudio();
   const x=e.clientX,y=e.clientY;
   if(DEBUG&&$('#dbg')){const r=$('#scene').getBoundingClientRect();$('#dbg').textContent=`x:${((x-r.left)/r.width*100).toFixed(1)}% y:${((y-r.top)/r.height*100).toFixed(1)}%`}
   if(!removed&&hit($('#intr'),x,y,10)){removeIntruder();return}
   if(sel&&!placed&&hit($('#slot'),x,y,16)){tryPlace(sel);return}
-  if(sel&&!placed){shake($('#sceneWrap'));ripple(x,y);return}
-  ripple(x,y);
+  if(sel&&!placed){shake($('#sceneWrap'));ripple(x,y);miss();return}
+  ripple(x,y);miss();
 });
 function removeIntruder(){
   const s=D.stages[cur];removed=true;$('#intr').classList.remove('hint');
