@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#08060c" />
+  <title>CRYPT-MAN: Maze of Lies</title>
+  <style>
+    :root {
+      --bg: #08060c;
+      --panel: #120d1a;
+      --border: #3a2452;
+      --accent: #ff5e1a;
+      --soul: #38f2ff;
+      --danger: #ff1e42;
+      --text: #f3e9ff;
+      --muted: #9b87b5;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      background: radial-gradient(circle at 50% 20%, #1a1026 0%, var(--bg) 75%);
+      color: var(--text);
+      font-family: 'Courier New', Courier, monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: max(8px, env(safe-area-inset-top, 0px)) 8px max(8px, env(safe-area-inset-bottom, 0px));
+    }
+
+    .cabinet {
+      width: 100%;
+      max-width: 660px;
+      background: var(--panel);
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.9), 0 0 25px rgba(255, 94, 26, 0.15);
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+    }
+
+    .hud {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      background: #0b0811;
+      border: 1px solid #2b1b3d;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .hud-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge-deaths {
+      color: var(--danger);
+      text-shadow: 0 0 8px rgba(255, 30, 66, 0.6);
+      position: relative;
+    }
+
+    .badge-souls {
+      color: var(--soul);
+      text-shadow: 0 0 8px rgba(56, 242, 255, 0.5);
+    }
+
+    .btn-mini {
+      background: #1d142b;
+      color: var(--text);
+      border: 1px solid #492f66;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.1s, background 0.15s;
+    }
+
+    .btn-mini:hover {
+      background: #2e2044;
+    }
+
+    .btn-mini.active {
+      background: var(--accent);
+      color: #09060d;
+      border-color: #ff9466;
+    }
+
+    .screen-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 19 / 15;
+      background: #050408;
+      border: 2px solid #2a1b3d;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Jemný CRT scanline efekt */
+    .scanlines {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0) 0px,
+        rgba(255, 255, 255, 0) 2px,
+        rgba(0, 0, 0, 0.22) 3px,
+        rgba(0, 0, 0, 0.22) 4px
+      );
+    }
+
+    .banner {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 7, 22, 0.92);
+      border: 1px solid var(--danger);
+      color: #ffccd5;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      white-space: normal;
+      max-width: 92%;
+      box-shadow: 0 0 15px rgba(255, 30, 66, 0.5);
+      z-index: 5;
+    }
+
+    .banner.show {
+      opacity: 1;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(6, 4, 10, 0.86);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 18px;
+      z-index: 10;
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .overlay h1 {
+      margin: 0 0 6px;
+      font-size: clamp(20px, 4.5vw, 30px);
+      color: var(--accent);
+      text-shadow: 0 0 16px rgba(255, 94, 26, 0.7);
+      letter-spacing: 1px;
+    }
+
+    .overlay p {
+      margin: 0 0 14px;
+      font-size: 13px;
+      color: var(--muted);
+      max-width: 440px;
+      line-height: 1.45;
+    }
+
+    .btn-play {
+      background: linear-gradient(180deg, #ff7438 0%, #d93800 100%);
+      color: #fff;
+      border: 2px solid #ffb38a;
+      border-radius: 8px;
+      padding: 10px 22px;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(255, 94, 26, 0.5);
+    }
+
+    .btn-play:active {
+      transform: scale(0.97);
+    }
+
+    /* Dotykový D-Pad pre mobil (390x844) */
+    .controls-mobile {
+      display: grid;
+      grid-template-columns: repeat(3, 62px);
+      grid-template-rows: repeat(2, 52px);
+      gap: 6px;
+      justify-content: center;
+      margin-top: 2px;
+    }
+
+    .dpad-btn {
+      background: #191224;
+      border: 1px solid #3f2859;
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 18px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .dpad-btn:active {
+      background: var(--accent);
+      color: #000;
+    }
+
+    .hint-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 2px 12px;
+      font-size: 11px;
+      color: var(--muted);
+      padding: 0 4px;
+    }
+    .hint-bar span { white-space: nowrap; }
+    @media (max-width: 520px) {
+      .hint-bar {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 2px;
+        font-size: 10px;
+      }
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      .controls-mobile {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="cabinet">
+  <div class="hud">
+    <div class="hud-group">
+      <button class="btn-mini active" id="btnLvl1" onclick="selectLevel(0)">1</button>
+      <button class="btn-mini" id="btnLvl2" onclick="selectLevel(1)">2</button>
+      <button class="btn-mini" id="btnLvl3" onclick="selectLevel(2)">3</button>
+      <span class="badge-souls" id="hudSouls">DUŠE: 0/0</span>
+    </div>
+    <div class="hud-group">
+      <span class="badge-deaths" id="hudDeaths">SMRTI: 0</span>
+      <button class="btn-mini" id="btnSound" onclick="toggleSound()">🔊</button>
+      <button class="btn-mini" onclick="restartAttempt()" title="Reštart (R)">↻</button>
+    </div>
+  </div>
+
+  <div class="screen-wrap" id="screenWrap">
+    <canvas id="gameCanvas" width="760" height="600"></canvas>
+    <div class="scanlines"></div>
+    <div class="banner" id="trollBanner">NIEČO TU NESEDÍ...</div>
+
+    <div class="overlay" id="overlay">
+      <h1 id="overlayTitle">CRYPT-MAN</h1>
+      <p id="overlayDesc">
+        Maze of Lies — tri levely lží.<br>
+        Pozbieraj všetky dušičky a uteč portálom. Hrobka klame a pamätá si, kde si zomrel.
+      </p>
+      <button class="btn-play" id="overlayBtn" onclick="startGame()">VSTÚPIŤ DO KRYPTY</button>
+    </div>
+  </div>
+
+  <div class="hint-bar">
+    <span>Pohyb: šípky, WASD, potiahnutie</span>
+    <span id="levelSubtitle">Level 1: Krypta falošných sľubov</span>
+  </div>
+
+  <div class="controls-mobile">
+    <div></div>
+    <button class="dpad-btn" data-dir="UP">▲</button>
+    <div></div>
+    <button class="dpad-btn" data-dir="LEFT">◀</button>
+    <button class="dpad-btn" data-dir="DOWN">▼</button>
+    <button class="dpad-btn" data-dir="RIGHT">▶</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const COLS = 19;
+  const ROWS = 15;
+  const TILE = canvas.width / COLS; // 40px
+
+  // === WEB AUDIO API RETRO HORROR SYNTH ===
+  let audioCtx = null;
+  let soundEnabled = true;
+
+  function initAudio() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  }
+
+  function playTone(freq, type, duration, vol = 0.12, slideTo = null) {
+    if (!soundEnabled || !audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, now);
+    if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, now + duration);
+    gain.gain.setValueAtTime(vol, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + duration);
+  }
+
+  const SFX = {
+    orb: () => playTone(520, 'triangle', 0.08, 0.08, 780),
+    trap: () => {
+      playTone(150, 'sawtooth', 0.35, 0.18, 55);
+      setTimeout(() => playTone(220, 'square', 0.25, 0.14, 90), 90);
+    },
+    laugh: () => {
+      [420, 360, 400, 310, 340, 220].forEach((f, i) => {
+        setTimeout(() => playTone(f, 'sawtooth', 0.11, 0.13, f * 0.8), i * 85);
+      });
+    },
+    death: () => {
+      playTone(240, 'sawtooth', 0.45, 0.22, 42);
+      playTone(110, 'square', 0.4, 0.18, 35);
+    },
+    portal: () => {
+      [330, 440, 554, 659, 880].forEach((f, i) => {
+        setTimeout(() => playTone(f, 'triangle', 0.18, 0.12), i * 70);
+      });
+    },
+    slam: () => playTone(95, 'square', 0.28, 0.22, 32)
+  };
+
+  window.toggleSound = () => {
+    soundEnabled = !soundEnabled;
+    document.getElementById('btnSound').textContent = soundEnabled ? '🔊' : '🔇';
+  };
+
+  // === DEFINÍCIE LEVELOV (1 = stena, 0 = dušička, 2 = prázdne, 3 = falošná lebka, 4 = portál) ===
+  const LEVELS = [
+    {
+      name: "Level 1: Krypta falošných sľubov",
+      spawn: { x: 1, y: 1 },
+      exit: { x: 17, y: 7 },
+      altExit: { x: 1, y: 7 },
+      ghosts: [
+        { x: 8, y: 5, dir: { x: 1, y: 0 }, speed: 3.1, color: '#ff2a55', name: 'Smrtka' },
+        { x: 9, y: 13, dir: { x: -1, y: 0 }, speed: 2.9, color: '#b84dff', name: 'Prízrak' }
+      ],
+      map: [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,2,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
+        [1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1],
+        [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+        [1,0,1,0,1,1,1,1,2,1,1,1,1,0,1,0,1,0,1],
+        [1,0,0,0,1,2,2,2,2,2,2,2,1,0,1,0,0,0,1],
+        [1,1,1,0,1,2,2,2,2,2,2,2,1,0,1,1,1,0,1],
+        [1,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,4,1],
+        [1,0,1,1,1,0,1,1,1,1,1,0,1,1,1,0,1,0,1],
+        [1,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,1,0,1],
+        [1,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,1,0,1],
+        [1,3,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
+        [1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+      ]
+    },
+    {
+      name: "Level 2: Zrkadlové bludisko tieňov",
+      spawn: { x: 1, y: 1 },
+      exit: { x: 9, y: 8 },
+      lanternRadius: 175,
+      ghosts: [
+        { x: 9, y: 5, dir: { x: 1, y: 0 }, speed: 3.3, color: '#ff5e1a', name: 'Tekvicový démon' },
+        { x: 9, y: 11, dir: { x: -1, y: 0 }, speed: 3.2, color: '#00e5ff', name: 'Banshee' },
+        { x: 17, y: 7, dir: { x: 0, y: -1 }, speed: 3.0, color: '#ff1e42', name: 'Krvavý tieň' }
+      ],
+      map: [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,2,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,1],
+        [1,0,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,1,1,0,1,1,0,1,1,2,1,1,0,1,1,0,1,1,1],
+        [1,0,0,0,1,0,0,1,2,2,2,1,0,0,1,0,0,0,1],
+        [1,0,1,0,0,0,1,1,2,2,2,1,1,0,0,0,1,0,1],
+        [1,0,1,0,1,0,0,0,0,0,0,0,0,0,1,0,1,0,1],
+        [1,0,0,0,1,1,1,0,1,4,1,0,1,1,1,0,0,0,1],
+        [1,1,1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,1,1],
+        [1,0,0,0,1,1,0,1,1,0,1,1,0,1,1,0,0,0,1],
+        [1,0,1,1,1,0,0,0,0,0,0,0,0,0,1,1,1,0,1],
+        [1,0,0,0,0,0,1,1,0,1,0,1,1,0,0,0,0,0,1],
+        [1,0,1,1,1,0,0,0,0,0,0,0,0,0,1,1,1,0,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+      ]
+    },
+    {
+      name: "Level 3: Sieň poslednej lži",
+      spawn: { x: 1, y: 1 },
+      exit: { x: 17, y: 13 },
+      ghosts: [
+        { x: 9, y: 7, dir: { x: 1, y: 0 }, speed: 3.25, color: '#ff5e1a', name: 'Strážca siene' },
+        { x: 17, y: 5, dir: { x: 0, y: 1 }, speed: 3.15, color: '#b84dff', name: 'Fialový tieň' }
+      ],
+      map: [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,2,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,1],
+        [1,0,1,0,1,0,1,1,0,1,0,1,1,0,1,0,1,0,1],
+        [1,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,1],
+        [1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,1,1,0,1],
+        [1,0,0,0,0,0,0,0,1,3,1,0,0,0,0,0,0,0,1],
+        [1,1,1,0,1,1,1,0,1,2,1,0,1,1,1,0,1,1,1],
+        [1,0,0,0,1,2,2,0,0,0,0,0,2,2,1,0,0,0,1],
+        [1,0,1,1,1,2,1,1,1,0,1,1,1,2,1,1,1,0,1],
+        [1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1],
+        [1,1,1,1,0,1,1,0,1,1,1,0,1,1,0,1,1,1,1],
+        [1,3,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,3,1],
+        [1,0,1,1,1,1,1,0,1,0,1,0,1,1,1,1,1,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+      ]
+    }
+  ];
+
+  // === HERNÝ STAV ===
+  let currentLevelIdx = 0;
+  let deathsByLevel = [[], [], []]; // Stopy smrtí {x, y, attempt, color}
+  let totalDeaths = 0;
+  let gameState = 'MENU'; // MENU, PLAYING, DEAD_PAUSE, LEVEL_WIN
+  let shakeTime = 0;
+  let bannerTimer = 0;
+  let lastTime = 0;
+
+  // Dynamický stav aktuálneho pokusu
+  let grid = [];
+  let player = null;
+  let ghosts = [];
+  let particles = [];
+  let totalOrbs = 0;
+  let collectedOrbs = 0;
+  let exitPos = { x: 0, y: 0 };
+  let exitOpen = false;
+  let traps = {};
+
+  const DIRS = {
+    UP: { x: 0, y: -1 },
+    DOWN: { x: 0, y: 1 },
+    LEFT: { x: -1, y: 0 },
+    RIGHT: { x: 1, y: 0 },
+    NONE: { x: 0, y: 0 }
+  };
+
+  function showBanner(text, duration = 2.6) {
+    const el = document.getElementById('trollBanner');
+    el.textContent = text;
+    el.classList.add('show');
+    bannerTimer = duration;
+  }
+
+  function spawnParticles(gx, gy, color, count = 18) {
+    const px = (gx + 0.5) * TILE;
+    const py = (gy + 0.5) * TILE;
+    for (let i = 0; i < count; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const spd = 40 + Math.random() * 160;
+      particles.push({
+        x: px, y: py,
+        vx: Math.cos(ang) * spd,
+        vy: Math.sin(ang) * spd,
+        life: 0.4 + Math.random() * 0.4,
+        maxLife: 0.8,
+        color,
+        size: 2 + Math.random() * 4
+      });
+    }
+  }
+
+  function loadLevelAttempt(idx) {
+    currentLevelIdx = idx;
+    const def = LEVELS[idx];
+    document.getElementById('btnLvl1').classList.toggle('active', idx === 0);
+    document.getElementById('btnLvl2').classList.toggle('active', idx === 1);
+    document.getElementById('btnLvl3').classList.toggle('active', idx === 2);
+    document.getElementById('levelSubtitle').textContent = def.name;
+
+    grid = def.map.map(row => [...row]);
+    totalOrbs = 0;
+    collectedOrbs = 0;
+
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (grid[r][c] === 0 || grid[r][c] === 3) totalOrbs++;
+      }
+    }
+
+    player = {
+      x: def.spawn.x,
+      y: def.spawn.y,
+      dir: DIRS.NONE,
+      nextDir: DIRS.NONE,
+      speed: 4.5,
+      mouthPhase: 0,
+      alive: true
+    };
+
+    ghosts = def.ghosts.map(g => ({
+      x: g.x,
+      y: g.y,
+      dir: { ...g.dir },
+      baseSpeed: g.speed,
+      speed: g.speed,
+      color: g.color,
+      scaredTimer: 0,
+      enraged: false,
+      scale: 1
+    }));
+
+    exitPos = { ...def.exit };
+    exitOpen = false;
+    particles = [];
+
+    // Špecifické pasce pre Level 1 a Level 2
+    traps = {
+      // Level 1 pasce
+      l1CorridorTriggered: false,
+      l1FakePillTriggered: false,
+      l1ExitTeleported: false,
+      l1SpiderActive: false,
+      l1SpiderY: -1, // v grid súradniciach
+      l1SpiderDir: 1,
+
+      // Level 2 pasce
+      l2MirrorTriggered: false,
+      l2MirrorTimer: 0,
+      l2Mimic: idx === 1 ? { x: 16, y: 1, active: true, moveCooldown: 0 } : null,
+      l2CollapseWarning: 0,
+      l2Collapsed: false,
+      l2CollapseTiles: [
+        { x: 6, y: 3 }, { x: 12, y: 3 },
+        { x: 5, y: 11 }, { x: 13, y: 11 }
+      ],
+      l2FakeWinTimer: 0,
+      l2SurvivalTimer: 0,
+
+      // Level 3 pasce
+      l3GateClosed: false,
+      l2SurvivalActive: false
+    };
+
+    // V Leveli 2 nahradíme statickú dušičku na (16,1) za pohyblivého Mimica
+    if (idx === 1) {
+      grid[1][16] = 2;
+    }
+
+    updateHUD();
+  }
+
+  function updateHUD() {
+    document.getElementById('hudSouls').textContent = `DUŠE: ${collectedOrbs}/${totalOrbs}`;
+    document.getElementById('hudDeaths').textContent = `SMRTI: ${totalDeaths}`;
+  }
+
+  window.selectLevel = (idx) => {
+    initAudio();
+    loadLevelAttempt(idx);
+    if (gameState !== 'MENU') {
+      gameState = 'PLAYING';
+      document.getElementById('overlay').classList.add('hidden');
+    }
+  };
+
+  window.startGame = () => {
+    initAudio();
+    document.getElementById('overlay').classList.add('hidden');
+    loadLevelAttempt(currentLevelIdx);
+    gameState = 'PLAYING';
+  };
+
+  window.restartAttempt = () => {
+    initAudio();
+    document.getElementById('overlay').classList.add('hidden');
+    loadLevelAttempt(currentLevelIdx);
+    gameState = 'PLAYING';
+  };
+
+  // === VSTUPY (KLÁVESNICA, MOBILNÝ D-PAD, SWIPE) ===
+  function queueDirection(rawDir) {
+    initAudio();
+    if (!player || !player.alive) return;
+    let d = rawDir;
+    // Zrkadlová kliatba v Leveli 2
+    if (traps.l2MirrorTimer > 0) {
+      if (rawDir === DIRS.LEFT) d = DIRS.RIGHT;
+      else if (rawDir === DIRS.RIGHT) d = DIRS.LEFT;
+      else if (rawDir === DIRS.UP) d = DIRS.DOWN;
+      else if (rawDir === DIRS.DOWN) d = DIRS.UP;
+    }
+    player.nextDir = d;
+  }
+
+  window.addEventListener('keydown', (e) => {
+    const key = e.key.toLowerCase();
+    if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(key)) {
+      e.preventDefault();
+    }
+    if (key === 'r') {
+      restartAttempt();
+      return;
+    }
+    if (gameState === 'MENU' && (key === 'enter' || key === ' ')) {
+      startGame();
+      return;
+    }
+    if (key === 'arrowup' || key === 'w') queueDirection(DIRS.UP);
+    if (key === 'arrowdown' || key === 's') queueDirection(DIRS.DOWN);
+    if (key === 'arrowleft' || key === 'a') queueDirection(DIRS.LEFT);
+    if (key === 'arrowright' || key === 'd') queueDirection(DIRS.RIGHT);
+  });
+
+  document.querySelectorAll('.dpad-btn').forEach(btn => {
+    const handler = (e) => {
+      e.preventDefault();
+      const dirName = btn.getAttribute('data-dir');
+      queueDirection(DIRS[dirName]);
+    };
+    btn.addEventListener('touchstart', handler, { passive: false });
+    btn.addEventListener('mousedown', handler);
+  });
+
+  // Swipe podpora na plátne
+  let touchStartX = 0, touchStartY = 0;
+  canvas.addEventListener('touchstart', (e) => {
+    initAudio();
+    if (e.touches.length > 0) {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }
+  }, { passive: true });
+
+  canvas.addEventListener('touchmove', (e) => {
+    if (!touchStartX || !touchStartY || e.touches.length === 0) return;
+    const dx = e.touches[0].clientX - touchStartX;
+    const dy = e.touches[0].clientY - touchStartY;
+    if (Math.abs(dx) > 22 || Math.abs(dy) > 22) {
+      if (Math.abs(dx) > Math.abs(dy)) {
+        queueDirection(dx > 0 ? DIRS.RIGHT : DIRS.LEFT);
+      } else {
+        queueDirection(dy > 0 ? DIRS.DOWN : DIRS.UP);
+      }
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }
+  }, { passive: true });
+
+  // === POHYB A KOLÍZIE V MRIEŽKE ===
+  function isWalkable(gx, gy, allowExit = false) {
+    if (gx < 0 || gx >= COLS || gy < 0 || gy >= ROWS) return false;
+    const cell = grid[gy][gx];
+    if (cell === 1) return false;
+    if (cell === 4 && !allowExit && !exitOpen) return false;
+    return true;
+  }
+
+  function moveGridEntity(ent, dt, allowExit = false) {
+    const cx = Math.round(ent.x);
+    const cy = Math.round(ent.y);
+
+    // Pokus o zmenu smeru (corner-turning buffer)
+    if (ent.nextDir && (ent.nextDir.x !== ent.dir.x || ent.nextDir.y !== ent.dir.y)) {
+      const distToCenter = Math.hypot(ent.x - cx, ent.y - cy);
+      if (distToCenter < 0.32 && isWalkable(cx + ent.nextDir.x, cy + ent.nextDir.y, allowExit)) {
+        ent.x = cx;
+        ent.y = cy;
+        ent.dir = ent.nextDir;
+      }
+    }
+
+    if (ent.dir.x === 0 && ent.dir.y === 0) return;
+
+    // Zarovnanie na stred chodby v kolmom smere
+    if (ent.dir.x !== 0) {
+      ent.y += (cy - ent.y) * Math.min(1, dt * 18);
+    } else if (ent.dir.y !== 0) {
+      ent.x += (cx - ent.x) * Math.min(1, dt * 18);
+    }
+
+    const step = ent.speed * dt;
+    let nx = ent.x + ent.dir.x * step;
+    let ny = ent.y + ent.dir.y * step;
+
+    const targetCol = cx + ent.dir.x;
+    const targetRow = cy + ent.dir.y;
+
+    if (!isWalkable(targetCol, targetRow, allowExit)) {
+      if (ent.dir.x > 0 && nx > cx) nx = cx;
+      if (ent.dir.x < 0 && nx < cx) nx = cx;
+      if (ent.dir.y > 0 && ny > cy) ny = cy;
+      if (ent.dir.y < 0 && ny < cy) ny = cy;
+    }
+
+    ent.x = nx;
+    ent.y = ny;
+  }
+
+  function killPlayer(reasonText) {
+    if (!player.alive || gameState !== 'PLAYING') return;
+    player.alive = false;
+    totalDeaths++;
+    updateHUD();
+    SFX.death();
+    shakeTime = 0.35;
+
+    const stains = deathsByLevel[currentLevelIdx];
+    stains.push({
+      x: player.x,
+      y: player.y,
+      attempt: totalDeaths,
+      color: currentLevelIdx === 0 ? 'rgba(255, 30, 66, 0.42)' : 'rgba(184, 77, 255, 0.45)'
+    });
+    if (stains.length > 35) stains.shift();
+
+    spawnParticles(player.x, player.y, '#ff1e42', 26);
+    showBanner(reasonText, 2.0);
+    gameState = 'DEAD_PAUSE';
+
+    setTimeout(() => {
+      if (gameState === 'DEAD_PAUSE') {
+        loadLevelAttempt(currentLevelIdx);
+        gameState = 'PLAYING';
+      }
+    }, 420);
+  }
+
+  // === LOGIKA PASCÍ PRE LEVEL 1 A LEVEL 2 ===
+  function updateTraps(dt) {
+    const px = Math.round(player.x);
+    const py = Math.round(player.y);
+
+    // --- LEVEL 1 PASCE ---
+    if (currentLevelIdx === 0) {
+      // Pasca 1: Keď hráč v hornej chodbe zje 3. dušičku (x=4, y=1), zabuchne sa stena za ním a vyštartuje Smrtka
+      if (!traps.l1CorridorTriggered && px === 4 && py === 1) {
+        traps.l1CorridorTriggered = true;
+        grid[1][2] = 1; // Zavrie ústupovú cestu za hráčom!
+        grid[2][5] = 2; // Otvorí tajný výklenok na (5,2)
+        ghosts.push({
+          x: 7, y: 1,
+          dir: { x: -1, y: 0 },
+          baseSpeed: 6.4,
+          speed: 6.4,
+          color: '#ff0033',
+          scaredTimer: 0,
+          enraged: true,
+          scale: 1.15
+        });
+        SFX.trap();
+        shakeTime = 0.25;
+        showBanner("PASCA! SKRY SA DO VÝKLENKU DOLE!", 2.8);
+      }
+
+      // Pasca 3: Zradný portál + Pavúk spustený z horného UI
+      if (exitOpen) {
+        const distToExit = Math.hypot(player.x - exitPos.x, player.y - exitPos.y);
+        if (!traps.l1ExitTeleported && distToExit < 1.15) {
+          traps.l1ExitTeleported = true;
+          grid[exitPos.y][exitPos.x] = 1; // Starý východ sa zamuruje
+          exitPos = { ...LEVELS[0].altExit };
+          grid[exitPos.y][exitPos.x] = 4; // Nový východ na opačnej strane
+          traps.l1SpiderActive = true;
+          traps.l1SpiderY = 0.2;
+          SFX.laugh();
+          shakeTime = 0.25;
+          showBanner("HA! VÝCHOD SA PRESUNUL NA DRUHÚ STRANU!", 3.0);
+        } else if (traps.l1ExitTeleported && distToExit < 0.55) {
+          completeLevel();
+        }
+      }
+
+      // Pohyb obrieho pavúka strážiaceho nový portál na (2, 7)
+      if (traps.l1SpiderActive) {
+        traps.l1SpiderY += traps.l1SpiderDir * 5.2 * dt;
+        if (traps.l1SpiderY >= 7.2) {
+          traps.l1SpiderY = 7.2;
+          traps.l1SpiderDir = -1;
+        } else if (traps.l1SpiderY <= 3.5) {
+          traps.l1SpiderY = 3.5;
+          traps.l1SpiderDir = 1;
+        }
+        // Pavúk visí na stĺpci x = 2
+        if (Math.hypot(player.x - 2, player.y - traps.l1SpiderY) < 0.58) {
+          killPlayer("ZOŽRAL ŤA PAVÚK Z POČÍTADLA SMRTÍ!");
+        }
+      }
+    }
+
+    // --- LEVEL 2 PASCE ---
+    if (currentLevelIdx === 1) {
+      // Pasca 1: Zrkadlová kliatba pri 8 dušičkách
+      if (!traps.l2MirrorTriggered && collectedOrbs >= 8) {
+        traps.l2MirrorTriggered = true;
+        traps.l2MirrorTimer = 5.0;
+        SFX.trap();
+        shakeTime = 0.3;
+        showBanner("ZRKADLOVÁ KLIATBA! OVLÁDANIE JE OBRÁTENÉ (5s)!", 3.5);
+      }
+      if (traps.l2MirrorTimer > 0) {
+        traps.l2MirrorTimer = Math.max(0, traps.l2MirrorTimer - dt);
+      }
+
+      // Pasca 2: Utekajúca Mimic dušička
+      if (traps.l2Mimic && traps.l2Mimic.active) {
+        const m = traps.l2Mimic;
+        const dist = Math.hypot(player.x - m.x, player.y - m.y);
+        if (dist < 0.55) {
+          m.active = false;
+          collectedOrbs++;
+          updateHUD();
+          SFX.orb();
+          spawnParticles(m.x, m.y, '#38f2ff', 20);
+          showBanner("CHYTIL SI UTEKAJÚCU DUŠIČKU!", 2.0);
+          checkAllOrbsCollected();
+        } else if (dist < 3.6) {
+          m.moveCooldown -= dt;
+          if (m.moveCooldown <= 0) {
+            m.moveCooldown = 0.24;
+            const opts = [DIRS.UP, DIRS.DOWN, DIRS.LEFT, DIRS.RIGHT].filter(d =>
+              isWalkable(m.x + d.x, m.y + d.y)
+            );
+            // Vyber políčko čo najďalej od hráča
+            opts.sort((a, b) => {
+              const da = Math.hypot((m.x + a.x) - player.x, (m.y + a.y) - player.y);
+              const db = Math.hypot((m.x + b.x) - player.x, (m.y + b.y) - player.y);
+              return db - da;
+            });
+            if (opts.length > 0) {
+              m.x += opts[0].x;
+              m.y += opts[0].y;
+            }
+          }
+        }
+      }
+
+      // Pasca 3: Zrútenie náhrobkov pri 24 dušičkách
+      if (!traps.l2Collapsed && traps.l2CollapseWarning === 0 && collectedOrbs >= 24) {
+        traps.l2CollapseWarning = 1.15;
+        SFX.trap();
+        showBanner("POZOR! NÁHROBKY PADAJÚ ZO STROPU!", 2.2);
+      }
+      if (traps.l2CollapseWarning > 0) {
+        traps.l2CollapseWarning -= dt;
+        if (traps.l2CollapseWarning <= 0) {
+          traps.l2CollapseWarning = 0;
+          traps.l2Collapsed = true;
+          SFX.slam();
+          shakeTime = 0.35;
+          for (const t of traps.l2CollapseTiles) {
+            grid[t.y][t.x] = 1;
+            spawnParticles(t.x, t.y, '#9b87b5', 14);
+            if (Math.round(player.x) === t.x && Math.round(player.y) === t.y) {
+              killPlayer("ROZPUČIL ŤA PADNUTÝ NÁHROBOK!");
+            }
+          }
+        }
+      }
+
+      // Pasca 4: Vstup do východu spustí falošnú výhru a 4.5s prežitia v tme
+      if (exitOpen && !traps.l2SurvivalActive && traps.l2FakeWinTimer === 0) {
+        if (Math.hypot(player.x - exitPos.x, player.y - exitPos.y) < 0.55) {
+          traps.l2FakeWinTimer = 0.85;
+          SFX.portal();
+          showBanner("LEVEL 2 DOKONČENÝ! ... ALEBO NIE?!", 2.5);
+        }
+      }
+
+      if (traps.l2FakeWinTimer > 0) {
+        traps.l2FakeWinTimer -= dt;
+        if (traps.l2FakeWinTimer <= 0) {
+          traps.l2FakeWinTimer = 0;
+          traps.l2SurvivalActive = true;
+          traps.l2SurvivalTimer = 4.5;
+          SFX.laugh();
+          shakeTime = 0.4;
+          // Pridaj zúrivých prízrakov
+          ghosts.forEach(g => {
+            g.speed = 4.3;
+            g.enraged = true;
+          });
+          ghosts.push({
+            x: 9, y: 1,
+            dir: { x: 0, y: 1 },
+            baseSpeed: 4.5,
+            speed: 4.5,
+            color: '#ff0033',
+            scaredTimer: 0,
+            enraged: true,
+            scale: 1.2
+          });
+        }
+      }
+
+      if (traps.l2SurvivalActive) {
+        traps.l2SurvivalTimer -= dt;
+        showBanner(`KLAMSTVO! PREŽI V TME EŠTE ${Math.max(0, traps.l2SurvivalTimer).toFixed(1)}s!`, 0.2);
+        if (traps.l2SurvivalTimer <= 0) {
+          completeLevel();
+        }
+      }
+    }
+
+    // --- LEVEL 3 PASCE ---
+    if (currentLevelIdx === 2) {
+      // Po piatej dušičke sa za hráčom zabuchne chodba pri štarte a pribudne rýchly strážca.
+      if (!traps.l3GateClosed && collectedOrbs >= 5) {
+        traps.l3GateClosed = true;
+        // Zavri štartovú bunku, len ak na nej už nie je dušička.
+        if (grid[1][1] === 2) grid[1][1] = 1;
+        ghosts.push({
+          x: 9, y: 13,
+          dir: { x: 0, y: -1 },
+          baseSpeed: 4.2,
+          speed: 4.2,
+          color: '#ff0033',
+          scaredTimer: 0,
+          enraged: true,
+          scale: 1.1
+        });
+        SFX.trap();
+        shakeTime = 0.25;
+        showBanner("BRÁNA ZA TEBOU PADLA! STRÁŽCA SA PREBUDIL!", 2.8);
+      }
+    }
+  }
+
+  function checkAllOrbsCollected() {
+    if (collectedOrbs >= totalOrbs && !exitOpen) {
+      exitOpen = true;
+      SFX.portal();
+      spawnParticles(exitPos.x, exitPos.y, '#ffae00', 25);
+      showBanner("VŠETKY DUŠE ZOZBIERANÉ! UTEČ PORTÁLOM!", 2.8);
+    }
+  }
+
+  function completeLevel() {
+    if (gameState !== 'PLAYING') return;
+    gameState = 'LEVEL_WIN';
+    SFX.portal();
+    const ov = document.getElementById('overlay');
+    const title = document.getElementById('overlayTitle');
+    const desc = document.getElementById('overlayDesc');
+    const btn = document.getElementById('overlayBtn');
+
+    ov.classList.remove('hidden');
+    if (currentLevelIdx === 0) {
+      title.textContent = "LEVEL 1 PREŽITÝ!";
+      desc.textContent = `Podarilo sa ti prekabátiť kryptu. Smrti: ${totalDeaths}. Priprav sa na tmu a zrkadlá v Leveli 2.`;
+      btn.textContent = "POKRAČOVAŤ DO LEVELU 2";
+      btn.onclick = () => {
+        currentLevelIdx = 1;
+        startGame();
+      };
+    } else if (currentLevelIdx === 1) {
+      title.textContent = "LEVEL 2 PREŽITÝ!";
+      desc.textContent = `Zrkadlá ťa nezlomili. Smrti: ${totalDeaths}. Zostáva posledná sieň.`;
+      btn.textContent = "POKRAČOVAŤ DO LEVELU 3";
+      btn.onclick = () => {
+        currentLevelIdx = 2;
+        startGame();
+      };
+    } else {
+      title.textContent = "PORAZIL SI HROBKU KLAMSTIEV!";
+      desc.textContent = `Všetky tri levely sú za tebou. Celkovo si zomrel ${totalDeaths}-krát. Skúsiš čistý beh s menším počtom smrtí?`;
+      btn.textContent = "HRAŤ ZNOVA OD LEVELU 1";
+      btn.onclick = () => {
+        totalDeaths = 0;
+        deathsByLevel = [[], [], []];
+        currentLevelIdx = 0;
+        startGame();
+      };
+    }
+  }
+
+  // === UPDATE LOOP ===
+  function update(dt) {
+    if (shakeTime > 0) shakeTime = Math.max(0, shakeTime - dt);
+    if (bannerTimer > 0) {
+      bannerTimer -= dt;
+      if (bannerTimer <= 0) document.getElementById('trollBanner').classList.remove('show');
+    }
+
+    // Častice
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.life -= dt;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    if (gameState !== 'PLAYING' || !player.alive) return;
+
+    // Pohyb hráča
+    player.mouthPhase += dt * 14;
+    moveGridEntity(player, dt, exitOpen);
+
+    // Zber dušičiek a falošnej lebky
+    const gx = Math.round(player.x);
+    const gy = Math.round(player.y);
+    const distCenter = Math.hypot(player.x - gx, player.y - gy);
+
+    if (distCenter < 0.42) {
+      const cell = grid[gy][gx];
+      if (cell === 0) {
+        grid[gy][gx] = 2;
+        collectedOrbs++;
+        updateHUD();
+        SFX.orb();
+        spawnParticles(gx, gy, '#38f2ff', 8);
+        checkAllOrbsCollected();
+      } else if (cell === 3) {
+        // PASCA 2 V LEVELI 1: Falošná Power-Pill lebka!
+        grid[gy][gx] = 2;
+        collectedOrbs++;
+        updateHUD();
+        SFX.orb();
+        traps.l1FakePillTriggered = true;
+        ghosts.forEach(g => {
+          g.scaredTimer = 1.25; // Zmodrejú len na 1.25 sekundy!
+          g.dir = { x: -g.dir.x, y: -g.dir.y };
+        });
+        showBanner("SUPER SILA! ... POČKAJ, NIEČO JE ZLE!", 2.2);
+        checkAllOrbsCollected();
+      }
+    }
+
+    updateTraps(dt);
+
+    // Pohyb a AI duchov
+    for (const g of ghosts) {
+      if (g.scaredTimer > 0) {
+        g.scaredTimer -= dt;
+        g.speed = g.baseSpeed * 0.65;
+        if (g.scaredTimer <= 0) {
+          // Zrada! Zmenia sa na obrovských rýchlych lovcov a otočia smer
+          g.scaredTimer = 0;
+          g.enraged = true;
+          g.scale = 1.25;
+          g.speed = g.baseSpeed * 1.48;
+          g.dir = { x: -g.dir.x, y: -g.dir.y };
+          SFX.laugh();
+          shakeTime = 0.25;
+          showBanner("HAHA! LEBKA ICH LEN NAHNEVALA!", 2.5);
+        }
+      }
+
+      const gcx = Math.round(g.x);
+      const gcy = Math.round(g.y);
+      const gDist = Math.hypot(g.x - gcx, g.y - gcy);
+
+      if (gDist < 0.14) {
+        const possible = [DIRS.UP, DIRS.DOWN, DIRS.LEFT, DIRS.RIGHT].filter(d => {
+          if (d.x === -g.dir.x && d.y === -g.dir.y) return false;
+          return isWalkable(gcx + d.x, gcy + d.y);
+        });
+
+        if (possible.length > 0) {
+          // Ak je nahnevaný, prenasleduje hráča; ak sa bojí, uteká; inak semi-náhodne
+          if (g.enraged || g.scaredTimer > 0) {
+            possible.sort((a, b) => {
+              const da = Math.hypot((gcx + a.x) - player.x, (gcy + a.y) - player.y);
+              const db = Math.hypot((gcx + b.x) - player.x, (gcy + b.y) - player.y);
+              return g.scaredTimer > 0 ? db - da : da - db;
+            });
+            g.dir = possible[0];
+          } else {
+            g.dir = possible[Math.floor(Math.random() * possible.length)];
+          }
+        } else if (!isWalkable(gcx + g.dir.x, gcy + g.dir.y)) {
+          g.dir = { x: -g.dir.x, y: -g.dir.y };
+        }
+      }
+
+      moveGridEntity(g, dt, false);
+
+      // Kolízia s hráčom
+      if (Math.hypot(player.x - g.x, player.y - g.y) < 0.56) {
+        if (g.scaredTimer > 0) {
+          // Stihol ho zjesť počas prvých 1.2s!
+          spawnParticles(g.x, g.y, '#38f2ff', 22);
+          g.x = 9; g.y = 5;
+          g.scaredTimer = 0;
+          SFX.orb();
+        } else {
+          killPlayer(`DOSTAL ŤA ${g.enraged ? 'ZÚRIVÝ PRÍZRAK' : 'STRÁŽCA KRYPTY'}!`);
+        }
+      }
+    }
+  }
+
+  // === VYKRESĽOVANIE (HALLOWEENSKA GOTICKÁ ATMOSFÉRA) ===
+  function drawCobwebs() {
+    ctx.strokeStyle = 'rgba(220, 210, 240, 0.16)';
+    ctx.lineWidth = 1.2;
+    const corners = [
+      { x: 0, y: 0, sx: 1, sy: 1 },
+      { x: canvas.width, y: 0, sx: -1, sy: 1 },
+      { x: 0, y: canvas.height, sx: 1, sy: -1 },
+      { x: canvas.width, y: canvas.height, sx: -1, sy: -1 }
+    ];
+    for (const c of corners) {
+      for (let i = 0; i <= 4; i++) {
+        const ang = (Math.PI / 2) * (i / 4);
+        ctx.beginPath();
+        ctx.moveTo(c.x, c.y);
+        ctx.lineTo(c.x + Math.cos(ang) * 95 * c.sx, c.y + Math.sin(ang) * 95 * c.sy);
+        ctx.stroke();
+      }
+      for (let r = 25; r <= 85; r += 20) {
+        ctx.beginPath();
+        for (let i = 0; i <= 4; i++) {
+          const ang = (Math.PI / 2) * (i / 4);
+          const wx = c.x + Math.cos(ang) * r * c.sx;
+          const wy = c.y + Math.sin(ang) * r * c.sy;
+          if (i === 0) ctx.moveTo(wx, wy);
+          else ctx.lineTo(wx, wy);
+        }
+        ctx.stroke();
+      }
+    }
+  }
+
+  function render() {
+    ctx.save();
+    if (shakeTime > 0) {
+      const mag = shakeTime * 22;
+      ctx.translate((Math.random() - 0.5) * mag, (Math.random() - 0.5) * mag);
+    }
+
+    // Podlaha krypty
+    ctx.fillStyle = '#07050b';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Jemná mriežka dlaždíc
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
+    ctx.lineWidth = 1;
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        ctx.strokeRect(c * TILE, r * TILE, TILE, TILE);
+      }
+    }
+
+    // Stopy predchádzajúcich smrtí (ektoplazma + mini náhrobky)
+    for (const s of deathsByLevel[currentLevelIdx]) {
+      const sx = (s.x + 0.5) * TILE;
+      const sy = (s.y + 0.5) * TILE;
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      ctx.arc(sx, sy + 4, 13, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Mini krížik
+      ctx.fillStyle = 'rgba(210, 195, 230, 0.45)';
+      ctx.fillRect(sx - 1.5, sy - 8, 3, 12);
+      ctx.fillRect(sx - 5, sy - 4, 10, 2.5);
+    }
+
+    const now = performance.now() * 0.004;
+
+    // Steny, dušičky, falošná lebka a portál
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const val = grid[r][c];
+        const x = c * TILE;
+        const y = r * TILE;
+
+        if (val === 1) {
+          // Gotický kameň s neónovým okrajom
+          ctx.fillStyle = '#171024';
+          ctx.fillRect(x + 1, y + 1, TILE - 2, TILE - 2);
+          ctx.strokeStyle = currentLevelIdx === 0 ? '#573380' : '#7a2846';
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(x + 2, y + 2, TILE - 4, TILE - 4);
+        } else if (val === 0) {
+          // Žiariaca dušička
+          const pulse = 3.6 + Math.sin(now + c + r) * 0.9;
+          ctx.fillStyle = '#38f2ff';
+          ctx.shadowColor = '#38f2ff';
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.arc(x + TILE / 2, y + TILE / 2, pulse, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        } else if (val === 3) {
+          // Falošná Power-Pill lebka
+          const pulse = 7.5 + Math.sin(now * 2) * 1.6;
+          ctx.fillStyle = '#ffae00';
+          ctx.shadowColor = '#ff5e1a';
+          ctx.shadowBlur = 14;
+          ctx.beginPath();
+          ctx.arc(x + TILE / 2, y + TILE / 2, pulse, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = '#14091f';
+          ctx.font = 'bold 12px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText('☠', x + TILE / 2, y + TILE / 2 + 4);
+        } else if (val === 4) {
+          // Východový portál
+          ctx.fillStyle = exitOpen ? 'rgba(255, 174, 0, 0.25)' : 'rgba(90, 60, 110, 0.2)';
+          ctx.fillRect(x + 3, y + 3, TILE - 6, TILE - 6);
+          ctx.strokeStyle = exitOpen ? '#ffae00' : '#553a6b';
+          ctx.lineWidth = 2.5;
+          ctx.strokeRect(x + 4, y + 4, TILE - 8, TILE - 8);
+          ctx.fillStyle = exitOpen ? '#ffd166' : '#6c5385';
+          ctx.font = 'bold 11px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(exitOpen ? 'EXIT' : '🔒', x + TILE / 2, y + TILE / 2 + 4);
+        }
+      }
+    }
+
+    // Varovanie padajúcich náhrobkov v Leveli 2
+    if (traps.l2CollapseWarning > 0) {
+      ctx.fillStyle = 'rgba(255, 30, 66, 0.45)';
+      for (const t of traps.l2CollapseTiles) {
+        ctx.fillRect(t.x * TILE + 2, t.y * TILE + 2, TILE - 4, TILE - 4);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 16px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('!', (t.x + 0.5) * TILE, (t.y + 0.65) * TILE);
+        ctx.fillStyle = 'rgba(255, 30, 66, 0.45)';
+      }
+    }
+
+    // Mimic dušička s nožičkami (Level 2)
+    if (traps.l2Mimic && traps.l2Mimic.active) {
+      const mx = (traps.l2Mimic.x + 0.5) * TILE;
+      const my = (traps.l2Mimic.y + 0.5) * TILE;
+      ctx.fillStyle = '#38f2ff';
+      ctx.beginPath();
+      ctx.arc(mx, my - 2, 5, 0, Math.PI * 2);
+      ctx.fill();
+      // Malé utekajúce nožičky
+      const leg = Math.sin(now * 6) * 3;
+      ctx.strokeStyle = '#38f2ff';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(mx - 2, my + 2); ctx.lineTo(mx - 4, my + 7 + leg);
+      ctx.moveTo(mx + 2, my + 2); ctx.lineTo(mx + 4, my + 7 - leg);
+      ctx.stroke();
+    }
+
+    // Hráč (Kryptový Pac-Man s kapucňou / lampášom)
+    if (player && player.alive) {
+      const px = (player.x + 0.5) * TILE;
+      const py = (player.y + 0.5) * TILE;
+      const mouth = Math.abs(Math.sin(player.mouthPhase)) * 0.65 + 0.1;
+
+      let angle = 0;
+      if (player.dir === DIRS.DOWN) angle = Math.PI / 2;
+      else if (player.dir === DIRS.LEFT) angle = Math.PI;
+      else if (player.dir === DIRS.UP) angle = -Math.PI / 2;
+
+      ctx.fillStyle = traps.l2MirrorTimer > 0 ? '#d56bff' : '#ffae00';
+      ctx.shadowColor = traps.l2MirrorTimer > 0 ? '#d56bff' : '#ff5e1a';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.arc(px, py, TILE * 0.36, angle + mouth, angle + Math.PI * 2 - mouth);
+      ctx.closePath();
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    // Duchovia / Smrtky
+    for (const g of ghosts) {
+      const gx = (g.x + 0.5) * TILE;
+      const gy = (g.y + 0.5) * TILE;
+      const r = TILE * 0.38 * g.scale;
+
+      ctx.fillStyle = g.scaredTimer > 0 ? '#1e6bff' : (g.enraged ? '#ff002b' : g.color);
+      ctx.beginPath();
+      ctx.arc(gx, gy - 2, r, Math.PI, 0);
+      ctx.lineTo(gx + r, gy + r);
+      ctx.lineTo(gx + r * 0.33, gy + r * 0.65);
+      ctx.lineTo(gx, gy + r);
+      ctx.lineTo(gx - r * 0.33, gy + r * 0.65);
+      ctx.lineTo(gx - r, gy + r);
+      ctx.closePath();
+      ctx.fill();
+
+      // Svietiace oči
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(gx - r * 0.35, gy - 3, r * 0.24, 0, Math.PI * 2);
+      ctx.arc(gx + r * 0.35, gy - 3, r * 0.24, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = g.enraged ? '#ffea00' : '#09060d';
+      ctx.beginPath();
+      ctx.arc(gx - r * 0.35 + g.dir.x * 2, gy - 3 + g.dir.y * 2, r * 0.12, 0, Math.PI * 2);
+      ctx.arc(gx + r * 0.35 + g.dir.x * 2, gy - 3 + g.dir.y * 2, r * 0.12, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Obrovský pavúk na pavučine v Leveli 1
+    if (traps.l1SpiderActive) {
+      const sx = 2.5 * TILE;
+      const sy = (traps.l1SpiderY + 0.5) * TILE;
+      ctx.strokeStyle = '#e5dcff';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(sx, 0);
+      ctx.lineTo(sx, sy);
+      ctx.stroke();
+
+      ctx.fillStyle = '#120b1c';
+      ctx.strokeStyle = '#ff1e42';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 13, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Oči pavúka
+      ctx.fillStyle = '#ff1e42';
+      ctx.fillRect(sx - 5, sy - 2, 3, 3);
+      ctx.fillRect(sx + 2, sy - 2, 3, 3);
+    }
+
+    // Častice
+    for (const p of particles) {
+      ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+    }
+    ctx.globalAlpha = 1;
+
+    // Tma a kužeľ lampáša v Leveli 2
+    if (currentLevelIdx === 1 && player && player.alive) {
+      const px = (player.x + 0.5) * TILE;
+      const py = (player.y + 0.5) * TILE;
+      const baseRad = traps.l2SurvivalActive ? 115 : LEVELS[1].lanternRadius;
+      const flicker = baseRad + Math.sin(now * 5) * 8;
+
+      const grad = ctx.createRadialGradient(px, py, flicker * 0.35, px, py, flicker);
+      grad.addColorStop(0, 'rgba(5, 4, 8, 0)');
+      grad.addColorStop(0.75, 'rgba(5, 4, 8, 0.78)');
+      grad.addColorStop(1, 'rgba(5, 4, 8, 0.96)');
+
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    drawCobwebs();
+    ctx.restore();
+  }
+
+  function loop(ts) {
+    const dt = Math.min(0.05, (ts - lastTime) / 1000 || 0.016);
+    lastTime = ts;
+    update(dt);
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  loadLevelAttempt(0);
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

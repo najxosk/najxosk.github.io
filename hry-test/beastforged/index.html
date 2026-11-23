@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#020617">
+  <title>BeastForged — Fitness RPG</title>
+  <style>
+    :root {
+      --bg: #020617;
+      --panel: #0f172a;
+      --card: #1e293b;
+      --line: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --amber: #fbbf24;
+      --orange: #f97316;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: #020617; color: #f8fafc; font-family: system-ui, "Segoe UI", sans-serif; }
+    body { min-height: 100%; min-height: 100dvh; display: flex; justify-content: center; user-select: none; -webkit-user-select: none; }
+    .font-fantasy { font-family: Georgia, "Times New Roman", serif; letter-spacing: 0.02em; }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px) rotate(-5deg); } 75% { transform: translateX(8px) rotate(5deg); } }
+    .animate-float { animation: float 3s ease-in-out infinite; }
+    .animate-hit { animation: shake 0.3s ease-in-out; }
+    .hidden { display: none !important; }
+    button, label, input { touch-action: manipulation; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #1e293b; }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 5px; }
+
+    .min-h-screen { min-height: 100vh; min-height: 100dvh; }
+    .w-full { width: 100%; }
+    .w-28 { width: 7rem; }
+    .max-w-md { max-width: 28rem; }
+    .h-full { height: 100%; }
+    .h-2 { height: 0.5rem; }
+    .h-2\.5 { height: 0.625rem; }
+    .h-10 { height: 2.5rem; }
+    .h-28 { height: 7rem; }
+    .h-32 { height: 8rem; }
+    .flex { display: flex; }
+    .flex-1 { flex: 1 1 0%; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .items-start { align-items: flex-start; }
+    .justify-center { justify-content: center; }
+    .justify-between { justify-content: space-between; }
+    .grid { display: grid; }
+    .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+    .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .col-span-2 { grid-column: span 2 / span 2; }
+    .gap-1 { gap: 0.25rem; }
+    .gap-1\.5 { gap: 0.375rem; }
+    .gap-2 { gap: 0.5rem; }
+    .gap-2\.5 { gap: 0.625rem; }
+    .gap-3 { gap: 0.75rem; }
+    .gap-4 { gap: 1rem; }
+    .space-y-1 > * + * { margin-top: 0.25rem; }
+    .space-y-2 > * + * { margin-top: 0.5rem; }
+    .space-y-2\.5 > * + * { margin-top: 0.625rem; }
+    .space-y-3 > * + * { margin-top: 0.75rem; }
+    .space-y-4 > * + * { margin-top: 1rem; }
+    .space-y-5 > * + * { margin-top: 1.25rem; }
+    .relative { position: relative; }
+    .absolute { position: absolute; }
+    .sticky { position: sticky; }
+    .inset-0 { inset: 0; }
+    .top-0 { top: 0; }
+    .bottom-0 { bottom: 0; }
+    .z-10 { z-index: 10; }
+    .z-30 { z-index: 30; }
+    .z-50 { z-index: 50; }
+    .overflow-hidden { overflow: hidden; }
+    .overflow-y-auto { overflow-y: auto; }
+    .p-2 { padding: 0.5rem; }
+    .p-2\.5 { padding: 0.625rem; }
+    .p-3 { padding: 0.75rem; }
+    .p-3\.5 { padding: 0.875rem; }
+    .p-4 { padding: 1rem; }
+    .p-5 { padding: 1.25rem; }
+    .p-6 { padding: 1.5rem; }
+    .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+    .px-2\.5 { padding-left: 0.625rem; padding-right: 0.625rem; }
+    .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+    .py-0\.5 { padding-top: 0.125rem; padding-bottom: 0.125rem; }
+    .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+    .py-1\.5 { padding-top: 0.375rem; padding-bottom: 0.375rem; }
+    .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .py-2\.5 { padding-top: 0.625rem; padding-bottom: 0.625rem; }
+    .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+    .pb-24 { padding-bottom: 6rem; }
+    .mb-1 { margin-bottom: 0.25rem; }
+    .mb-2 { margin-bottom: 0.5rem; }
+    .mb-3 { margin-bottom: 0.75rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .mb-6 { margin-bottom: 1.5rem; }
+    .ml-2 { margin-left: 0.5rem; }
+    .mt-0\.5 { margin-top: 0.125rem; }
+    .mt-1 { margin-top: 0.25rem; }
+    .mt-4 { margin-top: 1rem; }
+    .my-3 { margin-top: 0.75rem; margin-bottom: 0.75rem; }
+    .my-5 { margin-top: 1.25rem; margin-bottom: 1.25rem; }
+    .my-6 { margin-top: 1.5rem; margin-bottom: 1.5rem; }
+    .rounded { border-radius: 0.25rem; }
+    .rounded-lg { border-radius: 0.5rem; }
+    .rounded-xl { border-radius: 0.75rem; }
+    .rounded-2xl { border-radius: 1rem; }
+    .rounded-full { border-radius: 9999px; }
+    .border { border: 1px solid #334155; }
+    .border-b { border-bottom: 1px solid #1e293b; }
+    .border-t { border-top: 1px solid #1e293b; }
+    .border-x { border-left: 1px solid #1e293b; border-right: 1px solid #1e293b; }
+    .border-slate-700, .border-slate-700\/70 { border-color: #334155; }
+    .border-slate-800 { border-color: #1e293b; }
+    .border-amber-700\/40, .border-amber-700\/50, .border-amber-700\/60 { border-color: rgba(180,83,9,.55); }
+    .border-cyan-600 { border-color: #0891b2; }
+    .border-cyan-700\/50, .border-cyan-800 { border-color: #155e75; }
+    .border-rose-800\/40 { border-color: rgba(159,18,57,.45); }
+    .bg-slate-800, .bg-slate-800\/50, .bg-slate-800\/60 { background: #1e293b; }
+    .bg-slate-900, .bg-slate-900\/90 { background: #0f172a; }
+    .bg-slate-950, .bg-slate-950\/80, .bg-slate-950\/95 { background: #020617; }
+    .bg-emerald-500, .bg-emerald-600 { background: #059669; }
+    .bg-cyan-700, .bg-cyan-950, .bg-cyan-950\/60 { background: #155e75; }
+    .bg-rose-500, .bg-rose-600 { background: #e11d48; }
+    .bg-purple-700 { background: #6d28d9; }
+    .bg-amber-500\/10 { background: rgba(245,158,11,.12); }
+    .bg-amber-500\/20 { background: rgba(245,158,11,.2); }
+    .bg-amber-950\/60 { background: rgba(69,26,3,.65); }
+    .bg-amber-500 { background: #f59e0b; }
+    .bg-gradient-to-b { background-image: linear-gradient(to bottom, var(--tw-from, #1e293b), var(--tw-to, #0f172a)); }
+    .bg-gradient-to-r { background-image: linear-gradient(to right, var(--tw-from, #f59e0b), var(--tw-to, #ea580c)); }
+    .from-amber-400 { --tw-from: #fbbf24; }
+    .from-amber-500 { --tw-from: #f59e0b; }
+    .from-amber-950\/60 { --tw-from: rgba(69,26,3,.65); }
+    .from-emerald-500 { --tw-from: #10b981; }
+    .from-rose-600 { --tw-from: #e11d48; }
+    .from-rose-950\/50 { --tw-from: rgba(76,5,25,.55); }
+    .from-slate-800\/80 { --tw-from: rgba(30,41,59,.85); }
+    .to-green-400 { --tw-to: #4ade80; }
+    .to-orange-500 { --tw-to: #f97316; }
+    .to-orange-600 { --tw-to: #ea580c; }
+    .to-red-400 { --tw-to: #f87171; }
+    .to-slate-900 { --tw-to: #0f172a; }
+    .bg-clip-text { -webkit-background-clip: text; background-clip: text; }
+    .text-transparent { color: transparent; }
+    .text-white { color: #fff; }
+    .text-slate-300 { color: #cbd5e1; }
+    .text-slate-400 { color: #94a3b8; }
+    .text-slate-500 { color: #64748b; }
+    .text-slate-700 { color: #334155; }
+    .text-slate-950 { color: #020617; }
+    .text-amber-300 { color: #fcd34d; }
+    .text-amber-400 { color: #fbbf24; }
+    .text-amber-500 { color: #f59e0b; }
+    .text-cyan-300 { color: #67e8f9; }
+    .text-cyan-400 { color: #22d3ee; }
+    .text-emerald-400 { color: #34d399; }
+    .text-rose-400 { color: #fb7185; }
+    .text-rose-500 { color: #f43f5e; }
+    .text-center { text-align: center; }
+    .text-left { text-align: left; }
+    .text-\[10px\] { font-size: 10px; }
+    .text-\[11px\] { font-size: 11px; }
+    .text-xs { font-size: 0.75rem; line-height: 1rem; }
+    .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+    .text-base { font-size: 1rem; }
+    .text-lg { font-size: 1.125rem; }
+    .text-xl { font-size: 1.25rem; }
+    .text-2xl { font-size: 1.5rem; }
+    .text-3xl { font-size: 1.875rem; }
+    .text-4xl { font-size: 2.25rem; }
+    .text-5xl { font-size: 3rem; }
+    .text-7xl { font-size: 4.5rem; }
+    .font-bold { font-weight: 700; }
+    .font-semibold { font-weight: 600; }
+    .font-mono { font-family: ui-monospace, Consolas, monospace; }
+    .uppercase { text-transform: uppercase; }
+    .tracking-wider { letter-spacing: 0.08em; }
+    .blur-xl { filter: blur(24px); }
+    .backdrop-blur { backdrop-filter: blur(8px); }
+    .shadow-2xl { box-shadow: 0 25px 50px rgba(0,0,0,.45); }
+    .shadow-lg { box-shadow: 0 10px 20px rgba(0,0,0,.28); }
+    .shadow-emerald-950\/50 { box-shadow: 0 10px 20px rgba(2,44,34,.5); }
+    .cursor-pointer { cursor: pointer; }
+    .select-none { user-select: none; }
+    .transition, .transition-all { transition: all .15s ease; }
+    .duration-500 { transition-duration: .5s; }
+    .accent-amber-500 { accent-color: #f59e0b; }
+    .accent-cyan-400 { accent-color: #22d3ee; }
+    @media (hover: hover) {
+      .hover\:bg-amber-400:hover { background: #fbbf24; }
+      .hover\:bg-amber-900\/60:hover { background: rgba(120,53,15,.65); }
+      .hover\:bg-cyan-600:hover { background: #0891b2; }
+      .hover\:bg-emerald-500:hover { background: #10b981; }
+      .hover\:bg-purple-600:hover { background: #7c3aed; }
+      .hover\:bg-rose-500:hover { background: #f43f5e; }
+      .hover\:bg-slate-700:hover { background: #334155; }
+      .hover\:bg-slate-800:hover { background: #1e293b; }
+      .hover\:from-amber-400:hover { --tw-from: #fbbf24; }
+      .hover\:to-orange-500:hover { --tw-to: #f97316; }
+    }
+    .active\:scale-95:active { transform: scale(0.95); }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+
+    /* App chrome */
+    .app-shell {
+      width: 100%;
+      max-width: 28rem;
+      background: #0f172a;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-left: 1px solid #1e293b;
+      border-right: 1px solid #1e293b;
+      box-shadow: 0 25px 50px rgba(0,0,0,.45);
+      position: relative;
+      overflow: hidden;
+      padding-top: env(safe-area-inset-top, 0);
+    }
+    nav.bottom-nav {
+      padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+    }
+    .overlay-screen {
+      position: absolute; inset: 0; z-index: 80;
+      background: #020617;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      text-align: center; padding: 1.5rem; overflow-y: auto;
+    }
+    .overlay-screen h1, .overlay-screen h2 {
+      font-family: Georgia, "Times New Roman", serif;
+      color: #fbbf24; margin: 0 0 0.5rem;
+    }
+    .overlay-screen h1 { font-size: 2.1rem; }
+    .overlay-screen p { color: #94a3b8; font-size: 0.95rem; max-width: 22rem; line-height: 1.5; }
+    .btn-main {
+      margin-top: 1.25rem; background: linear-gradient(to right, #f59e0b, #ea580c);
+      color: #020617; font-weight: 800; border: 0; border-radius: 0.75rem;
+      padding: 0.85rem 1.4rem; font-size: 1rem; cursor: pointer; width: min(100%, 18rem);
+    }
+    .btn-ghost {
+      margin-top: 0.6rem; background: #1e293b; color: #e2e8f0; border: 1px solid #334155;
+      border-radius: 0.75rem; padding: 0.7rem 1.2rem; font-weight: 700; cursor: pointer; width: min(100%, 18rem);
+    }
+    .btn-new {
+      font-size: 10px; padding: 0.2rem 0.5rem; border-radius: 999px;
+      background: #1e293b; color: #94a3b8; border: 1px solid #334155; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .06em; cursor: pointer;
+    }
+    input[type="range"] { width: 100%; accent-color: #f59e0b; }
+
+  </style>
+</head>
+<body>
+
+  <!-- Hlavný Mobilný Kontajner -->
+  <div class="app-shell">
+
+    <div id="title-screen" class="overlay-screen">
+      <h1>BEASTFORGED</h1>
+      <p>Staraj sa o svojho strážcu, zapisuj tréningy a bojuj v aréne. Žiadne platby — celá hra je voľne hrateľná.</p>
+      <button type="button" class="btn-main" id="btn-continue" onclick="startFromTitle()">Hrať</button>
+      <button type="button" class="btn-ghost hidden" id="btn-new-from-title" onclick="newGame(true)">Nová hra</button>
+    </div>
+
+    <div id="death-screen" class="overlay-screen hidden">
+      <h2>Strážca padol</h2>
+      <p>Vyčerpanie ho zložilo. Môžeš ho oživiť tréningom, alebo začať odznova s novým strážcom.</p>
+      <button type="button" class="btn-main" onclick="goRevive()">Ísť na tréning</button>
+      <button type="button" class="btn-ghost" onclick="newGame(true)">Nová hra</button>
+    </div>
+
+    <div id="win-screen" class="overlay-screen hidden">
+      <h2>Šampión padol!</h2>
+      <p id="win-desc">Tvoj strážca ovládol arénu. Môžeš bojovať ďalej, cvičiť a zbierať výbavu.</p>
+      <button type="button" class="btn-main" onclick="closeWinScreen()">Pokračovať</button>
+    </div>
+
+    <!-- MODAL: Výber jedného z 5 Zvierat na štarte -->
+    <div id="starter-modal" class="hidden absolute inset-0 bg-slate-950/95 z-50 p-6 flex flex-col justify-center items-center text-center overflow-y-auto">
+      <h1 class="font-fantasy text-3xl text-amber-400 font-bold mb-2">Vyber si svojho VigorKina</h1>
+      <p class="text-slate-400 text-sm mb-6">Tvoj pot a pohyb sa stanú jeho silou v Aréne. Vyber si jedného z 5 strážcov:</p>
+      <div id="starter-list" class="grid grid-cols-1 gap-3 w-full mb-4"></div>
+    </div>
+
+    <!-- HORNÁ LIŠTA: Meny & PRO prepínač -->
+    <header class="p-4 bg-slate-950/80 border-b border-slate-800 flex justify-between items-center sticky top-0 z-30 backdrop-blur">
+      <div>
+        <span class="font-fantasy text-lg font-bold bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">BEASTFORGED</span>
+        <button type="button" class="btn-new ml-2" onclick="newGame()">Nová hra</button>
+      </div>
+      <div class="flex gap-3 text-sm font-semibold">
+        <div class="bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 flex items-center gap-1" title="Rácie jedla z cvičenia">
+          <span>🍖</span> <span id="ui-rations" class="text-emerald-400">0</span>
+        </div>
+        <div class="bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 flex items-center gap-1" title="Zlatky z práce a cvičenia">
+          <span>🪙</span> <span id="ui-gold" class="text-amber-400">0</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- HLAVNÝ OBSAH (Záložky) -->
+    <main class="flex-1 overflow-y-auto p-4 pb-24 space-y-5">
+
+      <!-- TAB 1: DOMOV & ZVIERATKO -->
+      <section id="tab-pet" class="space-y-4">
+        <!-- Stav Zvieratka -->
+        <div class="bg-gradient-to-b from-slate-800/80 to-slate-900 p-5 rounded-2xl border border-slate-700/70 text-center relative overflow-hidden">
+          <div class="flex justify-between items-center text-xs text-slate-400 mb-2">
+            <span id="pet-class" class="px-2 py-0.5 bg-slate-800 rounded border border-slate-700">Ohnivý Strážca</span>
+            <span>Úroveň <strong id="pet-level" class="text-amber-400 text-sm">1</strong> (<span id="pet-xp">0</span>/100 XP)</span>
+          </div>
+
+          <!-- Vizuál Zvieratka -->
+          <div class="my-6 relative flex justify-center items-center h-32">
+            <div id="pet-aura" class="absolute w-28 h-28 rounded-full bg-amber-500/10 blur-xl"></div>
+            <div id="pet-emoji" class="text-7xl animate-float relative z-10 select-none">🦎</div>
+          </div>
+
+          <h2 id="pet-name" class="font-fantasy text-2xl font-bold text-white">Ignis</h2>
+          <p id="pet-status-text" class="text-xs text-emerald-400 mt-1">Plný energie a pripravený na boj!</p>
+
+          <!-- Ukazovatele Sýtosti a Prežitia -->
+          <div class="mt-4 space-y-2 text-left">
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-300">🍗 Sýtosť (Trávenie 48h)</span>
+                <span id="pet-hunger-val" class="font-bold text-emerald-400">100%</span>
+              </div>
+              <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800">
+                <div id="pet-hunger-bar" class="bg-gradient-to-r from-emerald-500 to-green-400 h-full transition-all duration-500" style="width: 100%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-300">❤️ Životnosť (5-dňová rezerva pred smrťou)</span>
+                <span id="pet-hp-val" class="font-bold text-rose-400">100%</span>
+              </div>
+              <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800">
+                <div id="pet-hp-bar" class="bg-gradient-to-r from-rose-600 to-red-400 h-full transition-all duration-500" style="width: 100%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Rýchle nakŕmenie -->
+          <div class="mt-4 flex gap-2">
+            <button onclick="feedPetDirect()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-emerald-950/50">
+              🍖 Nakŕmiť ihneď (50 Rácií)
+            </button>
+            <button type="button" onclick="simulateTimePass(12)" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-2 rounded-xl border border-slate-700 text-slate-300" title="Posuň čas o 12 hodín">
+              😴 Odpočinok +12h
+            </button>
+          </div>
+        </div>
+
+        <!-- Bojové Štatistiky z Cvičenia -->
+        <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-800">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Bojové atribúty (Vycvičené tebou)</h3>
+          <div class="grid grid-cols-2 gap-2.5 text-sm">
+            <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center">
+              <span>⚔️ Sila (STR)</span>
+              <strong id="stat-str" class="text-rose-400">10</strong>
+            </div>
+            <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center">
+              <span>🛡️ Výdrž (STA)</span>
+              <strong id="stat-sta" class="text-emerald-400">10</strong>
+            </div>
+            <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center">
+              <span>⚡ Obratnosť (AGI)</span>
+              <strong id="stat-agi" class="text-amber-400">10</strong>
+            </div>
+            <div class="bg-slate-900 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center">
+              <span>❄️ Odolnosť (RES)</span>
+              <strong id="stat-res" class="text-cyan-400">10</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Automatická Chladnička -->
+        <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-800">
+          <div class="flex justify-between items-center mb-2">
+            <div>
+              <h3 class="text-sm font-bold text-white flex items-center gap-1.5">❄️ Kryo-Chladnička (Auto-Kŕmenie)</h3>
+              <p class="text-[11px] text-slate-400">Keď sýtosť klesne pod 25 %, zvieratko sa naje samo aj keď si offline.</p>
+            </div>
+            <span id="fridge-count" class="text-xs font-bold bg-cyan-950 text-cyan-300 px-2.5 py-1 rounded-lg border border-cyan-800">2 / 4</span>
+          </div>
+          <div id="fridge-slots" class="grid grid-cols-4 gap-2 my-3"></div>
+          <button onclick="stockFridge()" class="w-full bg-cyan-700 hover:bg-cyan-600 active:scale-95 transition py-2 rounded-xl font-semibold text-xs">
+            ➕ Uvariť krabičku do zásoby (60 Rácií)
+          </button>
+        </div>
+      </section>
+
+      <!-- TAB 2: TRÉNING & PRÁCA -->
+      <section id="tab-workout" class="hidden space-y-4">
+        <!-- Denná Špecialita (Bounty) -->
+        <div class="bg-gradient-to-r from-amber-950/60 to-slate-900 p-4 rounded-2xl border border-amber-700/50">
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded">Denný Quest</span>
+              <h3 class="font-bold text-sm text-white mt-1">Železné Jadro: Odcvič aspoň 20 minút (Kliky + Hrazda)</h3>
+              <p class="text-xs text-slate-400 mt-0.5">Bonus: +80 Rácií, +30 Zlatiek a +2 STR</p>
+            </div>
+            <span id="quest-status" class="text-xs font-bold text-amber-400">Aktívne</span>
+          </div>
+        </div>
+
+        <!-- Zadanie Tréningu na Minúty -->
+        <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700 space-y-4">
+          <h3 class="font-fantasy text-lg font-bold text-white">Zapísať tréning</h3>
+          
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span class="text-slate-300">Trvanie tréningu:</span>
+              <strong class="text-amber-400"><span id="workout-mins-label">20</span> minút</strong>
+            </div>
+            <input type="range" id="workout-mins" min="5" max="120" step="5" value="20" oninput="updateWorkoutPreview()" class="w-full accent-amber-500">
+          </div>
+
+          <!-- Základné Cviky (FREE) -->
+          <div>
+            <p class="text-xs font-bold uppercase text-slate-400 mb-2">Základné cviky (Free):</p>
+            <div class="grid grid-cols-2 gap-2" id="free-exercises">
+              <label class="flex items-center gap-2 bg-slate-900 p-2.5 rounded-xl border border-slate-700 cursor-pointer">
+                <input type="checkbox" value="pushups" checked onchange="updateWorkoutPreview()" class="accent-amber-500">
+                <span class="text-xs font-semibold">💪 Kliky (+STR)</span>
+              </label>
+              <label class="flex items-center gap-2 bg-slate-900 p-2.5 rounded-xl border border-slate-700 cursor-pointer">
+                <input type="checkbox" value="core" checked onchange="updateWorkoutPreview()" class="accent-amber-500">
+                <span class="text-xs font-semibold">🔥 Brušáky/Drepy (+STA)</span>
+              </label>
+              <label class="flex items-center gap-2 bg-slate-900 p-2.5 rounded-xl border border-slate-700 cursor-pointer">
+                <input type="checkbox" value="pullups" onchange="updateWorkoutPreview()" class="accent-amber-500">
+                <span class="text-xs font-semibold">🏋️ Hrazda (+STR/RES)</span>
+              </label>
+              <label class="flex items-center gap-2 bg-slate-900 p-2.5 rounded-xl border border-slate-700 cursor-pointer">
+                <input type="checkbox" value="run" onchange="updateWorkoutPreview()" class="accent-amber-500">
+                <span class="text-xs font-semibold">🏃 Beh (+STA/AGI)</span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <p class="text-xs font-bold uppercase text-amber-400">Športy, turistika a otužovanie:</p>
+            </div>
+            <div class="grid grid-cols-2 gap-2" id="pro-exercises">
+              <label class="flex items-center gap-2 bg-slate-900/90 p-2.5 rounded-xl border border-amber-700/40 cursor-pointer">
+                <input type="checkbox" value="football" onchange="updateWorkoutPreview()" class="pro-check accent-amber-500">
+                <span class="text-xs font-semibold">⚽ Futbal / Hokej (+AGI)</span>
+              </label>
+              <label class="flex items-center gap-2 bg-slate-900/90 p-2.5 rounded-xl border border-amber-700/40 cursor-pointer">
+                <input type="checkbox" value="swim_hike" onchange="updateWorkoutPreview()" class="pro-check accent-amber-500">
+                <span class="text-xs font-semibold">⛰️ Turistika / Plávanie (+STA)</span>
+              </label>
+              <label class="flex items-center gap-2 bg-slate-900/90 p-2.5 rounded-xl border border-cyan-700/50 cursor-pointer col-span-2">
+                <input type="checkbox" value="icebath" onchange="updateWorkoutPreview()" class="pro-check accent-cyan-400">
+                <span class="text-xs font-semibold text-cyan-300">🧊 Otužovanie / Ľadová voda (+Veľký bonus RES)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Výpočet Odmeny -->
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+            <span>Odmena za tréning:</span>
+            <span id="workout-reward-preview" class="font-bold text-emerald-400">+120 🍖 | +40 🪙 | +Combo!</span>
+          </div>
+
+          <button onclick="logWorkout()" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-bold py-3 rounded-xl shadow-lg">
+            ✅ Potvrdiť odcvičený tréning
+          </button>
+        </div>
+
+        <!-- Odpracovaný Čas -->
+        <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700 space-y-3">
+          <h3 class="font-fantasy text-base font-bold text-white">⚒️ Odpracovaná Zmena (Práca)</h3>
+          <p class="text-xs text-slate-400">Za odpracované hodiny dostávaš hlavne Zlatky na nákup brnení a vylepšení.</p>
+          <div class="flex gap-2">
+            <button onclick="logWork(4)" class="flex-1 bg-slate-900 hover:bg-slate-700 py-2 rounded-xl border border-slate-700 text-xs font-bold">4 hod (+80 🪙)</button>
+            <button onclick="logWork(8)" class="flex-1 bg-slate-900 hover:bg-slate-700 py-2 rounded-xl border border-slate-700 text-xs font-bold">8 hod (+160 🪙)</button>
+            <button onclick="logWork(12)" class="flex-1 bg-amber-950/60 hover:bg-amber-900/60 py-2 rounded-xl border border-amber-700/60 text-amber-300 text-xs font-bold">12h Zmena (+260 🪙)</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: BATTLEFIELD (ARÉNA) -->
+      <section id="tab-arena" class="hidden space-y-4">
+        <div class="bg-gradient-to-b from-rose-950/50 to-slate-900 p-4 rounded-2xl border border-rose-800/40 text-center">
+          <h2 class="font-fantasy text-xl font-bold text-rose-400">⚔️ Aréna</h2>
+          <p class="text-xs text-slate-400 mt-1">Tvoje štatistiky z tréningu rozhodujú o víťazstve. Vyber súpera:</p>
+
+          <!-- Bojové pole -->
+          <div class="my-5 grid grid-cols-3 items-center bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
+            <!-- Hráč -->
+            <div class="text-center">
+              <div id="arena-player-emoji" class="text-5xl mb-1">🦎</div>
+              <p id="arena-player-name" class="text-xs font-bold text-white">Ignis</p>
+              <div class="w-full bg-slate-800 h-2 rounded-full mt-1 overflow-hidden">
+                <div id="arena-player-hp" class="bg-emerald-500 h-full" style="width: 100%"></div>
+              </div>
+              <span id="arena-player-hp-text" class="text-[10px] text-slate-400">100/100 HP</span>
+            </div>
+
+            <div class="font-fantasy text-xl font-bold text-amber-500">VS</div>
+
+            <!-- Súper -->
+            <div class="text-center">
+              <div id="arena-enemy-emoji" class="text-5xl mb-1">👹</div>
+              <p id="arena-enemy-name" class="text-xs font-bold text-rose-400">Tieňový Golem</p>
+              <div class="w-full bg-slate-800 h-2 rounded-full mt-1 overflow-hidden">
+                <div id="arena-enemy-hp" class="bg-rose-500 h-full" style="width: 100%"></div>
+              </div>
+              <span id="arena-enemy-hp-text" class="text-[10px] text-slate-400">120/120 HP</span>
+            </div>
+          </div>
+
+          <!-- Záznam súboja -->
+          <div id="battle-log" class="bg-slate-950 p-3 rounded-xl border border-slate-800 h-28 overflow-y-auto text-left text-xs space-y-1 font-mono text-slate-300 mb-4">
+            <div>> Aréna je pripravená. Klikni na Štart Súboja!</div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="startBattle(1)" class="bg-rose-600 hover:bg-rose-500 py-2.5 rounded-xl font-bold text-xs shadow-lg">
+              ⚔️ Bojovať: Lesný Troll (Ľahký)
+            </button>
+            <button onclick="startBattle(2)" class="bg-purple-700 hover:bg-purple-600 py-2.5 rounded-xl font-bold text-xs shadow-lg">
+              🔥 Bojovať: Arénový Šampión (Ťažký)
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: KOVÁČ & OBCHOD -->
+      <section id="tab-shop" class="hidden space-y-4">
+        <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700">
+          <h2 class="font-fantasy text-lg font-bold text-amber-400 mb-1">🛡️ Kováčska Vyhňa & Výbava</h2>
+          <p class="text-xs text-slate-400 mb-4">Kupuj výstroj za Zlatky z práce. Každý kus oblečenia trvalo zvyšuje bojové štatistiky v Aréne.</p>
+          <div id="shop-list" class="space-y-2.5"></div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- SPODNÁ NAVIGÁCIA -->
+    <nav class="bottom-nav bg-slate-950 border-t border-slate-800 grid grid-cols-4 p-2 sticky bottom-0 z-30 text-xs">
+      <button onclick="switchTab('pet')" id="nav-pet" class="flex flex-col items-center py-1 text-amber-400 font-bold">
+        <span class="text-lg">🐾</span>
+        <span>Strážca</span>
+      </button>
+      <button onclick="switchTab('workout')" id="nav-workout" class="flex flex-col items-center py-1 text-slate-400">
+        <span class="text-lg">💪</span>
+        <span>Tréning</span>
+      </button>
+      <button onclick="switchTab('arena')" id="nav-arena" class="flex flex-col items-center py-1 text-slate-400">
+        <span class="text-lg">⚔️</span>
+        <span>Aréna</span>
+      </button>
+      <button onclick="switchTab('shop')" id="nav-shop" class="flex flex-col items-center py-1 text-slate-400">
+        <span class="text-lg">🛡️</span>
+        <span>Výbava</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <script>
+    // --- 1. DATABÁZA 5 ŠTARTOVACÍCH ZVIERAT ---
+    const STARTER_PETS = [
+      { id: 'ignis', name: 'Ignis', title: 'Ohnivý Salamander', emoji: '🦎', str: 14, sta: 10, agi: 12, res: 8, desc: 'Vysoký útok (STR), ideálny pre milovníkov klikov a hrazdy.' },
+      { id: 'tide', name: 'Dosi-Tide', title: 'Vodný Axolotl', emoji: '🐉', str: 10, sta: 12, agi: 10, res: 15, desc: 'Vysoká odolnosť a regenerácia (RES), miluje otužovanie a plávanie.' },
+      { id: 'crag', name: 'Crag', title: 'Kamenný Golem', emoji: '🦍', str: 13, sta: 15, agi: 6, res: 12, desc: 'Obrovská výdrž (STA), takmer nezničiteľný tank v Aréne.' },
+      { id: 'volt', name: 'Volt', title: 'Bleskový Rys', emoji: '🐆', str: 11, sta: 9, agi: 16, res: 8, desc: 'Extrémna rýchlosť a kritické útoky (AGI), stvorený pre beh a futbal.' },
+      { id: 'sylvan', name: 'Sylvan', title: 'Lesný Vlk', emoji: '🐺', str: 12, sta: 12, agi: 12, res: 10, desc: 'Dokonale vyvážený bojovník pre všestranných športovcov.' }
+    ];
+
+    const SHOP_ITEMS = [
+      { id: 'belt', name: 'Opasok Titánov', cost: 150, stat: 'str', bonus: 5, icon: '🎗️', desc: '+5 Sila (STR) v Aréne' },
+      { id: 'boots', name: 'Čižmy Vetra', cost: 180, stat: 'agi', bonus: 5, icon: '🥾', desc: '+5 Obratnosť (AGI) na úhyby' },
+      { id: 'cloak', name: 'Plášť Ľadového Medveďa', cost: 220, stat: 'res', bonus: 6, icon: '🧥', desc: '+6 Odolnosť (RES) voči útokom' },
+      { id: 'fridge_upg', name: 'Rozšírenie Kryo-Chladničky', cost: 300, stat: 'fridge', bonus: 2, icon: '❄️', desc: '+2 miesta v chladničke (dlhšie prežitie offline)' }
+    ];
+
+    // --- 2. HERNÝ STAV (LocalStorage) ---
+    const DEFAULT_STATE = {
+      petSelected: false,
+      pet: { name: 'Ignis', title: 'Ohnivý Salamander', emoji: '🦎', level: 1, xp: 0, hunger: 100, hp: 100, str: 12, sta: 10, agi: 10, res: 10 },
+      rations: 100,
+      gold: 100,
+      fridge: 2,
+      fridgeMax: 4,
+      ownedItems: [],
+      questDone: false,
+      championBeaten: false,
+      lastUpdate: Date.now()
+    };
+    function loadState() {
+      try {
+        const raw = localStorage.getItem('beastforged-hra-v1');
+        if (!raw) return { ...DEFAULT_STATE, pet: { ...DEFAULT_STATE.pet } };
+        const s = JSON.parse(raw);
+        return { ...DEFAULT_STATE, ...s, pet: { ...DEFAULT_STATE.pet, ...(s.pet || {}) } };
+      } catch (e) {
+        return { ...DEFAULT_STATE, pet: { ...DEFAULT_STATE.pet } };
+      }
+    }
+    let state = loadState();
+
+    function saveState() {
+      state.lastUpdate = Date.now();
+      localStorage.setItem('beastforged-hra-v1', JSON.stringify(state));
+      renderAll();
+    }
+
+    // --- 3. INICIALIZÁCIA & VÝBER ZVIERATKA ---
+    function fillStarterList() {
+      const list = document.getElementById('starter-list');
+      list.innerHTML = STARTER_PETS.map(p => `
+        <div onclick="selectStarter('${p.id}')" class="bg-slate-900 hover:bg-slate-800 p-3.5 rounded-2xl border border-slate-700 flex items-center gap-4 cursor-pointer text-left transition">
+          <div class="text-4xl">${p.emoji}</div>
+          <div class="flex-1">
+            <div class="font-bold text-amber-400">${p.name} <span class="text-xs text-slate-400">(${p.title})</span></div>
+            <p class="text-[11px] text-slate-300 mt-0.5">${p.desc}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function startFromTitle() {
+      document.getElementById('title-screen').classList.add('hidden');
+      if (!state.petSelected) {
+        fillStarterList();
+        document.getElementById('starter-modal').classList.remove('hidden');
+      }
+    }
+
+    function newGame(fromOverlay) {
+      if (!fromOverlay && !confirm('Naozaj začať odznova? Postup sa stratí.')) return;
+      if (battleInterval) clearInterval(battleInterval);
+      battleInterval = null;
+      localStorage.removeItem('beastforged-hra-v1');
+      state = loadState();
+      document.getElementById('death-screen').classList.add('hidden');
+      document.getElementById('win-screen').classList.add('hidden');
+      document.getElementById('starter-modal').classList.add('hidden');
+      document.getElementById('title-screen').classList.remove('hidden');
+      document.getElementById('btn-continue').textContent = 'Hrať';
+      document.getElementById('btn-new-from-title').classList.add('hidden');
+      switchTab('pet');
+      updateWorkoutPreview();
+      renderAll();
+    }
+
+    function goRevive() {
+      document.getElementById('death-screen').classList.add('hidden');
+      switchTab('workout');
+    }
+
+    function closeWinScreen() {
+      document.getElementById('win-screen').classList.add('hidden');
+    }
+
+    function init() {
+      if (state.petSelected) {
+        const hours = Math.max(0, (Date.now() - (state.lastUpdate || Date.now())) / 3600000);
+        if (hours >= 0.08) simulateTimePass(hours, true);
+        document.getElementById('btn-continue').textContent = 'Pokračovať';
+        document.getElementById('btn-new-from-title').classList.remove('hidden');
+      } else {
+        fillStarterList();
+      }
+      updateWorkoutPreview();
+      renderAll();
+    }
+
+    function selectStarter(id) {
+      const chosen = STARTER_PETS.find(p => p.id === id);
+      state.pet = { name: chosen.name, title: chosen.title, emoji: chosen.emoji, level: 1, xp: 0, hunger: 100, hp: 100, str: chosen.str, sta: chosen.sta, agi: chosen.agi, res: chosen.res };
+      state.petSelected = true;
+      document.getElementById('starter-modal').classList.add('hidden');
+      saveState();
+    }
+
+    // --- 4. MECHANIKA HLADU, CHLADNIČKY A 7-DŇOVÉHO PREŽITIA ---
+    function simulateTimePass(hours, silent) {
+      if (!state.petSelected) return;
+      let hungerDrop = hours * 2;
+      state.pet.hunger -= hungerDrop;
+
+      while (state.pet.hunger <= 25 && state.fridge > 0 && state.pet.hp > 0) {
+        state.fridge--;
+        state.pet.hunger = Math.min(100, state.pet.hunger + 65);
+      }
+
+      if (state.pet.hunger < 0) {
+        const deficitHours = Math.abs(state.pet.hunger) / 2;
+        state.pet.hunger = 0;
+        state.pet.hp = Math.max(0, Math.round(state.pet.hp - (deficitHours * (20 / 24))));
+      } else {
+        state.pet.hunger = Math.max(0, state.pet.hunger);
+      }
+      if (silent) {
+        state.lastUpdate = Date.now();
+        localStorage.setItem('beastforged-hra-v1', JSON.stringify(state));
+      } else {
+        saveState();
+      }
+    }
+
+    function feedPetDirect() {
+      if (state.pet.hp <= 0) return alert('Tvoj strážca padol od vyčerpania! Oživ ho tréningom.');
+      if (state.rations < 50) return alert('Nemáš dosť Rácií! Odcvič si tréning.');
+      if (state.pet.hunger >= 100 && state.pet.hp >= 100) return alert('Strážca je úplne sýty!');
+      state.rations -= 50;
+      state.pet.hunger = Math.min(100, state.pet.hunger + 50);
+      state.pet.hp = Math.min(100, state.pet.hp + 25);
+      addXp(25);
+      saveState();
+    }
+
+    function stockFridge() {
+      if (state.fridge >= state.fridgeMax) return alert('Chladnička je plná!');
+      if (state.rations < 60) return alert('Potrebuješ 60 Rácií na prípravu krabičky.');
+      state.rations -= 60;
+      state.fridge++;
+      saveState();
+    }
+
+    function addXp(amount) {
+      state.pet.xp += amount;
+      while (state.pet.xp >= 100) {
+        state.pet.xp -= 100;
+        state.pet.level++;
+        state.pet.str += 2; state.pet.sta += 2; state.pet.agi += 2; state.pet.res += 2;
+      }
+    }
+
+    // --- 5. TRÉNINGOVÝ KALKULÁTOR ---
+    function updateWorkoutPreview() {
+      const mins = parseInt(document.getElementById('workout-mins').value);
+      document.getElementById('workout-mins-label').innerText = mins;
+
+      const checks = Array.from(document.querySelectorAll('#tab-workout input[type="checkbox"]:checked')).map(c => c.value);
+      if (checks.length === 0) {
+        document.getElementById('workout-reward-preview').innerText = 'Vyber aspoň 1 aktivitu';
+        return;
+      }
+
+      const comboMult = 1 + (checks.length - 1) * 0.15;
+      const rations = Math.round(mins * 6 * comboMult);
+      const gold = Math.round(mins * 2.5 * comboMult);
+      document.getElementById('workout-reward-preview').innerText = `+${rations} 🍖 | +${gold} 🪙 (Combo x${comboMult.toFixed(2)})`;
+    }
+
+    function logWorkout() {
+      const mins = parseInt(document.getElementById('workout-mins').value);
+      const checks = Array.from(document.querySelectorAll('#tab-workout input[type="checkbox"]:checked')).map(c => c.value);
+      if (checks.length === 0) return alert('Zaklikni aspoň jeden cvik!');
+
+      const comboMult = 1 + (checks.length - 1) * 0.15;
+      let rationsGain = Math.round(mins * 6 * comboMult);
+      let goldGain = Math.round(mins * 2.5 * comboMult);
+
+      // Zvýšenie štatistík podľa typu cvičenia
+      const statGain = Math.max(1, Math.floor(mins / 15));
+      if (checks.includes('pushups') || checks.includes('pullups')) state.pet.str += statGain;
+      if (checks.includes('core') || checks.includes('swim_hike')) state.pet.sta += statGain;
+      if (checks.includes('run') || checks.includes('football')) state.pet.agi += statGain;
+      if (checks.includes('pullups') || checks.includes('icebath')) state.pet.res += (checks.includes('icebath') ? statGain * 2 : statGain);
+
+      // Kontrola Denného Questu
+      if (!state.questDone && mins >= 20 && checks.includes('pushups') && checks.includes('pullups')) {
+        state.questDone = true;
+        rationsGain += 80; goldGain += 30; state.pet.str += 2;
+        alert('🎉 Splnil si Dennú Špecialitu! Bonus +80 Rácií, +30 Zlatiek a +2 STR!');
+      }
+
+      // Ak bolo zvieratko mŕtve, tréning ho oživí
+      if (state.pet.hp <= 0) {
+        state.pet.hp = 50; state.pet.hunger = 50;
+      }
+
+      state.rations += rationsGain;
+      state.gold += goldGain;
+      addXp(mins * 2);
+      saveState();
+      switchTab('pet');
+    }
+
+    function logWork(hours) {
+      const goldGain = hours === 12 ? 260 : hours * 20;
+      const rationsGain = hours * 10;
+      state.gold += goldGain;
+      state.rations += rationsGain;
+      saveState();
+      alert(`⚒️ Odpracované ${hours}h! Získavaš +${goldGain} Zlatiek a +${rationsGain} Rácií.`);
+    }
+
+    // --- 6. BATTLEFIELD ARÉNA ---
+    let battleInterval = null;
+    function startBattle(difficulty) {
+      if (battleInterval) return;
+      if (state.pet.hp <= 0) {
+        return alert('Strážca padol. Oživ ho tréningom.');
+      }
+      if (state.pet.hunger < 20 || state.pet.hp < 30) {
+        return alert('Tvoj strážca je príliš hladný alebo vyčerpaný na boj! Najprv ho nakŕm.');
+      }
+      clearInterval(battleInterval);
+
+      const enemy = difficulty === 1
+        ? { name: 'Lesný Troll', emoji: '👹', hp: 120, maxHp: 120, str: 11, agi: 8, rewardGold: 80, rewardXp: 50 }
+        : { name: 'Arénový Šampión', emoji: '🐉', hp: 220, maxHp: 220, str: 18, agi: 14, rewardGold: 200, rewardXp: 120 };
+
+      let playerMaxHp = 80 + state.pet.sta * 5;
+      let playerHp = playerMaxHp;
+
+      document.getElementById('arena-enemy-name').innerText = enemy.name;
+      document.getElementById('arena-enemy-emoji').innerText = enemy.emoji;
+      const log = document.getElementById('battle-log');
+      log.innerHTML = `<div class="text-amber-400">> Súboj začína: ${state.pet.name} VS ${enemy.name}!</div>`;
+
+      battleInterval = setInterval(() => {
+        // Útok hráča
+        let isCrit = Math.random() * 100 < state.pet.agi;
+        let dmg = Math.max(5, Math.round((state.pet.str * 1.8) * (isCrit ? 1.6 : 1)));
+        enemy.hp = Math.max(0, enemy.hp - dmg);
+        log.innerHTML += `<div>⚔️ ${state.pet.name} útočí za <strong>${dmg} DMG</strong> ${isCrit ? '<span class="text-amber-400">(KRITICKÝ!)</span>' : ''}</div>`;
+
+        // Kontrola výhry
+        if (enemy.hp <= 0) {
+          clearInterval(battleInterval);
+          battleInterval = null;
+          state.gold += enemy.rewardGold;
+          addXp(enemy.rewardXp);
+          log.innerHTML += `<div class="text-emerald-400 font-bold">> VÍŤAZSTVO! Získavaš +${enemy.rewardGold} 🪙 a +${enemy.rewardXp} XP!</div>`;
+          log.scrollTop = log.scrollHeight;
+          const firstChamp = difficulty === 2 && !state.championBeaten;
+          if (difficulty === 2) state.championBeaten = true;
+          saveState();
+          if (firstChamp) {
+            document.getElementById('win-desc').textContent = `${state.pet.name} ovládol arénu! Získavaš +${enemy.rewardGold} zlatiek a +${enemy.rewardXp} XP. Môžeš cvičiť a bojovať ďalej.`;
+            document.getElementById('win-screen').classList.remove('hidden');
+          }
+          return;
+        }
+
+        // Útok súpera (znížený o našu Odolnosť RES z otužovania/hrazdy)
+        let dodged = Math.random() * 100 < (state.pet.agi * 0.7);
+        if (dodged) {
+          log.innerHTML += `<div class="text-cyan-400">💨 ${state.pet.name} sa obratne uhol útoku!</div>`;
+        } else {
+          let enemyDmg = Math.max(3, Math.round(enemy.str * 1.5 - state.pet.res * 0.4));
+          playerHp = Math.max(0, playerHp - enemyDmg);
+          log.innerHTML += `<div class="text-rose-400">💥 ${enemy.name} zasahuje za ${enemyDmg} DMG (Kryté cez RES)</div>`;
+        }
+
+        // Aktualizácia HP barov
+        document.getElementById('arena-player-hp').style.width = `${(playerHp / playerMaxHp) * 100}%`;
+        document.getElementById('arena-player-hp-text').innerText = `${playerHp}/${playerMaxHp} HP`;
+        document.getElementById('arena-enemy-hp').style.width = `${(enemy.hp / enemy.maxHp) * 100}%`;
+        document.getElementById('arena-enemy-hp-text').innerText = `${enemy.hp}/${enemy.maxHp} HP`;
+        log.scrollTop = log.scrollHeight;
+
+        if (playerHp <= 0) {
+          clearInterval(battleInterval);
+          battleInterval = null;
+          log.innerHTML += `<div class="text-rose-500 font-bold">> Prehra v aréne! Potrebuješ viac potrénovať!</div>`;
+        }
+      }, 900);
+    }
+
+    // --- 7. OBCHOD & VÝBAVA ---
+    function buyItem(id) {
+      const item = SHOP_ITEMS.find(i => i.id === id);
+      if (state.ownedItems.includes(id)) return;
+      if (state.gold < item.cost) return alert('Nemáš dosť Zlatiek!');
+
+      state.gold -= item.cost;
+      state.ownedItems.push(id);
+      if (item.stat === 'fridge') state.fridgeMax += item.bonus;
+      else state.pet[item.stat] += item.bonus;
+      saveState();
+    }
+
+    // --- 8. VYKRESLENIE UI ---
+    function switchTab(tab) {
+      ['pet', 'workout', 'arena', 'shop'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
+        const nav = document.getElementById(`nav-${t}`);
+        nav.className = t === tab ? 'flex flex-col items-center py-1 text-amber-400 font-bold' : 'flex flex-col items-center py-1 text-slate-400';
+      });
+    }
+
+    function renderAll() {
+      const dead = state.petSelected && state.pet.hp <= 0;
+      const deathEl = document.getElementById('death-screen');
+      const titleHidden = document.getElementById('title-screen').classList.contains('hidden');
+      const starterHidden = document.getElementById('starter-modal').classList.contains('hidden');
+      if (deathEl) {
+        if (dead && titleHidden && starterHidden) deathEl.classList.remove('hidden');
+        else if (!dead) deathEl.classList.add('hidden');
+      }
+      document.getElementById('ui-rations').innerText = state.rations;
+      document.getElementById('ui-gold').innerText = state.gold;
+
+            // Pet UI
+      document.getElementById('pet-name').innerText = state.pet.name;
+      document.getElementById('pet-class').innerText = state.pet.title;
+      document.getElementById('pet-emoji').innerText = state.pet.hp <= 0 ? '💀' : state.pet.emoji;
+      document.getElementById('pet-level').innerText = state.pet.level;
+      document.getElementById('pet-xp').innerText = state.pet.xp;
+
+      document.getElementById('pet-hunger-val').innerText = `${Math.round(state.pet.hunger)}%`;
+      document.getElementById('pet-hunger-bar').style.width = `${state.pet.hunger}%`;
+      document.getElementById('pet-hp-val').innerText = `${Math.round(state.pet.hp)}%`;
+      document.getElementById('pet-hp-bar').style.width = `${state.pet.hp}%`;
+
+      const statusText = document.getElementById('pet-status-text');
+      if (state.pet.hp <= 0) { statusText.innerText = 'Strážca padol od hladu! Zapíš tréning na oživenie.'; statusText.className = 'text-xs text-rose-500 mt-1 font-bold'; }
+      else if (state.pet.hunger === 0) { statusText.innerText = '⚠️ Kritické hladovanie! Stráca 20% života denne!'; statusText.className = 'text-xs text-rose-400 mt-1 font-bold'; }
+      else if (state.pet.hunger < 40) { statusText.innerText = 'Začína byť hladný. Doplň chladničku alebo ho nakŕm.'; statusText.className = 'text-xs text-amber-400 mt-1'; }
+      else { statusText.innerText = 'Plný energie a pripravený na boj v Aréne!'; statusText.className = 'text-xs text-emerald-400 mt-1'; }
+
+      // Stats
+      document.getElementById('stat-str').innerText = state.pet.str;
+      document.getElementById('stat-sta').innerText = state.pet.sta;
+      document.getElementById('stat-agi').innerText = state.pet.agi;
+      document.getElementById('stat-res').innerText = state.pet.res;
+
+      // Fridge
+      document.getElementById('fridge-count').innerText = `${state.fridge} / ${state.fridgeMax}`;
+      let slotsHtml = '';
+      for (let i = 0; i < state.fridgeMax; i++) {
+        slotsHtml += `<div class="h-10 rounded-xl border ${i < state.fridge ? 'bg-cyan-950/60 border-cyan-600 text-lg' : 'bg-slate-900 border-slate-800 text-slate-700 text-xs'} flex items-center justify-center">
+          ${i < state.fridge ? '🍱' : 'Prázdne'}
+        </div>`;
+      }
+      document.getElementById('fridge-slots').innerHTML = slotsHtml;
+
+      // Arena Player Preview
+      document.getElementById('arena-player-emoji').innerText = state.pet.emoji;
+      document.getElementById('arena-player-name').innerText = `${state.pet.name} (Lvl ${state.pet.level})`;
+
+      // Quest
+      document.getElementById('quest-status').innerText = state.questDone ? '✅ Splnené' : 'Aktívne';
+
+      // Shop
+      document.getElementById('shop-list').innerHTML = SHOP_ITEMS.map(item => {
+        const owned = state.ownedItems.includes(item.id);
+        return `
+          <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
+            <div>
+              <div class="font-bold text-sm text-white">${item.name}</div>
+              <div class="text-xs text-slate-400">${item.desc}</div>
+            </div>
+            <button onclick="buyItem('${item.id}')" ${owned ? 'disabled' : ''} class="px-3 py-1.5 rounded-lg font-bold text-xs ${owned ? 'bg-slate-800 text-slate-500' : 'bg-amber-500 hover:bg-amber-400 text-slate-950'}">
+              ${owned ? 'Vlastníš' : `${item.cost} 🪙`}
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.__BEAST = {
+      startFromTitle, selectStarter, newGame, simulateTimePass, logWorkout, logWork,
+      startBattle, feedPetDirect, switchTab, closeWinScreen, goRevive,
+      getState(){ return JSON.parse(JSON.stringify(state)); },
+      setState(p){ Object.assign(state, p); if(p.pet) state.pet={...state.pet,...p.pet}; renderAll(); }
+    };
+    init();
+  </script>
+</body>
+</html>

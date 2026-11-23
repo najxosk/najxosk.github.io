@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#7ec8c5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Slabiková hra</title>
+  <style>
+    :root {
+      --bg1: #8edcd8;
+      --bg2: #f8c6d6;
+      --card: #fffdf9;
+      --text: #2b3338;
+      --muted: #5b6770;
+      --purple: #5b4fd1;
+      --purple-soft: #efeefc;
+      --green: #0f9f7a;
+      --green-shadow: #0b7d5f;
+      --pink: #e25678;
+      --slot: #f3f1ea;
+      --btn: #fff7e8;
+      --btn-shadow: #e2c48a;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      min-height: 100%;
+      min-height: 100dvh;
+    }
+
+    body {
+      font-family: system-ui, "Segoe UI", "Nunito", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
+      color: var(--text);
+      background: linear-gradient(160deg, var(--bg1) 0%, var(--bg2) 100%);
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      padding: max(10px, var(--safe-top)) 12px max(12px, var(--safe-bottom));
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 440px;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      min-height: min(100dvh - 24px, 860px);
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 28px;
+      box-shadow: 0 16px 36px rgba(40, 30, 50, 0.14);
+      padding: 18px 18px 16px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .badge, .icon-btn {
+      background: #f1eee6;
+      border: 0;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--muted);
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      padding: 0;
+      font-size: 18px;
+      display: grid;
+      place-items: center;
+    }
+
+    .icon-btn:active { transform: scale(0.96); }
+
+    .stars {
+      font-size: 16px;
+      font-weight: 800;
+      color: #c47b00;
+      letter-spacing: 0.5px;
+    }
+
+    .emoji-display {
+      font-size: clamp(64px, 18vw, 92px);
+      line-height: 1;
+      text-align: center;
+      margin: 6px 0 8px;
+      min-height: 1.1em;
+    }
+
+    .emoji-display.bounce { animation: bounce 0.55s ease; }
+
+    @keyframes bounce {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.12); }
+    }
+
+    .hint {
+      text-align: center;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .slots {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      min-height: 64px;
+      margin-bottom: 18px;
+    }
+
+    .slot {
+      min-width: 76px;
+      min-height: 60px;
+      padding: 0 10px;
+      border: 3px dashed #c9c3b6;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(22px, 6vw, 28px);
+      font-weight: 800;
+      color: var(--purple);
+      background: var(--slot);
+    }
+
+    .slot.filled {
+      border-style: solid;
+      border-color: var(--purple);
+      background: var(--purple-soft);
+      animation: pop 0.18s ease;
+    }
+
+    @keyframes pop {
+      from { transform: scale(0.86); }
+      to { transform: scale(1); }
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      width: 100%;
+    }
+
+    .syllable-btn {
+      background: var(--btn);
+      border: 0;
+      border-radius: 18px;
+      min-height: 58px;
+      padding: 12px 8px;
+      font-size: clamp(22px, 6vw, 28px);
+      font-weight: 800;
+      color: var(--text);
+      box-shadow: 0 5px 0 var(--btn-shadow);
+    }
+
+    .syllable-btn:active:not(:disabled) {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 var(--btn-shadow);
+    }
+
+    .syllable-btn.used,
+    .syllable-btn:disabled.used {
+      opacity: 0.35;
+      box-shadow: none;
+      transform: translateY(4px);
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: center;
+      margin-top: auto;
+      padding-top: 14px;
+    }
+
+    .ghost-btn {
+      background: #f1eee6;
+      border: 0;
+      border-radius: 16px;
+      padding: 12px 18px;
+      min-height: 48px;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .ghost-btn:disabled { opacity: 0.4; }
+
+    .shake { animation: shake 0.4s ease-in-out; }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-7px); }
+      40%, 80% { transform: translateX(7px); }
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      background: var(--card);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 28px 22px;
+      z-index: 5;
+    }
+
+    .screen.hidden, .hidden { display: none !important; }
+
+    .screen h1 {
+      font-size: clamp(28px, 8vw, 36px);
+      color: var(--pink);
+      margin: 8px 0 10px;
+      line-height: 1.15;
+    }
+
+    .screen p {
+      font-size: 18px;
+      line-height: 1.45;
+      color: var(--muted);
+      max-width: 22em;
+    }
+
+    .play-btn {
+      margin-top: 22px;
+      background: var(--green);
+      color: #fff;
+      border: 0;
+      border-radius: 20px;
+      padding: 14px 28px;
+      min-height: 54px;
+      min-width: 200px;
+      font-size: 20px;
+      font-weight: 800;
+      box-shadow: 0 5px 0 var(--green-shadow);
+    }
+
+    .play-btn:active {
+      transform: translateY(4px);
+      box-shadow: none;
+    }
+
+    .play-btn.secondary {
+      margin-top: 10px;
+      background: var(--purple);
+      box-shadow: 0 5px 0 #4338a8;
+    }
+
+    .big-emoji { font-size: 64px; line-height: 1; }
+
+    @media (max-height: 640px) {
+      .emoji-display { font-size: 58px; margin: 0 0 4px; }
+      .hint { margin-bottom: 6px; font-size: 16px; }
+      .slots { margin-bottom: 10px; min-height: 52px; }
+      .slot { min-height: 52px; min-width: 68px; }
+      .syllable-btn { min-height: 50px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="card" id="gameCard">
+      <div class="top-bar">
+        <span class="badge" id="levelBadge">Úroveň 1 z 20</span>
+        <span class="stars" id="starCounter">⭐ 0</span>
+        <button class="icon-btn" id="soundBtn" type="button" aria-label="Zvuk zapnutý">🔊</button>
+      </div>
+
+      <div class="emoji-display" id="itemEmoji" aria-hidden="true">🐱</div>
+      <p class="hint" id="hintLabel">Poskladaj slovo zo slabík.</p>
+      <div class="slots" id="slots"></div>
+      <div class="options" id="options"></div>
+      <div class="toolbar">
+        <button class="ghost-btn" id="undoBtn" type="button" disabled>Späť</button>
+      </div>
+
+      <div class="screen" id="startScreen">
+        <div class="big-emoji">📚</div>
+        <h1>Slabiková hra</h1>
+        <p>Poskladaj slovo zo slabík. Klikni na ne v správnom poradí.</p>
+        <button class="play-btn" id="startBtn" type="button">Hrať</button>
+        <button class="play-btn secondary hidden" id="continueBtn" type="button">Pokračovať</button>
+      </div>
+
+      <div class="screen hidden" id="victoryScreen">
+        <div class="big-emoji">🏆</div>
+        <h1>Výborne!</h1>
+        <p id="victoryText">Poskladal si všetkých 20 slov.</p>
+        <button class="play-btn" id="restartBtn" type="button">Hrať znova</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const LEVELS = [
+      { word: "mačka", emoji: "🐱", syllables: ["ma", "čka"], decoys: ["pe", "so"] },
+      { word: "psíček", emoji: "🐶", syllables: ["psí", "ček"], decoys: ["le", "vik"] },
+      { word: "sova", emoji: "🦉", syllables: ["so", "va"], decoys: ["li", "ška"] },
+      { word: "ryba", emoji: "🐟", syllables: ["ry", "ba"], decoys: ["ža", "by"] },
+      { word: "domček", emoji: "🏠", syllables: ["dom", "ček"], decoys: ["le", "sík"] },
+      { word: "kvietok", emoji: "🌸", syllables: ["kvie", "tok"], decoys: ["trá", "va"] },
+      { word: "žabka", emoji: "🐸", syllables: ["žab", "ka"], decoys: ["my", "ška"] },
+      { word: "stromy", emoji: "🌳", syllables: ["stro", "my"], decoys: ["ko", "ny"] },
+      { word: "slnko", emoji: "☀️", syllables: ["sln", "ko"], decoys: ["obl", "ak"] },
+      { word: "jablko", emoji: "🍎", syllables: ["jab", "lko"], decoys: ["hru", "ška"] },
+      { word: "autíčko", emoji: "🚗", syllables: ["au", "tíč", "ko"], decoys: ["vlá", "čik", "mot"] },
+      { word: "jahoda", emoji: "🍓", syllables: ["ja", "ho", "da"], decoys: ["ma", "li", "lin"] },
+      { word: "káčer", emoji: "🦆", syllables: ["ká", "čer"], decoys: ["ku", "ra"] },
+      { word: "medveď", emoji: "🐻", syllables: ["med", "veď"], decoys: ["vlk", "líš"] },
+      { word: "balón", emoji: "🎈", syllables: ["ba", "lón"], decoys: ["ši", "ška"] },
+      { word: "mrkvička", emoji: "🥕", syllables: ["mrk", "vič", "ka"], decoys: ["ze", "le", "na"] },
+      { word: "motýľ", emoji: "🦋", syllables: ["mo", "týľ"], decoys: ["vče", "la"] },
+      { word: "banán", emoji: "🍌", syllables: ["ba", "nán"], decoys: ["ci", "trón"] },
+      { word: "hríbik", emoji: "🍄", syllables: ["hrí", "bik"], decoys: ["lú", "čka"] },
+      { word: "koruna", emoji: "👑", syllables: ["ko", "ru", "na"], decoys: ["prs", "teň", "šek"] }
+    ];
+
+    const SAVE_KEY = "slabikova-hra-v1";
+
+    const els = {
+      card: document.getElementById("gameCard"),
+      levelBadge: document.getElementById("levelBadge"),
+      starCounter: document.getElementById("starCounter"),
+      soundBtn: document.getElementById("soundBtn"),
+      emoji: document.getElementById("itemEmoji"),
+      hint: document.getElementById("hintLabel"),
+      slots: document.getElementById("slots"),
+      options: document.getElementById("options"),
+      undoBtn: document.getElementById("undoBtn"),
+      startScreen: document.getElementById("startScreen"),
+      victoryScreen: document.getElementById("victoryScreen"),
+      victoryText: document.getElementById("victoryText"),
+      startBtn: document.getElementById("startBtn"),
+      continueBtn: document.getElementById("continueBtn"),
+      restartBtn: document.getElementById("restartBtn")
+    };
+
+    let currentLevel = 0;
+    let stars = 0;
+    let picked = [];
+    let locked = false;
+    let soundOn = true;
+    let audioCtx = null;
+
+    function shuffle(list) {
+      const arr = list.slice();
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tmp;
+      }
+      return arr;
+    }
+
+    function loadSave() {
+      try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        if (typeof data.level !== "number" || typeof data.stars !== "number") return null;
+        if (data.level < 0 || data.level >= LEVELS.length) return null;
+        if (data.soundOn === false) soundOn = false;
+        return data;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function writeSave() {
+      try {
+        localStorage.setItem(SAVE_KEY, JSON.stringify({
+          level: currentLevel,
+          stars: stars,
+          soundOn: soundOn
+        }));
+      } catch (e) {}
+    }
+
+    function clearSave() {
+      try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+    }
+
+    function updateSoundBtn() {
+      els.soundBtn.textContent = soundOn ? "🔊" : "🔇";
+      els.soundBtn.setAttribute("aria-label", soundOn ? "Zvuk zapnutý" : "Zvuk vypnutý");
+    }
+
+    function initAudio() {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!audioCtx) audioCtx = new AC();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+    }
+
+    function playTone(freq, type, duration) {
+      if (!soundOn) return;
+      try {
+        initAudio();
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function playSound(name) {
+      if (name === "click") playTone(400, "sine", 0.1);
+      else if (name === "correct") {
+        playTone(523.25, "triangle", 0.15);
+        setTimeout(() => playTone(659.25, "triangle", 0.3), 120);
+      } else if (name === "wrong") {
+        playTone(180, "sawtooth", 0.25);
+      } else if (name === "win") {
+        [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+          setTimeout(() => playTone(f, "triangle", 0.35), i * 140);
+        });
+      }
+    }
+
+    function speakWord(text) {
+      if (!soundOn || !("speechSynthesis" in window)) return;
+      try {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = "sk-SK";
+        utter.rate = 0.85;
+        window.speechSynthesis.speak(utter);
+      } catch (e) {}
+    }
+
+    function setStars() {
+      els.starCounter.textContent = "⭐ " + stars;
+    }
+
+    function updateUndo() {
+      els.undoBtn.disabled = locked || picked.length === 0;
+    }
+
+    function loadLevel() {
+      const data = LEVELS[currentLevel];
+      picked = [];
+      locked = false;
+      els.levelBadge.textContent = "Úroveň " + (currentLevel + 1) + " z " + LEVELS.length;
+      setStars();
+      els.emoji.textContent = data.emoji;
+      els.emoji.classList.remove("bounce");
+      els.hint.textContent = "Poskladaj slovo zo slabík.";
+
+      els.slots.innerHTML = "";
+      data.syllables.forEach(() => {
+        const slot = document.createElement("div");
+        slot.className = "slot";
+        els.slots.appendChild(slot);
+      });
+
+      const choices = shuffle(data.syllables.concat(data.decoys));
+      els.options.innerHTML = "";
+      choices.forEach((text) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "syllable-btn";
+        btn.textContent = text;
+        btn.addEventListener("click", () => handleChoice(text, btn));
+        els.options.appendChild(btn);
+      });
+      updateUndo();
+      writeSave();
+    }
+
+    function handleChoice(syllable, btn) {
+      if (locked || btn.classList.contains("used")) return;
+      initAudio();
+      const data = LEVELS[currentLevel];
+      const next = data.syllables[picked.length];
+
+      if (syllable === next) {
+        playSound("click");
+        picked.push({ text: syllable, btn: btn });
+        btn.classList.add("used");
+        btn.disabled = true;
+        const slots = els.slots.querySelectorAll(".slot");
+        const slot = slots[picked.length - 1];
+        slot.textContent = syllable;
+        slot.classList.add("filled");
+        updateUndo();
+        if (picked.length === data.syllables.length) {
+          handleSuccess();
+        }
+      } else {
+        playSound("wrong");
+        locked = true;
+        els.card.classList.add("shake");
+        setTimeout(() => els.card.classList.remove("shake"), 400);
+        setTimeout(() => {
+          resetAttempt();
+          locked = false;
+          updateUndo();
+        }, 320);
+        updateUndo();
+      }
+    }
+
+    function resetAttempt() {
+      picked = [];
+      els.slots.querySelectorAll(".slot").forEach((slot) => {
+        slot.textContent = "";
+        slot.classList.remove("filled");
+      });
+      els.options.querySelectorAll(".syllable-btn").forEach((btn) => {
+        btn.classList.remove("used");
+        btn.disabled = false;
+      });
+    }
+
+    function undoLast() {
+      if (locked || picked.length === 0) return;
+      const last = picked.pop();
+      last.btn.classList.remove("used");
+      last.btn.disabled = false;
+      const slots = els.slots.querySelectorAll(".slot");
+      const slot = slots[picked.length];
+      slot.textContent = "";
+      slot.classList.remove("filled");
+      updateUndo();
+    }
+
+    function handleSuccess() {
+      locked = true;
+      updateUndo();
+      playSound("correct");
+      stars += 1;
+      setStars();
+      els.emoji.classList.add("bounce");
+      speakWord(LEVELS[currentLevel].word);
+      setTimeout(() => {
+        els.emoji.classList.remove("bounce");
+        currentLevel += 1;
+        if (currentLevel < LEVELS.length) {
+          loadLevel();
+        } else {
+          showVictory();
+        }
+      }, 1300);
+    }
+
+    function showVictory() {
+      playSound("win");
+      clearSave();
+      els.victoryText.textContent = "Všetkých " + LEVELS.length + " slov je poskladaných. Hviezdičky: " + stars + ".";
+      els.victoryScreen.classList.remove("hidden");
+    }
+
+    function startFrom(level, savedStars) {
+      currentLevel = level;
+      stars = savedStars;
+      els.startScreen.classList.add("hidden");
+      els.victoryScreen.classList.add("hidden");
+      loadLevel();
+    }
+
+    function boot() {
+      updateSoundBtn();
+      const save = loadSave();
+      updateSoundBtn();
+      if (save && save.level > 0) {
+        els.continueBtn.classList.remove("hidden");
+        els.continueBtn.addEventListener("click", () => {
+          initAudio();
+          startFrom(save.level, save.stars);
+        });
+      }
+    }
+
+    els.startBtn.addEventListener("click", () => {
+      initAudio();
+      startFrom(0, 0);
+    });
+    els.restartBtn.addEventListener("click", () => {
+      initAudio();
+      startFrom(0, 0);
+    });
+    els.undoBtn.addEventListener("click", undoLast);
+    els.soundBtn.addEventListener("click", () => {
+      soundOn = !soundOn;
+      if (soundOn) initAudio();
+      else if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      updateSoundBtn();
+      writeSave();
+    });
+
+    boot();
+  </script>
+</body>
+</html>
