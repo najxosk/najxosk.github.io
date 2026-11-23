@@ -210,6 +210,18 @@ body.mob #sealBadge{left:auto;right:42%;top:21%;width:50px;height:50px}
 .ordtop{display:flex;gap:10px;align-items:center}.ordtop canvas.opor{width:72px;height:90px;flex:none;border-radius:50%/46%;border:3px solid #a87a2c;box-shadow:0 4px 10px rgba(0,0,0,.6);background:#2a1808}
 .ordinfo{display:flex;align-items:center;justify-content:space-around;gap:6px;margin:6px 0 2px;text-align:center}.ordinfo>div{flex:1}.ordinfo small{display:block;font-size:11px;color:#6a3a14;font-variant:small-caps}.ordinfo .oi-big{font-size:22px} .ordwep{display:block;width:100%;height:56px;margin-top:4px}
 .langrow{display:flex;gap:10px;justify-content:center;margin:8px 0} .langrow .btn{width:auto;min-width:96px;margin:0}
+
+/* === PC layout fix (23.11.): HUD scales with the forge, nothing overlaps === */
+body:not(.mob) #fhead{right:auto;transform:scale(var(--uiz,1));transform-origin:0 0}
+body:not(.mob) #mechInd{left:var(--mechX,32%);transform:translateX(-50%) scale(var(--uiz,1));transform-origin:50% 100%}
+body:not(.mob) #tut{transform:translateX(-50%) scale(var(--uiz,1));transform-origin:50% 0;top:calc(var(--uiz,1) * 74px)}
+body:not(.mob) .overlay>*{width:min(100%,560px);align-self:center;zoom:var(--uiz,1)}
+body:not(.mob) #menu>div{min-height:0}
+body:not(.mob) #logoCv{width:auto!important;height:min(160px,20vh);margin:4px auto!important}
+body:not(.mob) .screen:not(#forge){overflow-y:auto}
+@media (min-width:601px) and (max-height:820px){ body:not(.mob) h1{font-size:52px} body:not(.mob) #menu .btn{min-height:46px;margin:6px 0} }
+body:not(.mob) #orders.on{display:block;overflow-y:auto;touch-action:pan-y} body:not(.mob) #orders>*{margin-left:auto;margin-right:auto} body:not(.mob) #orders #ordList{overflow:visible;flex:none} body:not(.mob) #bRefresh{display:block;margin:8px auto}
+@media (min-height:1300px) and (min-width:2200px){ .screen:not(#forge){zoom:1.7} }
 </style>
 </head>
 <body tabindex="-1">
@@ -1514,6 +1526,7 @@ function resize() {
   SC = Math.min(RW / VW, RH / VH); OX = (RW - VW * SC) / 2; OY = (RH - VH * SC) / 2;
   if (MOB) { BSC = Math.min(RH / 720 * 0.9, RW / 520); } else BSC = Math.min(RW / 1280, RH / 720);
   BOX = (RW - 1280 * BSC) / 2; BOY = (RH - 720 * BSC) / 2;
+  if (!MOB) { const z = Math.max(1, Math.min(2.2, BSC)); document.body.style.setProperty("--uiz", z.toFixed(3)); document.body.style.setProperty("--mechX", Math.round(OX + 490 * SC) + "px"); }
   if (typeof updMobTexts === "function") updMobTexts();
   cv.width = RW * DPR; cv.height = RH * DPR; if (typeof fcv !== "undefined") { fcv.width = RW * DPR; fcv.height = RH * DPR; }
   const e = $("embers"); e.width = RW; e.height = RH;
@@ -2043,7 +2056,7 @@ function draw() {
   if (!MOB) {
     drawBellows(x, 270, VH - 72, 0.6, F.belSq, -0.12);
     x.fillStyle = pumping ? "#ffb060" : "rgba(255,200,150,.6)"; x.font = "bold 20px Georgia"; x.textAlign = "center";
-    x.fillText(TR("hint_pc"), 900, VH - 20);
+    x.fillText(TR("hint_pc"), 820, VH - 20);
   }
   if (g.vert) { x.save(); x.translate(g.cx, g.cy); x.rotate(Math.PI / 2); }
   // čepeľ
@@ -2088,9 +2101,9 @@ function draw() {
     const cz = t.r * 1.6 * (1 - perfC());
     x.strokeStyle = "rgba(255,220,90,.9)"; x.lineWidth = 2; x.setLineDash([4, 4]); x.beginPath(); x.arc(t.x, t.y, cz, 0, Math.PI * 2); x.stroke(); x.setLineDash([]);
     // živé svetlá
-    if (!F.judge) drawLights(x, g.vert ? VW / 2 + 40 : MOB ? Math.max(205, Math.min(VW - 205, t.x)) : t.x, g.vert ? 262 : t.y - t.r * CONFIG.hammer.ringStart - 34, band(F.temp) === "gold",
+    if (!F.judge) drawLights(x, g.vert ? VW / 2 + 40 : MOB ? Math.max(205, Math.min(VW - 205, t.x)) : 1070, g.vert ? 262 : MOB ? t.y - t.r * CONFIG.hammer.ringStart - 34 : 34, band(F.temp) === "gold",
       Math.hypot(mouseW[0] - t.x, mouseW[1] - t.y) <= cz ? true : (mouseW[0] < -900 ? null : false), green, 1);
-    if (t.life < t.delay) { x.fillStyle = "#ffe0a0"; x.font = "bold 20px Georgia"; x.fillText("PRIPRAV SA…", t.x, Math.max(270, t.y - t.r * 2.8)); }
+    if (t.life < t.delay) { x.fillStyle = "#ffe0a0"; x.font = "bold 20px Georgia"; x.fillText(TR("ready"), t.x, Math.max(270, t.y - t.r * 2.8)); }
   }
   // kladivo animácia
   if (F.hammerAnim > 0) {
@@ -2098,7 +2111,7 @@ function draw() {
     x.fillStyle = "#5a3a1a"; x.fillRect(-4, -10, 8, 90); x.fillStyle = "#666"; x.fillRect(-26, -26, 52, 26); x.restore();
   }
   if (F.judge && !F.gem) { const j = F.judge, on = Math.floor(j.life * 8) % 2 === 0 || j.life < 1.0;
-    drawLights(x, g.vert ? VW / 2 + 40 : Math.max(MOB ? 205 : 170, Math.min(VW - (MOB ? 205 : 170), j.x)), g.vert ? 262 : j.y - CONFIG.hammer.targetR * CONFIG.hammer.ringStart - 34, j.t, j.c, j.g, on ? 1 : 0.35, true); }
+    drawLights(x, g.vert ? VW / 2 + 40 : MOB ? Math.max(205, Math.min(VW - 205, j.x)) : 1070, g.vert ? 262 : MOB ? j.y - CONFIG.hammer.targetR * CONFIG.hammer.ringStart - 34 : 34, j.t, j.c, j.g, on ? 1 : 0.35, true); }
   // rázová vlna + para
   F.waves.forEach(w => { x.strokeStyle = w.gold ? `rgba(255,220,100,${w.life * 2})` : `rgba(255,255,255,${w.life * 1.4})`; x.lineWidth = 4 * w.life * 2 + 1; x.beginPath(); x.arc(w.x, w.y, w.r, 0, 7); x.stroke(); });
   F.steam.forEach(p => { x.fillStyle = `rgba(220,225,235,${p.life * 0.045})`; x.beginPath(); x.arc(p.x, p.y, p.r, 0, 7); x.fill(); });
