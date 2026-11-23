@@ -292,19 +292,81 @@
       .slot { min-height: 52px; min-width: 68px; }
       .syllable-btn { min-height: 50px; }
     }
+  
+    .options.cols-3 { grid-template-columns: repeat(3, 1fr); }
+    .options.cols-4 { grid-template-columns: repeat(4, 1fr); }
+    .options.cols-4 .syllable-btn { min-height: 50px; font-size: clamp(18px, 4.6vw, 24px); padding: 8px 4px; }
+
+    .timer-wrap {
+      height: 8px;
+      background: #efeae0;
+      border-radius: 99px;
+      overflow: hidden;
+      margin: 0 0 10px;
+      display: none;
+    }
+    .timer-wrap.on { display: block; }
+    .timer-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #0f9f7a, #e2c15a 70%, #e25678);
+      transform-origin: left center;
+    }
+    .timer-wrap.warn .timer-fill { background: #e25678; }
+
+    .level-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      width: 100%;
+      max-height: min(52vh, 420px);
+      overflow-y: auto;
+      margin: 14px 0 8px;
+      padding: 2px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .lvl-btn {
+      min-height: 48px;
+      border: 0;
+      border-radius: 14px;
+      background: #efeae0;
+      color: #2b3338;
+      font-weight: 800;
+      font-size: 15px;
+    }
+    .lvl-btn.done { background: #d7f3ea; color: #0b7d5f; }
+    .lvl-btn.lock { opacity: 0.38; cursor: not-allowed; }
+    .lvl-btn.current { background: #5b4fd1; color: #fff; }
+
+    #levelsScreen { justify-content: flex-start; padding-top: 22px; }
+    #levelsScreen h1 { margin-bottom: 4px; }
+
+    .top-bar .icon-btn.wide {
+      width: auto;
+      padding: 0 12px;
+      font-size: 15px;
+    }
+
+    @media (max-height: 640px) {
+      .level-grid { max-height: 42vh; gap: 6px; }
+      .lvl-btn { min-height: 42px; }
+    }
+
   </style>
 </head>
 <body>
   <div class="shell">
     <div class="card" id="gameCard">
       <div class="top-bar">
-        <span class="badge" id="levelBadge">Úroveň 1 z 20</span>
+        <span class="badge" id="levelBadge">Úroveň 1 z 100</span>
         <span class="stars" id="starCounter">⭐ 0</span>
+        <button class="icon-btn wide" id="levelsOpenBtn" type="button" aria-label="Výber úrovní">☰</button>
         <button class="icon-btn" id="soundBtn" type="button" aria-label="Zvuk zapnutý">🔊</button>
       </div>
 
       <div class="emoji-display" id="itemEmoji" aria-hidden="true">🐱</div>
       <p class="hint" id="hintLabel">Poskladaj slovo zo slabík.</p>
+      <div class="timer-wrap" id="timerWrap"><div class="timer-fill" id="timerFill"></div></div>
       <div class="slots" id="slots"></div>
       <div class="options" id="options"></div>
       <div class="toolbar">
@@ -314,70 +376,1583 @@
       <div class="screen" id="startScreen">
         <div class="big-emoji">📚</div>
         <h1>Slabiková hra</h1>
-        <p>Poskladaj slovo zo slabík. Klikni na ne v správnom poradí.</p>
-        <button class="play-btn" id="startBtn" type="button">Hrať</button>
+        <p>Poskladaj slovo zo slabík. Je tu 100 slov, od krátkych po dlhšie. Postup sa ukladá.</p>
+        <button class="play-btn" id="startBtn" type="button">Hrať od začiatku</button>
         <button class="play-btn secondary hidden" id="continueBtn" type="button">Pokračovať</button>
+        <button class="play-btn secondary" id="selectBtn" type="button">Výber úrovní</button>
+      </div>
+
+      <div class="screen hidden" id="clearScreen">
+        <div class="big-emoji" id="clearEmoji">⭐</div>
+        <h1>Správne!</h1>
+        <p id="clearText">Slovo je hotové.</p>
+        <button class="play-btn" id="nextBtn" type="button">Ďalšie slovo</button>
+        <button class="play-btn secondary" id="clearToLevelsBtn" type="button">Výber úrovní</button>
+      </div>
+
+      <div class="screen hidden" id="levelsScreen">
+        <h1>Výber úrovní</h1>
+        <p>Zelené už máš hotové. Ostatné odomkneš poporadí.</p>
+        <div class="level-grid" id="levelGrid"></div>
+        <button class="play-btn secondary" id="levelsBackBtn" type="button">Späť</button>
       </div>
 
       <div class="screen hidden" id="victoryScreen">
         <div class="big-emoji">🏆</div>
         <h1>Výborne!</h1>
-        <p id="victoryText">Poskladal si všetkých 20 slov.</p>
+        <p id="victoryText">Všetkých 100 slov je poskladaných.</p>
         <button class="play-btn" id="restartBtn" type="button">Hrať znova</button>
+        <button class="play-btn secondary" id="victoryLevelsBtn" type="button">Výber úrovní</button>
       </div>
     </div>
   </div>
 
   <script>
     const LEVELS = [
-      { word: "mačka", emoji: "🐱", syllables: ["ma", "čka"], decoys: ["pe", "so"] },
-      { word: "psíček", emoji: "🐶", syllables: ["psí", "ček"], decoys: ["le", "vik"] },
-      { word: "sova", emoji: "🦉", syllables: ["so", "va"], decoys: ["li", "ška"] },
-      { word: "ryba", emoji: "🐟", syllables: ["ry", "ba"], decoys: ["ža", "by"] },
-      { word: "domček", emoji: "🏠", syllables: ["dom", "ček"], decoys: ["le", "sík"] },
-      { word: "kvietok", emoji: "🌸", syllables: ["kvie", "tok"], decoys: ["trá", "va"] },
-      { word: "žabka", emoji: "🐸", syllables: ["žab", "ka"], decoys: ["my", "ška"] },
-      { word: "stromy", emoji: "🌳", syllables: ["stro", "my"], decoys: ["ko", "ny"] },
-      { word: "slnko", emoji: "☀️", syllables: ["sln", "ko"], decoys: ["obl", "ak"] },
-      { word: "jablko", emoji: "🍎", syllables: ["jab", "lko"], decoys: ["hru", "ška"] },
-      { word: "autíčko", emoji: "🚗", syllables: ["au", "tíč", "ko"], decoys: ["vlá", "čik", "mot"] },
-      { word: "jahoda", emoji: "🍓", syllables: ["ja", "ho", "da"], decoys: ["ma", "li", "lin"] },
-      { word: "káčer", emoji: "🦆", syllables: ["ká", "čer"], decoys: ["ku", "ra"] },
-      { word: "medveď", emoji: "🐻", syllables: ["med", "veď"], decoys: ["vlk", "líš"] },
-      { word: "balón", emoji: "🎈", syllables: ["ba", "lón"], decoys: ["ši", "ška"] },
-      { word: "mrkvička", emoji: "🥕", syllables: ["mrk", "vič", "ka"], decoys: ["ze", "le", "na"] },
-      { word: "motýľ", emoji: "🦋", syllables: ["mo", "týľ"], decoys: ["vče", "la"] },
-      { word: "banán", emoji: "🍌", syllables: ["ba", "nán"], decoys: ["ci", "trón"] },
-      { word: "hríbik", emoji: "🍄", syllables: ["hrí", "bik"], decoys: ["lú", "čka"] },
-      { word: "koruna", emoji: "👑", syllables: ["ko", "ru", "na"], decoys: ["prs", "teň", "šek"] }
-    ];
+  {
+    "word": "mačka",
+    "emoji": "🐱",
+    "syllables": [
+      "ma",
+      "čka"
+    ],
+    "decoys": [
+      "psí",
+      "veď"
+    ]
+  },
+  {
+    "word": "sova",
+    "emoji": "🦉",
+    "syllables": [
+      "so",
+      "va"
+    ],
+    "decoys": [
+      "vi",
+      "mas"
+    ]
+  },
+  {
+    "word": "ryba",
+    "emoji": "🐟",
+    "syllables": [
+      "ry",
+      "ba"
+    ],
+    "decoys": [
+      "kad",
+      "kvet"
+    ]
+  },
+  {
+    "word": "žabka",
+    "emoji": "🐸",
+    "syllables": [
+      "žab",
+      "ka"
+    ],
+    "decoys": [
+      "rát",
+      "vlak"
+    ]
+  },
+  {
+    "word": "káčer",
+    "emoji": "🦆",
+    "syllables": [
+      "ká",
+      "čer"
+    ],
+    "decoys": [
+      "veď",
+      "pes"
+    ]
+  },
+  {
+    "word": "medveď",
+    "emoji": "🐻",
+    "syllables": [
+      "med",
+      "veď"
+    ],
+    "decoys": [
+      "ny",
+      "ba"
+    ]
+  },
+  {
+    "word": "balón",
+    "emoji": "🎈",
+    "syllables": [
+      "ba",
+      "lón"
+    ],
+    "decoys": [
+      "ško",
+      "bu"
+    ]
+  },
+  {
+    "word": "motýľ",
+    "emoji": "🦋",
+    "syllables": [
+      "mo",
+      "týľ"
+    ],
+    "decoys": [
+      "ník",
+      "li"
+    ]
+  },
+  {
+    "word": "banán",
+    "emoji": "🍌",
+    "syllables": [
+      "ba",
+      "nán"
+    ],
+    "decoys": [
+      "žab",
+      "myš"
+    ]
+  },
+  {
+    "word": "hríbik",
+    "emoji": "🍄",
+    "syllables": [
+      "hrí",
+      "bik"
+    ],
+    "decoys": [
+      "rát",
+      "oc"
+    ]
+  },
+  {
+    "word": "psíček",
+    "emoji": "🐶",
+    "syllables": [
+      "psí",
+      "ček"
+    ],
+    "decoys": [
+      "kor",
+      "hoj"
+    ]
+  },
+  {
+    "word": "domček",
+    "emoji": "🏠",
+    "syllables": [
+      "dom",
+      "ček"
+    ],
+    "decoys": [
+      "ňaj",
+      "kač"
+    ]
+  },
+  {
+    "word": "slnko",
+    "emoji": "☀️",
+    "syllables": [
+      "sln",
+      "ko"
+    ],
+    "decoys": [
+      "strom",
+      "vlá"
+    ]
+  },
+  {
+    "word": "kvietok",
+    "emoji": "🌸",
+    "syllables": [
+      "kvie",
+      "tok"
+    ],
+    "decoys": [
+      "ja",
+      "jar"
+    ]
+  },
+  {
+    "word": "mama",
+    "emoji": "👩",
+    "syllables": [
+      "ma",
+      "ma"
+    ],
+    "decoys": [
+      "dom",
+      "strom"
+    ]
+  },
+  {
+    "word": "auto",
+    "emoji": "🚗",
+    "syllables": [
+      "au",
+      "to"
+    ],
+    "decoys": [
+      "mo",
+      "le"
+    ]
+  },
+  {
+    "word": "lopta",
+    "emoji": "⚽",
+    "syllables": [
+      "lop",
+      "ta"
+    ],
+    "decoys": [
+      "vo",
+      "pres"
+    ]
+  },
+  {
+    "word": "voda",
+    "emoji": "💧",
+    "syllables": [
+      "vo",
+      "da"
+    ],
+    "decoys": [
+      "hra",
+      "den"
+    ]
+  },
+  {
+    "word": "kniha",
+    "emoji": "📖",
+    "syllables": [
+      "kni",
+      "ha"
+    ],
+    "decoys": [
+      "reš",
+      "ak"
+    ]
+  },
+  {
+    "word": "škola",
+    "emoji": "🏫",
+    "syllables": [
+      "ško",
+      "la"
+    ],
+    "decoys": [
+      "kač",
+      "nož"
+    ]
+  },
+  {
+    "word": "ucho",
+    "emoji": "👂",
+    "syllables": [
+      "u",
+      "cho"
+    ],
+    "decoys": [
+      "taš",
+      "lin",
+      "ov",
+      "bu"
+    ]
+  },
+  {
+    "word": "ovca",
+    "emoji": "🐑",
+    "syllables": [
+      "ov",
+      "ca"
+    ],
+    "decoys": [
+      "če",
+      "zmrz",
+      "lop",
+      "list"
+    ]
+  },
+  {
+    "word": "ruka",
+    "emoji": "✋",
+    "syllables": [
+      "ru",
+      "ka"
+    ],
+    "decoys": [
+      "čo",
+      "vít",
+      "obl",
+      "bá"
+    ]
+  },
+  {
+    "word": "sliepka",
+    "emoji": "🐔",
+    "syllables": [
+      "sliep",
+      "ka"
+    ],
+    "decoys": [
+      "zr",
+      "prs",
+      "táv",
+      "ňa"
+    ]
+  },
+  {
+    "word": "koza",
+    "emoji": "🐐",
+    "syllables": [
+      "ko",
+      "za"
+    ],
+    "decoys": [
+      "sto",
+      "to",
+      "daj",
+      "ku"
+    ]
+  },
+  {
+    "word": "taška",
+    "emoji": "👜",
+    "syllables": [
+      "taš",
+      "ka"
+    ],
+    "decoys": [
+      "ko",
+      "ry",
+      "tíč",
+      "myš"
+    ]
+  },
+  {
+    "word": "kolo",
+    "emoji": "🎡",
+    "syllables": [
+      "ko",
+      "lo"
+    ],
+    "decoys": [
+      "far",
+      "ve",
+      "tad",
+      "týľ"
+    ]
+  },
+  {
+    "word": "okno",
+    "emoji": "🪟",
+    "syllables": [
+      "ok",
+      "no"
+    ],
+    "decoys": [
+      "sík",
+      "ško",
+      "to",
+      "lo"
+    ]
+  },
+  {
+    "word": "babka",
+    "emoji": "👵",
+    "syllables": [
+      "bab",
+      "ka"
+    ],
+    "decoys": [
+      "strom",
+      "čka",
+      "vič",
+      "vlak"
+    ]
+  },
+  {
+    "word": "ocko",
+    "emoji": "👨",
+    "syllables": [
+      "oc",
+      "ko"
+    ],
+    "decoys": [
+      "zor",
+      "čaj",
+      "jíč",
+      "pán"
+    ]
+  },
+  {
+    "word": "maslo",
+    "emoji": "🧈",
+    "syllables": [
+      "mas",
+      "lo"
+    ],
+    "decoys": [
+      "ško",
+      "bá",
+      "au",
+      "la"
+    ]
+  },
+  {
+    "word": "krava",
+    "emoji": "🐄",
+    "syllables": [
+      "kra",
+      "va"
+    ],
+    "decoys": [
+      "pe",
+      "vlk",
+      "myš",
+      "mo"
+    ]
+  },
+  {
+    "word": "oko",
+    "emoji": "👁️",
+    "syllables": [
+      "o",
+      "ko"
+    ],
+    "decoys": [
+      "ze",
+      "ry",
+      "let",
+      "my"
+    ]
+  },
+  {
+    "word": "srdce",
+    "emoji": "❤️",
+    "syllables": [
+      "srd",
+      "ce"
+    ],
+    "decoys": [
+      "lič",
+      "la",
+      "oc",
+      "vít"
+    ]
+  },
+  {
+    "word": "myška",
+    "emoji": "🐭",
+    "syllables": [
+      "myš",
+      "ka"
+    ],
+    "decoys": [
+      "jar",
+      "ded",
+      "me",
+      "zač"
+    ]
+  },
+  {
+    "word": "dedko",
+    "emoji": "👴",
+    "syllables": [
+      "ded",
+      "ko"
+    ],
+    "decoys": [
+      "ranč",
+      "táv",
+      "vlak",
+      "lev"
+    ]
+  },
+  {
+    "word": "jablko",
+    "emoji": "🍎",
+    "syllables": [
+      "jab",
+      "lko"
+    ],
+    "decoys": [
+      "sta",
+      "pa",
+      "syr",
+      "most"
+    ]
+  },
+  {
+    "word": "noha",
+    "emoji": "🦶",
+    "syllables": [
+      "no",
+      "ha"
+    ],
+    "decoys": [
+      "ma",
+      "ší",
+      "ni",
+      "kel"
+    ]
+  },
+  {
+    "word": "pero",
+    "emoji": "🖊️",
+    "syllables": [
+      "pe",
+      "ro"
+    ],
+    "decoys": [
+      "ak",
+      "pán",
+      "ny",
+      "jab"
+    ]
+  },
+  {
+    "word": "mlieko",
+    "emoji": "🥛",
+    "syllables": [
+      "mlie",
+      "ko"
+    ],
+    "decoys": [
+      "lev",
+      "ny",
+      "ču",
+      "ta"
+    ]
+  },
+  {
+    "word": "večera",
+    "emoji": "🍽️",
+    "syllables": [
+      "ve",
+      "če",
+      "ra"
+    ],
+    "decoys": [
+      "noc",
+      "tič",
+      "ha"
+    ],
+    "time": 22
+  },
+  {
+    "word": "ceruzka",
+    "emoji": "✏️",
+    "syllables": [
+      "ce",
+      "ruz",
+      "ka"
+    ],
+    "decoys": [
+      "sne",
+      "vi",
+      "ta"
+    ],
+    "time": 22
+  },
+  {
+    "word": "bicykel",
+    "emoji": "🚲",
+    "syllables": [
+      "bi",
+      "cy",
+      "kel"
+    ],
+    "decoys": [
+      "kvet",
+      "práv",
+      "hru"
+    ],
+    "time": 22
+  },
+  {
+    "word": "opica",
+    "emoji": "🐵",
+    "syllables": [
+      "o",
+      "pi",
+      "ca"
+    ],
+    "decoys": [
+      "plot",
+      "teľ",
+      "ded"
+    ],
+    "time": 22
+  },
+  {
+    "word": "prestávka",
+    "emoji": "⏰",
+    "syllables": [
+      "pres",
+      "táv",
+      "ka"
+    ],
+    "decoys": [
+      "trá",
+      "veď",
+      "vlk"
+    ],
+    "time": 22
+  },
+  {
+    "word": "pečivo",
+    "emoji": "🥐",
+    "syllables": [
+      "pe",
+      "či",
+      "vo"
+    ],
+    "decoys": [
+      "hru",
+      "srd",
+      "u"
+    ],
+    "time": 22
+  },
+  {
+    "word": "medovník",
+    "emoji": "🍪",
+    "syllables": [
+      "me",
+      "dov",
+      "ník"
+    ],
+    "decoys": [
+      "ny",
+      "ná",
+      "cy"
+    ],
+    "time": 22
+  },
+  {
+    "word": "jahoda",
+    "emoji": "🍓",
+    "syllables": [
+      "ja",
+      "ho",
+      "da"
+    ],
+    "decoys": [
+      "slon",
+      "oc",
+      "ly"
+    ],
+    "time": 22
+  },
+  {
+    "word": "kamarát",
+    "emoji": "🤝",
+    "syllables": [
+      "ka",
+      "ma",
+      "rát"
+    ],
+    "decoys": [
+      "ru",
+      "svet",
+      "kôň"
+    ],
+    "time": 22
+  },
+  {
+    "word": "zrkadlo",
+    "emoji": "🪞",
+    "syllables": [
+      "zr",
+      "kad",
+      "lo"
+    ],
+    "decoys": [
+      "srd",
+      "ňa",
+      "ška"
+    ],
+    "time": 22
+  },
+  {
+    "word": "broskyňa",
+    "emoji": "🍑",
+    "syllables": [
+      "bros",
+      "ky",
+      "ňa"
+    ],
+    "decoys": [
+      "mes",
+      "mas",
+      "sík"
+    ],
+    "time": 22
+  },
+  {
+    "word": "vajíčko",
+    "emoji": "🥚",
+    "syllables": [
+      "va",
+      "jíč",
+      "ko"
+    ],
+    "decoys": [
+      "kôň",
+      "les",
+      "ro"
+    ],
+    "time": 22
+  },
+  {
+    "word": "záhrada",
+    "emoji": "🏡",
+    "syllables": [
+      "zá",
+      "hra",
+      "da"
+    ],
+    "decoys": [
+      "most",
+      "mrk",
+      "o"
+    ],
+    "time": 22
+  },
+  {
+    "word": "tabuľa",
+    "emoji": "🧮",
+    "syllables": [
+      "ta",
+      "bu",
+      "ľa"
+    ],
+    "decoys": [
+      "ru",
+      "ník",
+      "da"
+    ],
+    "time": 22
+  },
+  {
+    "word": "kuchyňa",
+    "emoji": "🍳",
+    "syllables": [
+      "ku",
+      "chy",
+      "ňa"
+    ],
+    "decoys": [
+      "dvor",
+      "me",
+      "fón"
+    ],
+    "time": 22
+  },
+  {
+    "word": "čerešňa",
+    "emoji": "🍒",
+    "syllables": [
+      "če",
+      "reš",
+      "ňa"
+    ],
+    "decoys": [
+      "den",
+      "te",
+      "bič"
+    ],
+    "time": 22
+  },
+  {
+    "word": "stolička",
+    "emoji": "🪑",
+    "syllables": [
+      "sto",
+      "lič",
+      "ka"
+    ],
+    "decoys": [
+      "sta",
+      "se",
+      "tíč"
+    ],
+    "time": 22
+  },
+  {
+    "word": "rodina",
+    "emoji": "👪",
+    "syllables": [
+      "ro",
+      "di",
+      "na"
+    ],
+    "decoys": [
+      "lop",
+      "pies",
+      "ču"
+    ],
+    "time": 22
+  },
+  {
+    "word": "lavica",
+    "emoji": "💺",
+    "syllables": [
+      "la",
+      "vi",
+      "ca"
+    ],
+    "decoys": [
+      "zr",
+      "či",
+      "ta"
+    ],
+    "time": 22
+  },
+  {
+    "word": "učiteľ",
+    "emoji": "👩‍🏫",
+    "syllables": [
+      "u",
+      "či",
+      "teľ"
+    ],
+    "decoys": [
+      "čer",
+      "ko",
+      "pán"
+    ],
+    "time": 22
+  },
+  {
+    "word": "šmýkačka",
+    "emoji": "🛝",
+    "syllables": [
+      "šmý",
+      "kač",
+      "ka"
+    ],
+    "decoys": [
+      "kvet",
+      "kor",
+      "ká",
+      "klo",
+      "kni"
+    ],
+    "time": 16
+  },
+  {
+    "word": "topánka",
+    "emoji": "👟",
+    "syllables": [
+      "to",
+      "pán",
+      "ka"
+    ],
+    "decoys": [
+      "pes",
+      "kor",
+      "táv",
+      "kra",
+      "tič"
+    ],
+    "time": 16
+  },
+  {
+    "word": "pesnička",
+    "emoji": "🎵",
+    "syllables": [
+      "pes",
+      "nič",
+      "ka"
+    ],
+    "decoys": [
+      "psí",
+      "kni",
+      "ne",
+      "po",
+      "ko"
+    ],
+    "time": 16
+  },
+  {
+    "word": "sýkorka",
+    "emoji": "🐦",
+    "syllables": [
+      "sý",
+      "kor",
+      "ka"
+    ],
+    "decoys": [
+      "so",
+      "klo",
+      "kel",
+      "kvie",
+      "strom"
+    ],
+    "time": 16
+  },
+  {
+    "word": "koruna",
+    "emoji": "👑",
+    "syllables": [
+      "ko",
+      "ru",
+      "na"
+    ],
+    "decoys": [
+      "ni",
+      "ry",
+      "klo",
+      "ká",
+      "noc"
+    ],
+    "time": 16
+  },
+  {
+    "word": "fazuľa",
+    "emoji": "🫘",
+    "syllables": [
+      "fa",
+      "zu",
+      "ľa"
+    ],
+    "decoys": [
+      "zá",
+      "za",
+      "zmrz",
+      "ze",
+      "zač"
+    ],
+    "time": 16
+  },
+  {
+    "word": "raňajky",
+    "emoji": "🥞",
+    "syllables": [
+      "ra",
+      "ňaj",
+      "ky"
+    ],
+    "decoys": [
+      "ka",
+      "reš",
+      "ňa",
+      "klo",
+      "ro"
+    ],
+    "time": 16
+  },
+  {
+    "word": "nožnice",
+    "emoji": "✂️",
+    "syllables": [
+      "nož",
+      "ni",
+      "ce"
+    ],
+    "decoys": [
+      "ná",
+      "chy",
+      "cho",
+      "nit",
+      "ny"
+    ],
+    "time": 16
+  },
+  {
+    "word": "zmrzlina",
+    "emoji": "🍦",
+    "syllables": [
+      "zmrz",
+      "li",
+      "na"
+    ],
+    "decoys": [
+      "lo",
+      "lek",
+      "nit",
+      "lú",
+      "zá"
+    ],
+    "time": 16
+  },
+  {
+    "word": "snehuliak",
+    "emoji": "⛄",
+    "syllables": [
+      "sne",
+      "hu",
+      "liak"
+    ],
+    "decoys": [
+      "la",
+      "lek",
+      "lá",
+      "ho",
+      "lin"
+    ],
+    "time": 16
+  },
+  {
+    "word": "uhorka",
+    "emoji": "🥒",
+    "syllables": [
+      "u",
+      "hor",
+      "ka"
+    ],
+    "decoys": [
+      "kad",
+      "ko",
+      "hu",
+      "hoj",
+      "ky"
+    ],
+    "time": 16
+  },
+  {
+    "word": "semienko",
+    "emoji": "🌱",
+    "syllables": [
+      "se",
+      "mien",
+      "ko"
+    ],
+    "decoys": [
+      "mot",
+      "sý",
+      "sta",
+      "kra",
+      "mes"
+    ],
+    "time": 16
+  },
+  {
+    "word": "malina",
+    "emoji": "🍇",
+    "syllables": [
+      "ma",
+      "li",
+      "na"
+    ],
+    "decoys": [
+      "nit",
+      "les",
+      "ná",
+      "loď",
+      "la"
+    ],
+    "time": 16
+  },
+  {
+    "word": "pomaranč",
+    "emoji": "🍊",
+    "syllables": [
+      "po",
+      "ma",
+      "ranč"
+    ],
+    "decoys": [
+      "mrk",
+      "mot",
+      "psí",
+      "reš",
+      "pres"
+    ],
+    "time": 16
+  },
+  {
+    "word": "žirafa",
+    "emoji": "🦒",
+    "syllables": [
+      "ži",
+      "ra",
+      "fa"
+    ],
+    "decoys": [
+      "roz",
+      "ried",
+      "reš",
+      "far",
+      "ruz"
+    ],
+    "time": 16
+  },
+  {
+    "word": "dedina",
+    "emoji": "🏘️",
+    "syllables": [
+      "de",
+      "di",
+      "na"
+    ],
+    "decoys": [
+      "ník",
+      "ni",
+      "ny",
+      "dážď",
+      "nož"
+    ],
+    "time": 16
+  },
+  {
+    "word": "ponožka",
+    "emoji": "🧦",
+    "syllables": [
+      "po",
+      "nož",
+      "ka"
+    ],
+    "decoys": [
+      "pís",
+      "kra",
+      "kač",
+      "kad",
+      "kvet"
+    ],
+    "time": 16
+  },
+  {
+    "word": "farbička",
+    "emoji": "🖍️",
+    "syllables": [
+      "far",
+      "bič",
+      "ka"
+    ],
+    "decoys": [
+      "kôň",
+      "bros",
+      "ba",
+      "ky",
+      "klo"
+    ],
+    "time": 16
+  },
+  {
+    "word": "písmeno",
+    "emoji": "🔤",
+    "syllables": [
+      "pís",
+      "me",
+      "no"
+    ],
+    "decoys": [
+      "pra",
+      "pre",
+      "po",
+      "pies",
+      "pa"
+    ],
+    "time": 16
+  },
+  {
+    "word": "klobása",
+    "emoji": "🌭",
+    "syllables": [
+      "klo",
+      "bá",
+      "sa"
+    ],
+    "decoys": [
+      "bik",
+      "kel",
+      "sne",
+      "bu",
+      "kor"
+    ],
+    "time": 16
+  },
+  {
+    "word": "kapusta",
+    "emoji": "🥬",
+    "syllables": [
+      "ka",
+      "pus",
+      "ta"
+    ],
+    "decoys": [
+      "tač",
+      "týľ",
+      "te",
+      "pies",
+      "pán"
+    ],
+    "time": 14
+  },
+  {
+    "word": "vidlička",
+    "emoji": "🍴",
+    "syllables": [
+      "vid",
+      "lič",
+      "ka"
+    ],
+    "decoys": [
+      "via",
+      "lie",
+      "lú",
+      "loď",
+      "kel"
+    ],
+    "time": 14
+  },
+  {
+    "word": "rozprávka",
+    "emoji": "🧚",
+    "syllables": [
+      "roz",
+      "práv",
+      "ka"
+    ],
+    "decoys": [
+      "psí",
+      "pi",
+      "ra",
+      "ky",
+      "pán"
+    ],
+    "time": 14
+  },
+  {
+    "word": "autíčko",
+    "emoji": "🚙",
+    "syllables": [
+      "au",
+      "tíč",
+      "ko"
+    ],
+    "decoys": [
+      "týľ",
+      "táv",
+      "to",
+      "ká",
+      "kôň"
+    ],
+    "time": 14
+  },
+  {
+    "word": "mrkvička",
+    "emoji": "🥕",
+    "syllables": [
+      "mrk",
+      "vič",
+      "ka"
+    ],
+    "decoys": [
+      "my",
+      "vlá",
+      "mien",
+      "med",
+      "klo"
+    ],
+    "time": 14
+  },
+  {
+    "word": "loptička",
+    "emoji": "🥎",
+    "syllables": [
+      "lop",
+      "tič",
+      "ka"
+    ],
+    "decoys": [
+      "teň",
+      "la",
+      "kvet",
+      "list",
+      "liak"
+    ],
+    "time": 14
+  },
+  {
+    "word": "lyžica",
+    "emoji": "🥄",
+    "syllables": [
+      "ly",
+      "ži",
+      "ca"
+    ],
+    "decoys": [
+      "la",
+      "ci",
+      "li",
+      "list",
+      "lev"
+    ],
+    "time": 14
+  },
+  {
+    "word": "cibuľa",
+    "emoji": "🧅",
+    "syllables": [
+      "ci",
+      "bu",
+      "ľa"
+    ],
+    "decoys": [
+      "cajt",
+      "ca",
+      "bá",
+      "ba",
+      "bi"
+    ],
+    "time": 14
+  },
+  {
+    "word": "hojdačka",
+    "emoji": "🎠",
+    "syllables": [
+      "hoj",
+      "dač",
+      "ka"
+    ],
+    "decoys": [
+      "ko",
+      "den",
+      "kel",
+      "kad",
+      "dym"
+    ],
+    "time": 14
+  },
+  {
+    "word": "bábika",
+    "emoji": "🎎",
+    "syllables": [
+      "bá",
+      "bi",
+      "ka"
+    ],
+    "decoys": [
+      "bros",
+      "kel",
+      "ky",
+      "ko",
+      "klo"
+    ],
+    "time": 14
+  },
+  {
+    "word": "čokoláda",
+    "emoji": "🍫",
+    "syllables": [
+      "čo",
+      "ko",
+      "lá",
+      "da"
+    ],
+    "decoys": [
+      "dov",
+      "ky",
+      "ká",
+      "daj"
+    ],
+    "time": 13
+  },
+  {
+    "word": "limonáda",
+    "emoji": "🍹",
+    "syllables": [
+      "li",
+      "mo",
+      "ná",
+      "da"
+    ],
+    "decoys": [
+      "mlie",
+      "na",
+      "de",
+      "ne"
+    ],
+    "time": 13
+  },
+  {
+    "word": "paradajka",
+    "emoji": "🍅",
+    "syllables": [
+      "pa",
+      "ra",
+      "daj",
+      "ka"
+    ],
+    "decoys": [
+      "ko",
+      "kra",
+      "da",
+      "di"
+    ],
+    "time": 13
+  },
+  {
+    "word": "čučoriedka",
+    "emoji": "🫐",
+    "syllables": [
+      "ču",
+      "čo",
+      "ried",
+      "ka"
+    ],
+    "decoys": [
+      "čik",
+      "če",
+      "kor",
+      "ček"
+    ],
+    "time": 13
+  },
+  {
+    "word": "nohavice",
+    "emoji": "👖",
+    "syllables": [
+      "no",
+      "ha",
+      "vi",
+      "ce"
+    ],
+    "decoys": [
+      "vlak",
+      "hu",
+      "cy",
+      "nič"
+    ],
+    "time": 13
+  },
+  {
+    "word": "televízor",
+    "emoji": "📺",
+    "syllables": [
+      "te",
+      "le",
+      "ví",
+      "zor"
+    ],
+    "decoys": [
+      "va",
+      "trá",
+      "taš",
+      "zr"
+    ],
+    "time": 13
+  },
+  {
+    "word": "električka",
+    "emoji": "🚊",
+    "syllables": [
+      "e",
+      "lek",
+      "trič",
+      "ka"
+    ],
+    "decoys": [
+      "kra",
+      "kad",
+      "kel",
+      "táv"
+    ],
+    "time": 13
+  },
+  {
+    "word": "nemocnica",
+    "emoji": "🏥",
+    "syllables": [
+      "ne",
+      "moc",
+      "ni",
+      "ca"
+    ],
+    "decoys": [
+      "na",
+      "most",
+      "nič",
+      "me"
+    ],
+    "time": 13
+  },
+  {
+    "word": "pieskovisko",
+    "emoji": "🪣",
+    "syllables": [
+      "pies",
+      "ko",
+      "vis",
+      "ko"
+    ],
+    "decoys": [
+      "pes",
+      "kač",
+      "ka",
+      "kel"
+    ],
+    "time": 13
+  },
+  {
+    "word": "preliezačka",
+    "emoji": "🧗",
+    "syllables": [
+      "pre",
+      "lie",
+      "zač",
+      "ka"
+    ],
+    "decoys": [
+      "lop",
+      "ká",
+      "la",
+      "lev"
+    ],
+    "time": 13
+  }
+];
 
-    const SAVE_KEY = "slabikova-hra-v1";
+    const SAVE_KEY = "slabikova-hra-v2";
 
     const els = {
       card: document.getElementById("gameCard"),
       levelBadge: document.getElementById("levelBadge"),
       starCounter: document.getElementById("starCounter"),
       soundBtn: document.getElementById("soundBtn"),
+      levelsOpenBtn: document.getElementById("levelsOpenBtn"),
       emoji: document.getElementById("itemEmoji"),
       hint: document.getElementById("hintLabel"),
+      timerWrap: document.getElementById("timerWrap"),
+      timerFill: document.getElementById("timerFill"),
       slots: document.getElementById("slots"),
       options: document.getElementById("options"),
       undoBtn: document.getElementById("undoBtn"),
       startScreen: document.getElementById("startScreen"),
+      clearScreen: document.getElementById("clearScreen"),
+      clearEmoji: document.getElementById("clearEmoji"),
+      clearText: document.getElementById("clearText"),
+      nextBtn: document.getElementById("nextBtn"),
+      levelsScreen: document.getElementById("levelsScreen"),
+      levelGrid: document.getElementById("levelGrid"),
       victoryScreen: document.getElementById("victoryScreen"),
       victoryText: document.getElementById("victoryText"),
       startBtn: document.getElementById("startBtn"),
       continueBtn: document.getElementById("continueBtn"),
-      restartBtn: document.getElementById("restartBtn")
+      selectBtn: document.getElementById("selectBtn")
     };
 
     let currentLevel = 0;
     let stars = 0;
+    let completed = [];
+    let maxUnlocked = 0;
+    let lastLevel = 0;
+    let soundOn = true;
     let picked = [];
     let locked = false;
-    let soundOn = true;
     let audioCtx = null;
+    let timerId = 0;
+    let timerEnds = 0;
+    let timerTotal = 0;
+    let pendingAdvance = null;
 
     function shuffle(list) {
       const arr = list.slice();
@@ -395,9 +1970,13 @@
         const raw = localStorage.getItem(SAVE_KEY);
         if (!raw) return null;
         const data = JSON.parse(raw);
-        if (typeof data.level !== "number" || typeof data.stars !== "number") return null;
-        if (data.level < 0 || data.level >= LEVELS.length) return null;
+        if (!Array.isArray(data.completed)) return null;
         if (data.soundOn === false) soundOn = false;
+        completed = data.completed.filter((n) => n >= 0 && n < LEVELS.length);
+        stars = typeof data.stars === "number" ? data.stars : completed.length;
+        maxUnlocked = Math.max(0, Math.min(LEVELS.length - 1, data.maxUnlocked || 0));
+        if (completed.length) maxUnlocked = Math.max(maxUnlocked, Math.min(LEVELS.length - 1, Math.max(...completed) + 1));
+        lastLevel = Math.max(0, Math.min(LEVELS.length - 1, data.lastLevel || 0));
         return data;
       } catch (e) {
         return null;
@@ -407,15 +1986,13 @@
     function writeSave() {
       try {
         localStorage.setItem(SAVE_KEY, JSON.stringify({
-          level: currentLevel,
+          completed: completed,
           stars: stars,
-          soundOn: soundOn
+          soundOn: soundOn,
+          maxUnlocked: maxUnlocked,
+          lastLevel: lastLevel
         }));
       } catch (e) {}
-    }
-
-    function clearSave() {
-      try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
     }
 
     function updateSoundBtn() {
@@ -481,10 +2058,69 @@
       els.undoBtn.disabled = locked || picked.length === 0;
     }
 
+    function stopTimer() {
+      if (timerId) {
+        cancelAnimationFrame(timerId);
+        timerId = 0;
+      }
+      els.timerWrap.classList.remove("on", "warn");
+    }
+
+    function tickTimer() {
+      if (!timerTotal) return;
+      const left = timerEnds - performance.now();
+      const p = Math.max(0, Math.min(1, left / timerTotal));
+      els.timerFill.style.transform = "scaleX(" + p + ")";
+      els.timerWrap.classList.toggle("warn", p < 0.25);
+      if (left <= 0) {
+        timerId = 0;
+        onTimeUp();
+        return;
+      }
+      timerId = requestAnimationFrame(tickTimer);
+    }
+
+    function startTimer(seconds) {
+      stopTimer();
+      if (!seconds) return;
+      timerTotal = seconds * 1000;
+      timerEnds = performance.now() + timerTotal;
+      els.timerWrap.classList.add("on");
+      els.timerFill.style.transform = "scaleX(1)";
+      timerId = requestAnimationFrame(tickTimer);
+    }
+
+    function onTimeUp() {
+      if (locked) return;
+      playSound("wrong");
+      locked = true;
+      els.hint.textContent = "Čas pretiekol. Skús znova.";
+      els.card.classList.add("shake");
+      setTimeout(() => els.card.classList.remove("shake"), 400);
+      setTimeout(() => {
+        resetAttempt();
+        locked = false;
+        updateUndo();
+        const data = LEVELS[currentLevel];
+        els.hint.textContent = "Poskladaj slovo zo slabík.";
+        if (data.time) startTimer(data.time);
+        updateUndo();
+      }, 500);
+    }
+
+    function hideScreens() {
+      els.startScreen.classList.add("hidden");
+      els.clearScreen.classList.add("hidden");
+      els.levelsScreen.classList.add("hidden");
+      els.victoryScreen.classList.add("hidden");
+    }
+
     function loadLevel() {
       const data = LEVELS[currentLevel];
       picked = [];
       locked = false;
+      lastLevel = currentLevel;
+      pendingAdvance = null;
       els.levelBadge.textContent = "Úroveň " + (currentLevel + 1) + " z " + LEVELS.length;
       setStars();
       els.emoji.textContent = data.emoji;
@@ -498,6 +2134,8 @@
         els.slots.appendChild(slot);
       });
 
+      const n = data.syllables.length + data.decoys.length;
+      els.options.className = "options" + (n <= 4 ? "" : n <= 6 ? " cols-3" : " cols-4");
       const choices = shuffle(data.syllables.concat(data.decoys));
       els.options.innerHTML = "";
       choices.forEach((text) => {
@@ -510,6 +2148,8 @@
       });
       updateUndo();
       writeSave();
+      if (data.time) startTimer(data.time);
+      else stopTimer();
     }
 
     function handleChoice(syllable, btn) {
@@ -571,59 +2211,119 @@
 
     function handleSuccess() {
       locked = true;
+      stopTimer();
       updateUndo();
       playSound("correct");
-      stars += 1;
-      setStars();
+      const data = LEVELS[currentLevel];
+      const firstTime = !completed.includes(currentLevel);
+      if (firstTime) {
+        completed.push(currentLevel);
+        stars += 1;
+        setStars();
+      }
+      if (currentLevel + 1 < LEVELS.length) {
+        maxUnlocked = Math.max(maxUnlocked, currentLevel + 1);
+      }
+      writeSave();
       els.emoji.classList.add("bounce");
-      speakWord(LEVELS[currentLevel].word);
-      setTimeout(() => {
-        els.emoji.classList.remove("bounce");
+      speakWord(data.word);
+      els.clearEmoji.textContent = data.emoji;
+      els.clearText.textContent = "Slovo „" + data.word + "“ je hotové. Úroveň " + (currentLevel + 1) + " z " + LEVELS.length + ".";
+      els.nextBtn.textContent = currentLevel + 1 < LEVELS.length ? "Ďalšie slovo" : "Pozrieť víťazstvo";
+      hideScreens();
+      els.clearScreen.classList.remove("hidden");
+      pendingAdvance = setTimeout(() => goAfterClear(), 2200);
+    }
+
+    function goAfterClear() {
+      if (pendingAdvance) {
+        clearTimeout(pendingAdvance);
+        pendingAdvance = null;
+      }
+      if (currentLevel + 1 < LEVELS.length) {
         currentLevel += 1;
-        if (currentLevel < LEVELS.length) {
-          loadLevel();
-        } else {
-          showVictory();
-        }
-      }, 1300);
-    }
-
-    function showVictory() {
-      playSound("win");
-      clearSave();
-      els.victoryText.textContent = "Všetkých " + LEVELS.length + " slov je poskladaných. Hviezdičky: " + stars + ".";
-      els.victoryScreen.classList.remove("hidden");
-    }
-
-    function startFrom(level, savedStars) {
-      currentLevel = level;
-      stars = savedStars;
-      els.startScreen.classList.add("hidden");
-      els.victoryScreen.classList.add("hidden");
-      loadLevel();
-    }
-
-    function boot() {
-      updateSoundBtn();
-      const save = loadSave();
-      updateSoundBtn();
-      if (save && save.level > 0) {
-        els.continueBtn.classList.remove("hidden");
-        els.continueBtn.addEventListener("click", () => {
-          initAudio();
-          startFrom(save.level, save.stars);
-        });
+        hideScreens();
+        loadLevel();
+      } else {
+        showVictory();
       }
     }
 
-    els.startBtn.addEventListener("click", () => {
+    function showVictory() {
+      stopTimer();
+      playSound("win");
+      hideScreens();
+      els.victoryText.textContent = "Všetkých " + LEVELS.length + " slov je poskladaných. Hviezdičky: " + stars + " z " + LEVELS.length + ".";
+      els.victoryScreen.classList.remove("hidden");
+      writeSave();
+    }
+
+    function startFrom(level) {
+      stopTimer();
+      currentLevel = level;
+      hideScreens();
+      loadLevel();
+    }
+
+    function renderLevelGrid() {
+      els.levelGrid.innerHTML = "";
+      LEVELS.forEach((lv, i) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        const done = completed.includes(i);
+        const open = i <= maxUnlocked || done;
+        btn.className = "lvl-btn" + (done ? " done" : open ? "" : " lock") + (i === currentLevel && open ? " current" : "");
+        btn.textContent = done ? (i + 1) + " ✓" : String(i + 1);
+        btn.disabled = !open;
+        if (open) btn.addEventListener("click", () => {
+          initAudio();
+          startFrom(i);
+        });
+        els.levelGrid.appendChild(btn);
+      });
+    }
+
+    function showLevelSelect() {
+      stopTimer();
+      if (pendingAdvance) {
+        clearTimeout(pendingAdvance);
+        pendingAdvance = null;
+      }
+      hideScreens();
+      renderLevelGrid();
+      els.levelsScreen.classList.remove("hidden");
+    }
+
+    function boot() {
+      loadSave();
+      updateSoundBtn();
+      setStars();
+      const canContinue = completed.length > 0 && completed.length < LEVELS.length;
+      if (canContinue) {
+        els.continueBtn.classList.remove("hidden");
+        const next = completed.includes(lastLevel) && lastLevel + 1 < LEVELS.length ? lastLevel + 1 : Math.min(lastLevel, maxUnlocked);
+        els.continueBtn.textContent = "Pokračovať (" + (next + 1) + ")";
+      }
+    }
+
+    els.startBtn.addEventListener("click", () => { initAudio(); startFrom(0); });
+    els.continueBtn.addEventListener("click", () => {
       initAudio();
-      startFrom(0, 0);
+      const next = completed.includes(lastLevel) && lastLevel + 1 < LEVELS.length ? lastLevel + 1 : Math.min(lastLevel, maxUnlocked);
+      startFrom(next);
     });
-    els.restartBtn.addEventListener("click", () => {
-      initAudio();
-      startFrom(0, 0);
+    els.selectBtn.addEventListener("click", () => { initAudio(); showLevelSelect(); });
+    els.levelsOpenBtn.addEventListener("click", () => { initAudio(); showLevelSelect(); });
+    els.levelsBackBtn = document.getElementById("levelsBackBtn");
+    document.getElementById("levelsBackBtn").addEventListener("click", () => {
+      hideScreens();
+      if (completed.length === LEVELS.length) els.victoryScreen.classList.remove("hidden");
+      else els.startScreen.classList.remove("hidden");
     });
+    els.nextBtn.addEventListener("click", () => goAfterClear());
+    document.getElementById("clearToLevelsBtn").addEventListener("click", () => showLevelSelect());
+    document.getElementById("restartBtn").addEventListener("click", () => { initAudio(); startFrom(0); });
+    document.getElementById("victoryLevelsBtn").addEventListener("click", () => showLevelSelect());
     els.undoBtn.addEventListener("click", undoLast);
     els.soundBtn.addEventListener("click", () => {
       soundOn = !soundOn;
@@ -632,6 +2332,22 @@
       updateSoundBtn();
       writeSave();
     });
+
+    window.__SLAB = {
+      LEVELS,
+      startFrom,
+      getState() {
+        return { currentLevel, stars, completed: completed.slice(), maxUnlocked, lastLevel, locked, word: LEVELS[currentLevel] && LEVELS[currentLevel].word };
+      },
+      completeCurrent() {
+        const data = LEVELS[currentLevel];
+        const btns = [...document.querySelectorAll(".syllable-btn")];
+        data.syllables.forEach((s) => {
+          const btn = btns.find((b) => b.textContent === s && !b.classList.contains("used") && !b.disabled);
+          if (btn) btn.click();
+        });
+      }
+    };
 
     boot();
   </script>

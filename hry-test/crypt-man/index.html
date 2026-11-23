@@ -249,6 +249,38 @@
       color: var(--muted);
       padding: 0 4px;
     }
+    
+    .btn-play.btn-alt {
+      margin-top: 10px;
+      background: transparent;
+      border: 1px solid #7a6a4a;
+      color: #e8d9b0;
+      box-shadow: none;
+    }
+    .level-picker {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      width: min(100%, 320px);
+      margin: 12px auto 6px;
+    }
+    .level-picker.hidden { display: none; }
+    .level-picker button {
+      min-height: 40px;
+      border-radius: 8px;
+      border: 1px solid #5a4a32;
+      background: #1a1420;
+      color: #f0e6d0;
+      font-weight: 800;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .level-picker button.active {
+      background: #ff6a1a;
+      border-color: #ff9a4a;
+      color: #111;
+    }
+
     .hint-bar span { white-space: nowrap; }
     @media (max-width: 520px) {
       .hint-bar {
@@ -272,9 +304,7 @@
 <div class="cabinet">
   <div class="hud">
     <div class="hud-group">
-      <button class="btn-mini active" id="btnLvl1" onclick="selectLevel(0)">1</button>
-      <button class="btn-mini" id="btnLvl2" onclick="selectLevel(1)">2</button>
-      <button class="btn-mini" id="btnLvl3" onclick="selectLevel(2)">3</button>
+      <button class="btn-mini" id="btnLevels" onclick="openLevelPicker()" title="Výber levelu">1/10</button>
       <span class="badge-souls" id="hudSouls">DUŠE: 0/0</span>
     </div>
     <div class="hud-group">
@@ -292,10 +322,12 @@
     <div class="overlay" id="overlay">
       <h1 id="overlayTitle">CRYPT-MAN</h1>
       <p id="overlayDesc">
-        Maze of Lies — tri levely lží.<br>
+        Maze of Lies — desať levelov lží.<br>
         Pozbieraj všetky dušičky a uteč portálom. Hrobka klame a pamätá si, kde si zomrel.
       </p>
+      <div id="levelPicker" class="level-picker hidden"></div>
       <button class="btn-play" id="overlayBtn" onclick="startGame()">VSTÚPIŤ DO KRYPTY</button>
+      <button class="btn-play btn-alt" id="overlayPickBtn" onclick="openLevelPicker()">VYBRAŤ LEVEL</button>
     </div>
   </div>
 
@@ -462,12 +494,198 @@
         [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,1],
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
       ]
+    },
+    {
+      name: "Level 4: Chodby tichých krokov",
+      spawn: { x: 1, y: 1 },
+      exit: { x: 17, y: 13 },
+      ghosts: [
+        { x: 17, y: 12, dir: { x: -1, y: 0 }, speed: 3.2, color: '#ff2a55', name: 'Tieň' },
+        { x: 15, y: 13, dir: { x: -1, y: 0 }, speed: 3.28, color: '#b84dff', name: 'Prízrak' }
+      ],
+      map: [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,2,0,2,3,2,1,0,0,2,2,2,2,2,2,2,2,2,1],
+        [1,2,0,0,0,1,1,0,1,0,1,2,1,2,1,1,1,0,1],
+        [1,2,2,0,2,0,1,0,1,0,2,0,2,0,2,0,1,2,1],
+        [1,0,1,1,1,0,0,2,1,2,1,1,1,0,0,2,2,0,1],
+        [1,2,0,2,1,0,2,0,1,0,1,0,2,2,2,2,2,2,1],
+        [1,1,1,0,1,0,1,2,1,2,0,0,2,1,1,1,1,2,1],
+        [1,2,2,0,2,0,1,2,1,2,1,0,0,2,2,2,2,0,1],
+        [1,0,1,0,0,0,2,0,1,2,1,1,1,1,1,2,1,2,1],
+        [1,2,1,2,1,0,2,0,2,0,0,2,0,0,1,0,0,0,1],
+        [1,2,0,0,1,1,1,2,1,2,1,1,0,1,1,1,1,0,1],
+        [1,2,2,0,1,2,2,2,1,2,1,0,0,2,2,0,1,2,1],
+        [1,0,1,2,1,2,1,2,1,1,1,2,1,1,2,0,1,2,1],
+        [1,0,0,0,2,0,1,0,2,0,2,0,0,2,0,0,0,4,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+      ]
+    },
+    {
+      name: "Level 5: Studňa ozvien",
+      spawn: { x: 1, y: 1 },
+      exit: { x: 17, y: 13 },
+      ghosts: [
+        { x: 17, y: 12, dir: { x: 0, y: 1 }, speed: 3.25, color: '#ff2a55', name: 'Tieň' },
+        { x: 15, y: 13, dir: { x: 0, y: 1 }, speed: 3.33, color: '#b84dff', name: 'Prízrak' }
+      ],
+      map: [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,2,1,0,3,2,2,0,0,0,2,2,1,0,0,0,0,2,1],
+        [1,2,1,1,1,1,1,0,1,1,1,2,1,0,0,0,1,1,1],
+        [1,0,0,0,0,2,1,0,0,2,1,0,2,0,1,0,0,2,1],
+        [1,1,0,1,1,0,1,1,0,1,1,1,1,1,1,0,1,2,1],
+        [1,0,0,2,0,2,2,0,2,0,0,0,0,0,2,0,1,0,1],
+        [1,0,1,1,1,0,1,0,0,2,1,1,1,1,1,2,1,0,1],
+        [1,0,0,0,2,0,2,0,2,2,2,0,1,2,2,0,1,2,1],
+        [1,2,1,1,1,1,1,1,2,1,1,2,1,2,1,0,1,2,1],
+        [1,0,0,0,1,0,1,0,0,0,1,0,0,0,1,0,2,0,1],
+        [1,2,1,0,1,2,1,2,1,0,1,0,1,1,1,0,2,0,1],
+        [1,0,1,2,1,2,2,0,1,0,0,0,0,2,1,2,0,2,1],
+        [1,0,1,0,1,0,1,2,1,2,1,1,2,2,1,2,1,2,1],
+        [1,0,0,2,0,2,2,2,2,0,0,2,0,0,0,0,2,4,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+      ]
+    },
+    {
+      name: "Level 6: Krížovatka tieňov",
+      spawn: { x: 1, y: 1 },
+      exit: { x: 17, y: 13 },
+      ghosts: [
+        { x: 17, y: 12, dir: { x: 0, y: 1 }, speed: 3.3, color: '#ff2a55', name: 'Tieň' },
+        { x: 15, y: 13, dir: { x: -1, y: 0 }, speed: 3.38, color: '#b84dff', name: 'Prízrak' }
+      ],
+      map: [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,2,1,0,2,2,1,2,0,2,2,2,0,2,2,0,2,2,1],
+        [1,2,1,0,2,2,1,1,1,0,1,0,1,2,1,0,1,0,1],
+        [1,0,2,2,1,2,0,0,2,2,1,2,0,2,1,0,0,2,1],
+        [1,2,2,0,1,1,1,1,1,2,1,1,0,1,1,1,1,2,1],
+        [1,0,2,2,2,0,0,2,1,0,2,0,2,0,2,0,1,2,1],
+        [1,2,1,1,1,0,1,2,1,2,1,2,1,1,1,0,1,2,1],
+        [1,0,1,2,0,2,2,2,0,0,1,2,2,2,0,2,2,2,1],
+        [1,2,1,0,1,1,1,2,2,0,1,1,1,2,1,1,2,2,1],
+        [1,0,1,0,2,2,1,0,1,0,2,0,1,2,0,2,0,2,1],
+        [1,0,1,1,1,0,1,2,1,2,1,0,1,0,1,1,0,1,1],
+        [1,0,1,0,1,0,0,2,2,2,1,2,1,2,2,2,0,0,1],
+        [1,2,1,0,1,1,0,3,1,2,1,2,1,0,1,1,2,0,1],
+        [1,0,2,2,3,2,2,0,1,2,0,2,2,2,0,0,2,4,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+      ]
+    },
+    {
+      name: "Level 7: Klenba bez dna",
+      spawn: { x: 1, y: 1 },
+      exit: { x: 17, y: 13 },
+      ghosts: [
+        { x: 17, y: 12, dir: { x: 0, y: 1 }, speed: 3.35, color: '#ff2a55', name: 'Tieň' },
+        { x: 15, y: 13, dir: { x: 1, y: 0 }, speed: 3.43, color: '#b84dff', name: 'Prízrak' },
+        { x: 17, y: 9, dir: { x: 0, y: -1 }, speed: 3.51, color: '#00e5ff', name: 'Banshee' }
+      ],
+      map: [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,2,0,0,0,2,1,2,2,0,3,2,2,2,0,3,0,2,1],
+        [1,1,1,1,1,0,1,1,1,0,1,2,1,1,1,1,2,0,1],
+        [1,2,0,2,1,2,2,0,2,0,1,0,0,0,0,2,0,0,1],
+        [1,2,1,1,1,1,2,1,0,2,1,0,1,1,0,0,1,0,1],
+        [1,2,0,2,0,0,2,0,0,2,1,2,0,0,2,0,1,2,1],
+        [1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,2,1,0,1],
+        [1,2,1,0,1,2,0,2,2,0,0,2,1,2,2,2,1,2,1],
+        [1,2,1,0,1,2,1,1,1,0,1,1,1,0,2,1,1,2,1],
+        [1,2,1,0,0,0,2,2,2,0,1,0,0,0,2,2,2,2,1],
+        [1,2,1,2,1,2,1,2,1,0,1,2,1,0,1,1,1,1,1],
+        [1,0,2,0,0,0,0,0,0,0,1,0,0,2,0,0,0,0,1],
+        [1,2,1,2,0,0,1,1,1,1,1,2,1,1,1,1,0,2,1],
+        [1,2,2,2,2,0,2,0,2,2,0,0,0,0,0,0,2,4,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+      ]
+    },
+    {
+      name: "Level 8: Kostnica sľubov",
+      spawn: { x: 1, y: 1 },
+      exit: { x: 17, y: 13 },
+      ghosts: [
+        { x: 17, y: 12, dir: { x: -1, y: 0 }, speed: 3.4, color: '#ff2a55', name: 'Tieň' },
+        { x: 15, y: 13, dir: { x: 1, y: 0 }, speed: 3.48, color: '#b84dff', name: 'Prízrak' },
+        { x: 17, y: 9, dir: { x: 1, y: 0 }, speed: 3.56, color: '#00e5ff', name: 'Banshee' }
+      ],
+      map: [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,2,2,2,2,2,1,2,2,2,2,2,0,2,0,2,0,2,1],
+        [1,1,1,1,1,2,2,0,1,2,1,2,1,0,1,1,1,0,1],
+        [1,0,1,2,2,2,1,0,1,0,1,0,0,0,0,0,1,0,1],
+        [1,0,1,0,1,1,1,1,1,2,1,2,1,0,1,0,1,2,1],
+        [1,0,0,0,1,0,2,2,2,2,1,2,1,2,1,3,2,0,1],
+        [1,0,1,1,1,0,1,0,0,1,1,0,1,0,1,1,0,1,1],
+        [1,0,2,0,0,0,0,2,0,2,1,0,2,0,1,2,2,0,1],
+        [1,1,1,1,1,2,1,2,1,0,1,0,1,2,1,0,1,0,1],
+        [1,0,2,2,1,0,1,0,0,0,2,0,1,0,1,2,1,0,1],
+        [1,1,1,0,1,0,1,1,1,2,2,2,1,0,1,2,1,2,1],
+        [1,0,0,2,0,2,0,2,1,2,1,2,0,0,1,2,0,0,1],
+        [1,2,0,1,1,2,1,2,1,0,1,0,0,2,1,2,1,0,1],
+        [1,0,0,0,0,2,2,2,0,0,1,3,0,2,2,2,1,4,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+      ]
+    },
+    {
+      name: "Level 9: Labyrint prázdnych očí",
+      spawn: { x: 1, y: 1 },
+      exit: { x: 17, y: 13 },
+      ghosts: [
+        { x: 17, y: 12, dir: { x: 0, y: 1 }, speed: 3.45, color: '#ff2a55', name: 'Tieň' },
+        { x: 15, y: 13, dir: { x: -1, y: 0 }, speed: 3.53, color: '#b84dff', name: 'Prízrak' },
+        { x: 17, y: 9, dir: { x: 0, y: 1 }, speed: 3.61, color: '#00e5ff', name: 'Banshee' }
+      ],
+      map: [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,2,2,2,0,0,1,2,2,0,2,3,0,0,0,0,0,2,1],
+        [1,0,1,2,0,2,1,2,1,1,1,0,0,0,1,0,1,2,1],
+        [1,2,1,0,1,2,2,0,2,0,1,0,1,2,2,2,1,2,1],
+        [1,0,1,0,1,0,1,1,1,0,2,0,1,1,1,0,1,2,1],
+        [1,0,1,0,0,2,1,2,2,2,0,0,1,2,0,2,2,2,1],
+        [1,2,2,0,1,2,1,0,1,0,1,2,1,1,0,2,1,0,1],
+        [1,0,2,0,0,2,0,0,0,0,1,0,1,2,0,2,1,0,1],
+        [1,2,1,2,1,1,1,1,1,2,1,0,1,2,1,2,1,2,1],
+        [1,2,1,0,2,0,0,0,1,3,1,2,0,0,1,2,0,2,1],
+        [1,0,1,2,1,1,1,2,1,1,1,0,1,1,1,2,1,2,1],
+        [1,2,2,2,1,2,1,0,0,0,1,2,1,0,0,2,0,0,1],
+        [1,1,1,1,1,2,1,1,1,0,1,0,1,2,1,1,1,2,1],
+        [1,2,0,0,0,0,0,3,2,2,2,2,0,2,1,0,0,4,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+      ]
+    },
+    {
+      name: "Level 10: Srdce hrobky",
+      spawn: { x: 1, y: 1 },
+      exit: { x: 17, y: 13 },
+      ghosts: [
+        { x: 17, y: 12, dir: { x: 1, y: 0 }, speed: 3.55, color: '#ff2a55', name: 'Tieň' },
+        { x: 15, y: 13, dir: { x: 0, y: 1 }, speed: 3.63, color: '#b84dff', name: 'Prízrak' },
+        { x: 17, y: 9, dir: { x: -1, y: 0 }, speed: 3.71, color: '#00e5ff', name: 'Banshee' }
+      ],
+      map: [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,2,0,2,2,2,2,2,3,0,0,2,2,0,3,2,2,0,1],
+        [1,1,1,1,1,1,1,1,1,0,1,2,1,2,1,0,1,0,1],
+        [1,2,2,0,2,2,0,2,1,0,3,2,1,0,2,0,1,2,1],
+        [1,0,1,2,1,1,1,2,1,1,1,2,1,2,1,1,1,2,1],
+        [1,0,1,0,0,2,0,0,2,0,1,0,2,0,0,2,1,0,1],
+        [1,0,1,0,1,2,1,1,1,2,1,2,2,2,1,0,1,2,1],
+        [1,2,0,2,1,0,0,0,1,0,1,0,1,2,1,0,2,2,1],
+        [1,0,0,1,1,1,1,2,1,1,1,0,1,0,1,1,1,0,1],
+        [1,0,0,0,2,2,1,0,1,0,0,2,1,0,1,0,2,0,1],
+        [1,1,1,1,1,2,0,2,2,2,1,1,1,0,2,0,1,2,1],
+        [1,2,2,2,1,0,0,2,0,0,0,2,1,2,1,2,1,2,1],
+        [1,2,0,0,0,2,0,2,1,1,1,2,1,1,1,2,1,2,1],
+        [1,2,2,0,2,2,1,0,2,2,2,2,2,2,0,0,1,4,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+      ]
     }
   ];
 
   // === HERNÝ STAV ===
   let currentLevelIdx = 0;
-  let deathsByLevel = [[], [], []]; // Stopy smrtí {x, y, attempt, color}
+  let deathsByLevel = LEVELS.map(() => []); // Stopy smrtí {x, y, attempt, color}
   let totalDeaths = 0;
   let gameState = 'MENU'; // MENU, PLAYING, DEAD_PAUSE, LEVEL_WIN
   let shakeTime = 0;
@@ -521,10 +739,10 @@
   function loadLevelAttempt(idx) {
     currentLevelIdx = idx;
     const def = LEVELS[idx];
-    document.getElementById('btnLvl1').classList.toggle('active', idx === 0);
-    document.getElementById('btnLvl2').classList.toggle('active', idx === 1);
-    document.getElementById('btnLvl3').classList.toggle('active', idx === 2);
+    const lvlBtn = document.getElementById('btnLevels');
+    if (lvlBtn) lvlBtn.textContent = (idx + 1) + '/' + LEVELS.length;
     document.getElementById('levelSubtitle').textContent = def.name;
+    document.querySelectorAll('#levelPicker button').forEach((b, i) => b.classList.toggle('active', i === idx));
 
     grid = def.map.map(row => [...row]);
     totalOrbs = 0;
@@ -614,6 +832,7 @@
 
   window.startGame = () => {
     initAudio();
+    hidePicker();
     document.getElementById('overlay').classList.add('hidden');
     loadLevelAttempt(currentLevelIdx);
     gameState = 'PLAYING';
@@ -983,6 +1202,50 @@
     }
   }
 
+  function hidePicker() {
+    const p = document.getElementById('levelPicker');
+    if (p) p.classList.add('hidden');
+    const alt = document.getElementById('overlayPickBtn');
+    if (alt) alt.classList.remove('hidden');
+  }
+
+  function renderLevelPicker() {
+    const p = document.getElementById('levelPicker');
+    if (!p) return;
+    p.innerHTML = '';
+    LEVELS.forEach((lv, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = String(i + 1);
+      b.classList.toggle('active', i === currentLevelIdx);
+      b.title = lv.name;
+      b.onclick = () => {
+        currentLevelIdx = i;
+        hidePicker();
+        startGame();
+      };
+      p.appendChild(b);
+    });
+    p.classList.remove('hidden');
+  }
+
+  window.openLevelPicker = () => {
+    initAudio();
+    const ov = document.getElementById('overlay');
+    const title = document.getElementById('overlayTitle');
+    const desc = document.getElementById('overlayDesc');
+    const btn = document.getElementById('overlayBtn');
+    const alt = document.getElementById('overlayPickBtn');
+    title.textContent = 'VÝBER LEVELU';
+    desc.textContent = 'Desať siení. Každá má svoj vchod, duše aj východ.';
+    btn.textContent = 'HRAŤ TENTO LEVEL';
+    btn.onclick = () => { hidePicker(); startGame(); };
+    if (alt) alt.classList.add('hidden');
+    renderLevelPicker();
+    ov.classList.remove('hidden');
+    if (gameState === 'PLAYING') gameState = 'MENU';
+  };
+
   function completeLevel() {
     if (gameState !== 'PLAYING') return;
     gameState = 'LEVEL_WIN';
@@ -991,34 +1254,32 @@
     const title = document.getElementById('overlayTitle');
     const desc = document.getElementById('overlayDesc');
     const btn = document.getElementById('overlayBtn');
-
+    const alt = document.getElementById('overlayPickBtn');
+    hidePicker();
     ov.classList.remove('hidden');
-    if (currentLevelIdx === 0) {
-      title.textContent = "LEVEL 1 PREŽITÝ!";
-      desc.textContent = `Podarilo sa ti prekabátiť kryptu. Smrti: ${totalDeaths}. Priprav sa na tmu a zrkadlá v Leveli 2.`;
-      btn.textContent = "POKRAČOVAŤ DO LEVELU 2";
+    const n = currentLevelIdx + 1;
+    if (currentLevelIdx < LEVELS.length - 1) {
+      title.textContent = "LEVEL " + n + " PREŽITÝ!";
+      desc.textContent = LEVELS[currentLevelIdx].name + " je za tebou. Smrti: " + totalDeaths + ". Ďalší je " + LEVELS[currentLevelIdx + 1].name + ".";
+      btn.textContent = "POKRAČOVAŤ DO LEVELU " + (n + 1);
       btn.onclick = () => {
-        currentLevelIdx = 1;
+        currentLevelIdx += 1;
+        hidePicker();
         startGame();
       };
-    } else if (currentLevelIdx === 1) {
-      title.textContent = "LEVEL 2 PREŽITÝ!";
-      desc.textContent = `Zrkadlá ťa nezlomili. Smrti: ${totalDeaths}. Zostáva posledná sieň.`;
-      btn.textContent = "POKRAČOVAŤ DO LEVELU 3";
-      btn.onclick = () => {
-        currentLevelIdx = 2;
-        startGame();
-      };
+      if (alt) { alt.classList.remove('hidden'); alt.textContent = 'VÝBER LEVELU'; }
     } else {
       title.textContent = "PORAZIL SI HROBKU KLAMSTIEV!";
-      desc.textContent = `Všetky tri levely sú za tebou. Celkovo si zomrel ${totalDeaths}-krát. Skúsiš čistý beh s menším počtom smrtí?`;
+      desc.textContent = "Všetkých " + LEVELS.length + " levelov je za tebou. Celkovo si zomrel " + totalDeaths + "-krát. Skúsiš čistý beh s menším počtom smrtí?";
       btn.textContent = "HRAŤ ZNOVA OD LEVELU 1";
       btn.onclick = () => {
         totalDeaths = 0;
-        deathsByLevel = [[], [], []];
+        deathsByLevel = LEVELS.map(() => []);
         currentLevelIdx = 0;
+        hidePicker();
         startGame();
       };
+      if (alt) { alt.classList.remove('hidden'); alt.textContent = 'VÝBER LEVELU'; }
     }
   }
 
@@ -1406,6 +1667,15 @@
     requestAnimationFrame(loop);
   }
 
+  window.__CRYPT = {
+    LEVELS,
+    COLS,
+    ROWS,
+    getState() {
+      return { currentLevelIdx, gameState, totalOrbs, collectedOrbs, exitOpen, deaths: totalDeaths };
+    },
+    start: (i) => { currentLevelIdx = i; startGame(); }
+  };
   loadLevelAttempt(0);
   requestAnimationFrame(loop);
 })();
