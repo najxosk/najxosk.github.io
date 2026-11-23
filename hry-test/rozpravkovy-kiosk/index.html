@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fce7f3">
+  <title>Rozprávkový kiosk</title>
+  <style>
+    :root {
+      --pink: #ec4899;
+      --pink-dark: #be185d;
+      --ink: #701a75;
+      --card: rgba(255,255,255,.92);
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", "Trebuchet MS", system-ui, sans-serif;
+      background: linear-gradient(165deg, #fdf4ff 0%, #fce7f3 45%, #e0f2fe 100%);
+      color: var(--ink);
+      min-height: 100dvh;
+      padding: calc(12px + var(--safe-t)) 14px calc(16px + var(--safe-b));
+    }
+    .wrap {
+      width: min(920px, 100%);
+      margin: 0 auto;
+      background: var(--card);
+      border: 3px solid #f9a8d4;
+      border-radius: 24px;
+      padding: 18px 16px 22px;
+      box-shadow: 0 12px 32px rgba(236, 72, 153, .16);
+    }
+    h1 {
+      margin: 0 0 6px;
+      text-align: center;
+      font-size: clamp(1.35rem, 4.6vw, 2rem);
+      color: #db2777;
+      line-height: 1.2;
+    }
+    .lead { text-align: center; margin: 0 0 16px; color: #9d174d; font-size: 15px; }
+    .offline {
+      display: inline-block;
+      background: #d1fae5;
+      color: #065f46;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+    }
+    h2.cat {
+      margin: 14px 0 8px;
+      font-size: 16px;
+      color: #9d174d;
+    }
+    .grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .btn {
+      appearance: none;
+      border: 2px solid #f9a8d4;
+      background: #fff;
+      color: #831843;
+      font: 600 15px/1.2 inherit;
+      padding: 12px 14px;
+      min-height: 48px;
+      border-radius: 16px;
+      cursor: pointer;
+      touch-action: manipulation;
+      box-shadow: 0 3px 0 #fbcfe8;
+    }
+    .btn:hover { background: #fdf2f8; }
+    .btn.active {
+      background: #ec4899;
+      color: #fff;
+      border-color: #be185d;
+      box-shadow: 0 3px 0 #be185d;
+    }
+    #genBtn, .act {
+      width: 100%;
+      margin-top: 18px;
+      border: 0;
+      border-radius: 16px;
+      padding: 16px;
+      min-height: 54px;
+      font: 800 18px/1.2 inherit;
+      color: #fff;
+      background: linear-gradient(90deg, #ec4899, #d946ef);
+      box-shadow: 0 8px 20px rgba(217, 70, 239, .35);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    #genBtn:disabled { opacity: .55; cursor: not-allowed; }
+    .hint { text-align: center; font-size: 13px; color: #9d174d; margin-top: 8px; min-height: 1.2em; }
+    #result { display: none; margin-top: 18px; }
+    #result.show { display: block; }
+    .pic-wrap {
+      background: #fff;
+      border: 4px solid #f472b6;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 24px rgba(236, 72, 153, .25);
+    }
+    #scene {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #fce7f3;
+    }
+    .story {
+      margin-top: 14px;
+      background: #fff7fb;
+      border: 2px solid #fbcfe8;
+      border-radius: 18px;
+      padding: 14px 16px;
+      font-size: 18px;
+      line-height: 1.55;
+      color: #3b0764;
+    }
+    .story h3 { margin: 0 0 8px; color: #db2777; font-size: 18px; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .act.secondary {
+      background: #fff;
+      color: #9d174d;
+      border: 2px solid #f9a8d4;
+      box-shadow: 0 3px 0 #fbcfe8;
+      font-size: 15px;
+      margin-top: 0;
+    }
+    .act.speak { background: linear-gradient(90deg, #22c55e, #16a34a); box-shadow: 0 8px 16px rgba(22,163,74,.28); margin-top: 0; }
+    .actions .act:last-child { grid-column: 1 / -1; }
+    @media (max-width: 420px) {
+      .btn { flex: 1 1 calc(50% - 8px); font-size: 14px; padding: 11px 8px; }
+      .story { font-size: 17px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div style="text-align:center"><span class="offline">Funguje aj bez internetu</span></div>
+    <h1>✨ Rozprávkový kiosk ✨</h1>
+    <p class="lead">Vyber si päť vecí. Nakreslíme obrázok a vymyslíme krátku rozprávku. Potom ti ju prečítame nahlas.</p>
+
+    <div id="picker">
+      <h2 class="cat">1. Kto bude v príbehu?</h2>
+      <div class="grid" data-cat="character">
+        <button class="btn" data-id="unicorn">🦄 Jednorožec</button>
+        <button class="btn" data-id="fairy">🧚‍♀️ Malá víla</button>
+        <button class="btn" data-id="bunny">🐰 Zajačik</button>
+        <button class="btn" data-id="princess">👑 Princeznička</button>
+      </div>
+      <h2 class="cat">2. Kde sa nachádza?</h2>
+      <div class="grid" data-cat="place">
+        <button class="btn" data-id="forest">🌈 Dúhový les</button>
+        <button class="btn" data-id="castle">🏰 Trblietavý hrad</button>
+        <button class="btn" data-id="candy">🍭 Cukríkovo</button>
+        <button class="btn" data-id="clouds">☁️ Na obláčikoch</button>
+      </div>
+      <h2 class="cat">3. Čo tam robí?</h2>
+      <div class="grid" data-cat="action">
+        <button class="btn" data-id="dance">💃 Tancuje</button>
+        <button class="btn" data-id="butterflies">🦋 Hrá sa s motýľmi</button>
+        <button class="btn" data-id="cake">🍰 Papá tortičku</button>
+        <button class="btn" data-id="sleep">😴 Sladko spinká</button>
+      </div>
+      <h2 class="cat">4. Čo má na sebe?</h2>
+      <div class="grid" data-cat="accessory">
+        <button class="btn" data-id="crown">🌸 Kvetinová koruna</button>
+        <button class="btn" data-id="dress">👗 Trblietavé šaty</button>
+        <button class="btn" data-id="bow">🎀 Veľká mašľa</button>
+        <button class="btn" data-id="wand">🪄 Čarovný prútik</button>
+      </div>
+      <h2 class="cat">5. Aký má byť obrázok?</h2>
+      <div class="grid" data-cat="style">
+        <button class="btn" data-id="pixar">🎨 Ako 3D rozprávka</button>
+        <button class="btn" data-id="pastel">🖍️ Jemné pastelky</button>
+        <button class="btn" data-id="sparkle">✨ Trblietavo-magický</button>
+        <button class="btn" data-id="plush">🧸 Ako plyšová hračka</button>
+      </div>
+      <button id="genBtn" type="button">💖 Vymysli rozprávku 💖</button>
+      <p class="hint" id="hint"></p>
+    </div>
+
+    <div id="result">
+      <div class="pic-wrap"><canvas id="scene" width="960" height="540" aria-label="Rozprávkový obrázok"></canvas></div>
+      <div class="story">
+        <h3 id="storyTitle">Tvoja rozprávka</h3>
+        <p id="storyText"></p>
+      </div>
+      <div class="actions">
+        <button type="button" class="act speak" id="speakBtn">🔊 Čítaj nahlas</button>
+        <button type="button" class="act secondary" id="stopBtn">⏹ Zastaviť</button>
+        <button type="button" class="act secondary" id="againBtn">🎲 Iná verzia</button>
+        <button type="button" class="act secondary" id="saveBtn">💾 Uložiť obrázok</button>
+        <button type="button" class="act secondary" id="newBtn">↩ Nový výber</button>
+      </div>
+    </div>
+  </div>
+<script>
+(function () {
+  const KEYS = ["character", "place", "action", "accessory", "style"];
+  const labels = {
+    character: { unicorn: "jednorožec", fairy: "víla", bunny: "zajačik", princess: "princeznička" },
+    place: { forest: "dúhový les", castle: "trblietavý hrad", candy: "Cukríkovo", clouds: "mäkké obláčiky" },
+    action: { dance: "tancovať", butterflies: "hrať sa s motýľmi", cake: "jesť tortičku", sleep: "sladko spať" },
+    accessory: { crown: "kvetinovú korunu", dress: "trblietavé šaty", bow: "veľkú mašľu", wand: "čarovný prútik" },
+    style: { pixar: "ako 3D rozprávka", pastel: "jemnými pastelkami", sparkle: "trblietavo a magicky", plush: "ako plyšová hračka" }
+  };
+  const choices = { character: null, place: null, action: null, accessory: null, style: null };
+  let seed = 1;
+  let lastStory = "";
+
+  const $ = (id) => document.getElementById(id);
+  function mulberry(a) { return function () { let t = a += 0x6D2B79F5; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  document.querySelectorAll(".grid").forEach((grid) => {
+    grid.addEventListener("click", (e) => {
+      const btn = e.target.closest(".btn");
+      if (!btn) return;
+      const cat = grid.getAttribute("data-cat");
+      choices[cat] = btn.getAttribute("data-id");
+      grid.querySelectorAll(".btn").forEach((b) => b.classList.toggle("active", b === btn));
+      $("hint").textContent = "";
+    });
+  });
+
+  function ready() { return KEYS.every((k) => choices[k]); }
+
+  function who() {
+    const c = choices.character;
+    if (c === "fairy" || c === "princess") {
+      return { nom: labels.character[c], ona: true, kto: c === "fairy" ? "malá víla" : "laskavá princeznička", verb: "a" };
+    }
+    return { nom: labels.character[c], ona: false, kto: c === "unicorn" ? "biely jednorožec so zlatým rohom" : "huňatý zajačik s dlhými uškami", verb: "" };
+  }
+  function placePhrase() {
+    return {
+      forest: "v dúhovom lese, kde stromy svetielkovali všetkými farbami",
+      castle: "v trblietavom hrade z číreho krištáľu",
+      candy: "v Cukríkove, kde cestičky voniali vanilkou a domčeky boli z perníka",
+      clouds: "hore na mäkkých ružových obláčikoch"
+    }[choices.place];
+  }
+  function accPhrase(ona) {
+    const ma = ona ? "mala" : "mal";
+    return {
+      crown: ma + " na hlave voňavú kvetinovú korunu",
+      dress: ma + " na sebe trblietavé šaty, ktoré ticho cinkali",
+      bow: ma + " na hlave veľkú ružovú mašľu",
+      wand: (ona ? "držala" : "držal") + " žiariaci čarovný prútik"
+    }[choices.accessory];
+  }
+  function actSent(w) {
+    const tancovala = w.ona ? "tancovala" : "tancoval";
+    const hrala = w.ona ? "hrala" : "hral";
+    const jedla = w.ona ? "jedla" : "jedol";
+    const spala = w.ona ? "spala" : "spal";
+    const usmiala = w.ona ? "usmiala" : "usmial";
+    return {
+      dance: "Od radosti " + tancovala + " dookola, až sa lístie a hviezdičky pridali k tancu.",
+      butterflies: hrala.charAt(0).toUpperCase() + hrala.slice(1) + " sa so svietiacimi motýľmi. Sadali jej na rameno a šteklili nos.",
+      cake: "Na veľkom tanieri " + jedla + " jahodovú tortičku. Bola taká kyprá, že sa " + usmiala + " od sladkosti.",
+      sleep: "Potom si ľahla do mäkkého hniezdočka a " + spala.replace("a", w.ona ? "ala" : "al") + " sladkým spánkom pod hviezdami."
+    }[choices.action];
+  }
+  // fix sleep sentence more carefully
+  function actSent2(w) {
+    if (choices.action === "dance") return (w.ona ? "Od radosti tancovala" : "Od radosti tancoval") + " dookola, až sa lístie a hviezdičky pridali k tancu.";
+    if (choices.action === "butterflies") return (w.ona ? "Hrala" : "Hral") + " sa so svietiacimi motýľmi. Sadali " + (w.ona ? "jej" : "mu") + " na rameno a šteklili nos.";
+    if (choices.action === "cake") return "Na veľkom tanieri " + (w.ona ? "jedla" : "jedol") + " jahodovú tortičku. Bola taká kyprá, že sa " + (w.ona ? "usmiala" : "usmial") + " od sladkosti.";
+    return "Potom si " + (w.ona ? "ľahla" : "ľahol") + " do mäkkého hniezdočka a " + (w.ona ? "spala" : "spal") + " sladkým spánkom pod hviezdami.";
+  }
+  function styleSent() {
+    return {
+      pixar: "Všetko okolo vyzeralo ako z farebnej 3D rozprávky, okrúhle a jasné.",
+      pastel: "Farby boli jemné ako pastelky, akoby ich niekto namaľoval na mäkký papier.",
+      sparkle: "Vzduchom lietali zlaté iskričky a všetko ticho žiarilo mágiou.",
+      plush: "Celý svet bol hebký ako plyšová hračka, ktorú je dobré objať."
+    }[choices.style];
+  }
+  function endings(rng, w) {
+    const pool = w.ona ? [
+      "A keď prišiel večer, sľúbila, že zajtra vymyslí ešte krajšiu hru.",
+      "Tak šťastne sa to skončilo, že aj mesiacik sa usmial.",
+      "Odvtedy si na to miesto chodia zvieratká posediať a spomínať na ten krásny deň.",
+      "A ty, ak zavrieš oči, môžeš ju tam ešte chvíľu vidieť."
+    ] : [
+      "A keď prišiel večer, sľúbil, že zajtra vymyslí ešte krajšiu hru.",
+      "Tak šťastne sa to skončilo, že aj mesiacik sa usmial.",
+      "Odvtedy si na to miesto chodia zvieratká posediať a spomínať na ten krásny deň.",
+      "A ty, ak zavrieš oči, môžeš ho tam ešte chvíľu vidieť."
+    ];
+    return pool[Math.floor(rng() * pool.length)];
+  }
+  function makeStory(s) {
+    const rng = mulberry(s);
+    const w = who();
+    const start = rng() < 0.5 ? "Kde bolo, tam bolo, " : "Raz jedného tichého dňa ";
+    const p1 = start + placePhrase() + ", žil" + (w.ona ? "a " : " ") + w.kto + ".";
+    const p2 = (w.ona ? "Ona " : "On ") + accPhrase(w.ona) + " a každému, kto išiel okolo, zdvihlo sa srdce.";
+    const p3 = actSent2(w);
+    const p4 = styleSent();
+    const p5 = endings(rng, w);
+    return [p1, p2, p3, p4, p5].join(" ");
+  }
+  function titleFor() {
+    const w = who();
+    const miesto = labels.place[choices.place];
+    return (w.ona ? "Rozprávka o " + (choices.character === "fairy" ? "víle" : "princezničke") : "Rozprávka o " + (choices.character === "unicorn" ? "jednorožcovi" : "zajačikovi")) + " " + ({
+      forest: "v dúhovom lese", castle: "v trblietavom hrade", candy: "v Cukríkove", clouds: "na obláčikoch"
+    }[choices.place]);
+  }
+
+  /* ----- canvas illustration ----- */
+  function pal() {
+    const base = {
+      forest: { sky: ["#b8e0ff", "#fce7f3"], ground: "#7bc47f", accent: "#f472b6" },
+      castle: { sky: ["#c4b5fd", "#fce7f3"], ground: "#e9d5ff", accent: "#a78bfa" },
+      candy: { sky: ["#fecdd3", "#fef3c7"], ground: "#fda4af", accent: "#fb7185" },
+      clouds: { sky: ["#bae6fd", "#fce7f3"], ground: "#e0f2fe", accent: "#38bdf8" }
+    }[choices.place];
+    if (choices.style === "pastel") {
+      base.sky = [base.sky[0], "#fff7ed"];
+    }
+    return base;
+  }
+  function drawScene(s) {
+    const cv = $("scene");
+    const x = cv.getContext("2d");
+    const W = cv.width, H = cv.height;
+    const rng = mulberry(s);
+    const P = pal();
+    x.clearRect(0, 0, W, H);
+    const sky = x.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, P.sky[0]);
+    sky.addColorStop(1, P.sky[1]);
+    x.fillStyle = sky;
+    x.fillRect(0, 0, W, H);
+
+    function blob(cx, cy, rx, ry, color, a) {
+      x.save(); x.globalAlpha = a == null ? 1 : a;
+      x.fillStyle = color;
+      x.beginPath(); x.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); x.fill();
+      x.restore();
+    }
+    function spark(n, color) {
+      for (let i = 0; i < n; i++) {
+        const px = 30 + rng() * (W - 60), py = 20 + rng() * (H - 80);
+        x.fillStyle = color;
+        x.globalAlpha = 0.55 + rng() * 0.4;
+        x.beginPath();
+        const r = 2 + rng() * 4;
+        x.moveTo(px, py - r);
+        x.lineTo(px + r * 0.35, py);
+        x.lineTo(px, py + r);
+        x.lineTo(px - r * 0.35, py);
+        x.closePath(); x.fill();
+        x.globalAlpha = 1;
+      }
+    }
+
+    // place scenery
+    if (choices.place === "forest") {
+      blob(W * 0.5, H * 0.92, W * 0.7, 140, P.ground);
+      blob(W * 0.2, H * 0.92, 260, 100, "#4ade80");
+      // trees
+      for (let i = 0; i < 7; i++) {
+        const tx = 80 + i * 120 + rng() * 30, ty = 280 + rng() * 40;
+        x.fillStyle = "#92400e"; x.fillRect(tx - 10, ty, 20, 80);
+        const cols = ["#fb7185", "#22d3ee", "#a3e635", "#c084fc", "#fbbf24"];
+        blob(tx, ty - 10, 48, 56, cols[i % cols.length]);
+        if (choices.style !== "pastel") blob(tx - 14, ty - 24, 16, 12, "rgba(255,255,255,.35)");
+      }
+      // rainbow
+      const cx = 200, cy = 260;
+      ["#ef4444", "#f59e0b", "#84cc16", "#22d3ee", "#6366f1", "#a855f7"].forEach((c, i) => {
+        x.beginPath(); x.strokeStyle = c; x.lineWidth = 10; x.globalAlpha = 0.8;
+        x.arc(cx, cy, 160 - i * 12, Math.PI, Math.PI * 1.7); x.stroke(); x.globalAlpha = 1;
+      });
+    } else if (choices.place === "castle") {
+      blob(W * 0.5, H * 0.95, W, 120, P.ground);
+      // castle body
+      const bx = 620, by = 180;
+      x.fillStyle = "#f5f3ff";
+      x.strokeStyle = "#7c3aed"; x.lineWidth = 3;
+      x.beginPath();
+      x.roundRect ? x.roundRect(bx, by + 40, 220, 200, 8) : x.rect(bx, by + 40, 220, 200);
+      x.fill(); x.stroke();
+      // towers
+      [[bx - 30, by, 70, 240], [bx + 180, by, 70, 240]].forEach(([tx, ty, tw, th]) => {
+        x.fillStyle = "#ede9fe"; x.fillRect(tx, ty + 40, tw, th);
+        x.fillStyle = "#c4b5fd";
+        x.beginPath(); x.moveTo(tx - 8, ty + 40); x.lineTo(tx + tw / 2, ty - 20); x.lineTo(tx + tw + 8, ty + 40); x.fill();
+      });
+      x.fillStyle = "#a78bfa";
+      x.beginPath(); x.moveTo(bx + 20, by + 40); x.lineTo(bx + 110, by - 30); x.lineTo(bx + 200, by + 40); x.fill();
+      // windows
+      x.fillStyle = "#fde68a";
+      [[bx + 40, by + 90], [bx + 140, by + 90], [bx + 90, by + 150]].forEach(([wx, wy]) => {
+        x.beginPath(); x.roundRect ? x.roundRect(wx, wy, 28, 36, 8) : x.rect(wx, wy, 28, 36); x.fill();
+      });
+      x.fillStyle = "#7c3aed"; x.fillRect(bx + 90, by + 200, 40, 40);
+    } else if (choices.place === "candy") {
+      blob(W * 0.5, H * 0.95, W, 130, "#fda4af");
+      blob(200, 500, 180, 60, "#86efac");
+      // lollipops / canes
+      for (let i = 0; i < 6; i++) {
+        const lx = 80 + i * 150, ly = 340 + (i % 2) * 20;
+        x.strokeStyle = i % 2 ? "#fff" : "#ef4444"; x.lineWidth = 10;
+        x.beginPath(); x.moveTo(lx, ly + 120); x.lineTo(lx, ly + 20); x.stroke();
+        blob(lx, ly, 36, 36, ["#fb7185", "#60a5fa", "#fbbf24", "#c084fc", "#34d399", "#f472b6"][i]);
+        blob(lx - 8, ly - 8, 10, 8, "rgba(255,255,255,.5)");
+      }
+      // cake house
+      x.fillStyle = "#fed7aa"; x.fillRect(700, 320, 160, 120);
+      x.fillStyle = "#fb7185";
+      x.beginPath(); x.moveTo(680, 320); x.lineTo(780, 250); x.lineTo(880, 320); x.fill();
+    } else {
+      blob(W * 0.5, H * 0.98, W, 80, "#e0f2fe");
+      [[180, 160, 90], [400, 120, 110], [700, 170, 100], [860, 90, 70]].forEach(([cx, cy, r]) => {
+        blob(cx, cy, r, r * 0.62, "#fff");
+        blob(cx - r * 0.5, cy + 8, r * 0.6, r * 0.48, "#fff");
+        blob(cx + r * 0.5, cy + 6, r * 0.55, r * 0.45, "#fff");
+      });
+      blob(120, 90, 44, 44, "#fde047");
+    }
+
+    if (choices.style === "sparkle" || choices.style === "pixar") spark(28, "#fffbeb");
+    if (choices.style === "pastel") {
+      blob(200, 80, 200, 80, "#fff", 0.18);
+      blob(800, 200, 180, 90, "#fff", 0.16);
+    }
+
+    // character on a stump / cloud
+    const CX = 420, CY = choices.action === "sleep" ? 390 : 330;
+    blob(CX, 470, 90, 22, "rgba(0,0,0,.12)");
+    if (choices.place !== "clouds") {
+      x.fillStyle = "#a16207"; x.beginPath(); x.ellipse(CX, 455, 70, 22, 0, 0, Math.PI * 2); x.fill();
+      x.fillStyle = "#854d0e"; x.fillRect(CX - 40, 455, 80, 30);
+    } else {
+      blob(CX, 455, 80, 28, "#fff");
+    }
+
+    function drawUnicorn(dx, dy, lying) {
+      x.save(); x.translate(dx, dy); if (lying) { x.rotate(-0.6); x.translate(-20, 30); }
+      // body
+      blob(0, 20, 70, 42, "#fff");
+      blob(50, 10, 36, 28, "#fff"); // rump
+      // legs
+      x.fillStyle = "#fff";
+      [[-40, 40], [-10, 46], [30, 46], [55, 40]].forEach(([lx, ly]) => { x.fillRect(lx, ly, 12, 40); blob(lx + 6, ly + 40, 8, 6, "#fbcfe8"); });
+      // neck + head
+      x.fillStyle = "#fff";
+      x.beginPath(); x.ellipse(-70, -20, 28, 22, -0.3, 0, Math.PI * 2); x.fill();
+      // horn
+      x.fillStyle = "#fbbf24";
+      x.beginPath(); x.moveTo(-78, -38); x.lineTo(-72, -84); x.lineTo(-62, -36); x.fill();
+      // mane
+      ["#f472b6", "#c084fc", "#38bdf8", "#fde047"].forEach((c, i) => blob(-50 + i * 8, -40 + i * 8, 14, 18, c));
+      // eye
+      blob(-78, -22, 4, 5, "#3b0764");
+      blob(-79, -24, 1.5, 1.5, "#fff");
+      x.restore();
+    }
+    function drawBunny(dx, dy, lying) {
+      x.save(); x.translate(dx, dy); if (lying) { x.rotate(-0.7); }
+      blob(0, 20, 54, 42, "#fff");
+      blob(-6, -20, 32, 28, "#fff");
+      // ears
+      x.fillStyle = "#fff";
+      x.beginPath(); x.ellipse(-18, -58, 10, 32, -0.2, 0, Math.PI * 2); x.fill();
+      x.beginPath(); x.ellipse(4, -58, 10, 32, 0.2, 0, Math.PI * 2); x.fill();
+      x.fillStyle = "#fbcfe8";
+      x.beginPath(); x.ellipse(-18, -56, 5, 20, -0.2, 0, Math.PI * 2); x.fill();
+      x.beginPath(); x.ellipse(4, -56, 5, 20, 0.2, 0, Math.PI * 2); x.fill();
+      blob(18, 40, 16, 14, "#fff"); // tail
+      blob(-16, -18, 3, 4, "#3b0764"); blob(-6, -18, 3, 4, "#3b0764");
+      blob(-12, -8, 8, 5, "#fbcfe8");
+      x.restore();
+    }
+    function drawFairy(dx, dy, lying) {
+      x.save(); x.translate(dx, dy); if (lying) { x.rotate(-0.8); x.translate(0, 20); }
+      // wings
+      x.fillStyle = "rgba(125, 211, 252, 0.7)";
+      x.beginPath(); x.ellipse(-18, -10, 28, 40, -0.5, 0, Math.PI * 2); x.fill();
+      x.beginPath(); x.ellipse(28, -10, 28, 40, 0.5, 0, Math.PI * 2); x.fill();
+      // dress
+      x.fillStyle = "#e879f9";
+      x.beginPath(); x.moveTo(-4, 8); x.lineTo(-36, 70); x.lineTo(40, 70); x.closePath(); x.fill();
+      blob(4, 6, 16, 18, "#fecaca"); // body
+      blob(4, -22, 16, 16, "#fecaca"); // head
+      x.fillStyle = "#fde047";
+      for (let i = 0; i < 6; i++) { const a = -Math.PI / 2 + i * 0.5; x.beginPath(); x.arc(4 + Math.cos(a) * 16, -36 + Math.sin(a) * 8, 4, 0, Math.PI * 2); x.fill(); }
+      blob(-2, -24, 2.2, 2.8, "#3b0764"); blob(8, -24, 2.2, 2.8, "#3b0764");
+      x.restore();
+    }
+    function drawPrincess(dx, dy, lying) {
+      x.save(); x.translate(dx, dy); if (lying) { x.rotate(-0.85); x.translate(0, 16); }
+      x.fillStyle = "#fb7185";
+      x.beginPath(); x.moveTo(-2, 10); x.lineTo(-50, 80); x.lineTo(54, 80); x.closePath(); x.fill();
+      if (choices.style === "sparkle" || choices.style === "pixar") {
+        sparkleDress();
+      }
+      blob(4, 8, 18, 20, "#fecaca");
+      blob(4, -24, 17, 17, "#fecaca");
+      x.fillStyle = "#fbbf24";
+      x.beginPath();
+      x.moveTo(-12, -36); x.lineTo(-8, -52); x.lineTo(0, -38); x.lineTo(8, -52); x.lineTo(12, -36); x.lineTo(20, -34); x.lineTo(-20, -34);
+      x.closePath(); x.fill();
+      blob(-4, -26, 2.3, 2.8, "#3b0764"); blob(10, -26, 2.3, 2.8, "#3b0764");
+      x.restore();
+      function sparkleDress() {
+        x.fillStyle = "#fff";
+        for (let i = 0; i < 10; i++) blob(-20 + rng() * 44, 30 + rng() * 40, 2, 2, "#fff", 0.8);
+      }
+    }
+
+    const lying = choices.action === "sleep";
+    const drawers = { unicorn: drawUnicorn, fairy: drawFairy, bunny: drawBunny, princess: drawPrincess };
+    drawers[choices.character](CX, CY, lying);
+
+    // accessories
+    x.save();
+    x.translate(CX, CY);
+    if (lying) x.rotate(-0.5);
+    if (choices.accessory === "crown") {
+      ["#fb7185", "#fde047", "#38bdf8", "#c084fc", "#fb7185"].forEach((c, i) => blob(-24 + i * 12, -78, 8, 8, c));
+    } else if (choices.accessory === "bow") {
+      x.fillStyle = "#fb7185";
+      x.beginPath(); x.moveTo(18, -72); x.lineTo(48, -92); x.lineTo(48, -52); x.closePath(); x.fill();
+      x.beginPath(); x.moveTo(18, -72); x.lineTo(-12, -92); x.lineTo(-12, -52); x.closePath(); x.fill();
+      blob(18, -72, 8, 8, "#be185d");
+    } else if (choices.accessory === "wand") {
+      x.strokeStyle = "#fbbf24"; x.lineWidth = 5;
+      x.beginPath(); x.moveTo(70, 10); x.lineTo(110, -50); x.stroke();
+      x.fillStyle = "#fde047";
+      star(110, -50, 16);
+    } else if (choices.accessory === "dress" && choices.character !== "princess" && choices.character !== "fairy") {
+      x.fillStyle = "rgba(244, 114, 182, 0.55)";
+      x.beginPath(); x.moveTo(-10, 8); x.lineTo(-40, 70); x.lineTo(40, 70); x.closePath(); x.fill();
+    }
+    x.restore();
+
+    function star(px, py, r) {
+      x.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const a = -Math.PI / 2 + i * 2 * Math.PI / 5;
+        const b = a + Math.PI / 5;
+        x.lineTo(px + Math.cos(a) * r, py + Math.sin(a) * r);
+        x.lineTo(px + Math.cos(b) * r * 0.45, py + Math.sin(b) * r * 0.45);
+      }
+      x.closePath(); x.fill();
+    }
+
+    // action extras
+    if (choices.action === "butterflies") {
+      for (let i = 0; i < 7; i++) {
+        const bx = 200 + rng() * 500, by = 120 + rng() * 280;
+        x.fillStyle = ["#c084fc", "#fb7185", "#38bdf8", "#fbbf24"][i % 4];
+        blob(bx - 8, by, 10, 7, x.fillStyle);
+        blob(bx + 8, by, 10, 7, x.fillStyle);
+        blob(bx, by, 3, 4, "#3b0764");
+      }
+    }
+    if (choices.action === "cake") {
+      const kx = CX + 100, ky = 430;
+      x.fillStyle = "#fbcfe8"; x.fillRect(kx - 40, ky - 30, 80, 40);
+      x.fillStyle = "#fda4af"; x.beginPath(); x.ellipse(kx, ky - 30, 40, 12, 0, 0, Math.PI * 2); x.fill();
+      x.fillStyle = "#fff"; x.beginPath(); x.ellipse(kx, ky - 44, 28, 10, 0, 0, Math.PI * 2); x.fill();
+      x.fillStyle = "#ef4444"; blob(kx, ky - 58, 8, 8, "#ef4444");
+    }
+    if (choices.action === "dance") {
+      x.fillStyle = "#db2777"; x.font = "bold 28px sans-serif";
+      x.fillText("♪", CX + 90, CY - 60);
+      x.fillText("♫", CX - 110, CY - 40);
+    }
+    if (choices.action === "sleep") {
+      x.fillStyle = "#64748b"; x.font = "bold 26px sans-serif";
+      x.fillText("z z z", CX + 80, CY - 70);
+    }
+
+    if (choices.style === "plush") {
+      // soft overlay
+      x.fillStyle = "rgba(255,255,255,0.12)";
+      x.fillRect(0, 0, W, H);
+    }
+    if (choices.style === "sparkle") spark(40, "#fde047");
+
+    // frame shine
+    const vg = x.createRadialGradient(W / 2, H / 2, 80, W / 2, H / 2, 560);
+    vg.addColorStop(0, "rgba(0,0,0,0)");
+    vg.addColorStop(1, "rgba(112, 26, 117, 0.12)");
+    x.fillStyle = vg; x.fillRect(0, 0, W, H);
+  }
+
+  function speak(text) {
+    stopTalk();
+    if (!("speechSynthesis" in window)) {
+      $("hint").textContent = "Tento prehliadač nevie čítať nahlas, ale rozprávku si môžeš prečítať sám.";
+      return false;
+    }
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "sk-SK";
+    u.rate = 0.92;
+    const voices = speechSynthesis.getVoices() || [];
+    const sk = voices.find((v) => /sk(-|_)SK/i.test(v.lang) || /slovak|sloven/i.test(v.name));
+    if (sk) u.voice = sk;
+    speechSynthesis.speak(u);
+    return true;
+  }
+  function stopTalk() {
+    try { if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch (e) {}
+  }
+
+  function generate(newSeed) {
+    if (!ready()) {
+      $("hint").textContent = "Vyber si prosím jednu možnosť z každej z piatich skupín.";
+      return false;
+    }
+    seed = newSeed || (Math.floor(Math.random() * 999999) + 1);
+    lastStory = makeStory(seed);
+    $("storyTitle").textContent = titleFor();
+    $("storyText").textContent = lastStory;
+    drawScene(seed);
+    $("result").classList.add("show");
+    $("result").scrollIntoView({ behavior: "smooth", block: "start" });
+    try { localStorage.setItem("rozpravkovy-kiosk-v1", JSON.stringify({ choices, seed, story: lastStory })); } catch (e) {}
+    return true;
+  }
+
+  $("genBtn").addEventListener("click", () => generate());
+  $("againBtn").addEventListener("click", () => generate());
+  $("newBtn").addEventListener("click", () => {
+    stopTalk();
+    $("result").classList.remove("show");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+  $("speakBtn").addEventListener("click", () => {
+    if (lastStory) speak($("storyTitle").textContent + ". " + lastStory);
+  });
+  $("stopBtn").addEventListener("click", stopTalk);
+  $("saveBtn").addEventListener("click", () => {
+    const a = document.createElement("a");
+    a.href = $("scene").toDataURL("image/png");
+    a.download = "rozpravka.png";
+    a.click();
+  });
+  window.addEventListener("pagehide", stopTalk);
+
+  window.__KIOSK = {
+    choices, labels,
+    select(cat, id) {
+      const grid = document.querySelector('.grid[data-cat="' + cat + '"]');
+      const btn = grid && grid.querySelector('[data-id="' + id + '"]');
+      if (btn) btn.click();
+    },
+    generate, speak, stopTalk,
+    getState() { return { choices: { ...choices }, seed, story: lastStory, ready: ready() }; },
+    pickAll() {
+      this.select("character", "fairy");
+      this.select("place", "forest");
+      this.select("action", "butterflies");
+      this.select("accessory", "wand");
+      this.select("style", "sparkle");
+    }
+  };
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="sk" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#090D16" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Klubovňa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background-color: #060911; color: #F8FAFC; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    .glass-card {
+      background: rgba(22, 30, 49, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-nav {
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .ambient-glow {
+      background: radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.16), transparent 60%),
+                  radial-gradient(circle at 90% 90%, rgba(56, 189, 248, 0.10), transparent 50%);
+    }
+    @keyframes pulse-rec { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); box-shadow: 0 0 20px rgba(239,68,68,0.6); } }
+    .rec-active { animation: pulse-rec 1s infinite; background: linear-gradient(135deg, #EF4444, #DC2626) !important; color: white !important; }
+  </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex justify-center bg-[#05070E] select-none">
+
+  <!-- HLAVNÝ MOBILNÝ RÁM -->
+  <div id="app" class="w-full max-w-md h-full bg-[#090D16] ambient-glow flex flex-col relative shadow-2xl overflow-hidden sm:rounded-[38px] sm:my-2 sm:h-[calc(100vh-16px)] sm:border sm:border-white/10">
+
+    <!-- ================= 1. VSTUP (BEZ HESLA, LEN TOTO ZARIADENIE) ================= -->
+    <div id="login-screen" class="absolute inset-0 z-50 bg-[#090D16] ambient-glow flex flex-col items-center justify-center p-6 overflow-y-auto">
+      <div class="w-24 h-24 rounded-[30px] bg-gradient-to-br from-amber-400 to-orange-600 p-0.5 shadow-2xl shadow-amber-500/20 mb-5 shrink-0">
+        <div class="w-full h-full bg-[#090D16] rounded-[28px] flex items-center justify-center text-5xl">
+          🍻
+        </div>
+      </div>
+      <h1 class="text-3xl font-extrabold tracking-tight text-white mb-1">Klubovňa</h1>
+      <p class="text-xs text-slate-400 mb-4 text-center max-w-[280px]">Súkromný kútik pre partiu. Bez hesla a bez účtu. Všetko ostáva len v tomto prehliadači, nie je to spoločný chat cez internet.</p>
+
+      <div class="w-full max-w-xs glass-card rounded-[28px] p-5 shadow-2xl mb-3">
+        <p class="text-[11px] uppercase tracking-widest text-slate-400 font-bold mb-3 text-center">Kto si dnes?</p>
+        <div id="welcome-members" class="space-y-2"></div>
+      </div>
+
+      <div class="w-full max-w-xs glass-card rounded-[28px] p-5 shadow-2xl">
+        <p class="text-[11px] uppercase tracking-widest text-slate-400 font-bold mb-3 text-center">Pridať nového člena</p>
+        <input id="new-member-name" type="text" maxlength="24" placeholder="Tvoja prezývka"
+          class="w-full bg-slate-950/90 border border-white/10 focus:border-amber-400 rounded-2xl py-3 px-4 text-center text-sm text-white outline-none mb-3" />
+        <button id="new-member-btn" class="w-full bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 active:scale-[0.98] text-slate-950 font-extrabold py-3.5 rounded-2xl transition shadow-lg shadow-amber-500/25">
+          Vstúpiť ako nový člen
+        </button>
+        <p id="login-error" class="text-xs text-rose-400 text-center mt-3 hidden font-medium">Napíš prezývku, aspoň dve písmená.</p>
+      </div>
+    </div>
+
+    <!-- ================= 2. HORNÁ HLAVIČKA + PROFIL + 1v1 LIŠTA ================= -->
+    <header class="pt-3 pb-2 px-4 glass-card border-t-0 border-x-0 rounded-b-[28px] shrink-0 z-20 shadow-lg">
+      <div class="flex items-center justify-between mb-2.5">
+        <!-- Kliknutím na svoj avatar alebo meno sa otvorí úprava profilu -->
+        <button id="open-profile-btn" class="flex items-center gap-2.5 text-left group">
+          <div class="relative">
+            <div id="my-avatar-container" class="w-10 h-10 rounded-2xl overflow-hidden shadow-md border border-white/15 flex items-center justify-center">
+              <!-- Dynamický avatar -->
+            </div>
+            <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-amber-400 text-slate-950 text-[9px] font-extrabold flex items-center justify-center shadow">✏️</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <h1 class="font-extrabold text-base text-white tracking-tight group-hover:text-amber-300 transition">Klubovňa</h1>
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            </div>
+            <p id="current-user-label" class="text-[11px] text-slate-400 font-medium">Upraviť môj profil</p>
+          </div>
+        </button>
+
+        <div class="flex items-center gap-1.5">
+          <button id="admin-btn" class="hidden text-xs bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-400/30 px-3 py-1.5 rounded-full font-bold transition">
+            ⚙️ Admin
+          </button>
+          <button id="logout-btn" title="Zmeniť člena / Odhlásiť" class="text-xs bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 px-3 py-1.5 rounded-full font-semibold transition">
+            Prepnúť
+          </button>
+        </div>
+      </div>
+
+      <!-- HORIZONTÁLNA LIŠTA S PARTIOU (Všetci + 1v1 s fotkami a odznakmi) -->
+      <div id="crew-bar" class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+        <!-- Dynamicky generované -->
+      </div>
+    </header>
+
+    <!-- ================= 3. HLAVNÝ OBSAH ================= -->
+    <main class="flex-1 overflow-hidden relative flex flex-col pb-20">
+
+      <!-- -------- TAB 1: CHAT & VÝZVA -------- -->
+      <section id="tab-feed" class="flex-1 flex flex-col h-full overflow-hidden">
+
+        <!-- A. Lišta "Čo mi ušlo?" -->
+        <div id="catchup-bar" class="hidden mx-3 mt-2 bg-indigo-500/15 border border-indigo-400/30 rounded-2xl px-3.5 py-2 flex items-center justify-between text-xs">
+          <span id="catchup-text" class="text-indigo-200 font-medium">✨ Nové správy v Klubovni</span>
+          <button id="catchup-close" class="text-[11px] bg-indigo-500/30 text-white px-2.5 py-0.5 rounded-full font-bold ml-2">OK</button>
+        </div>
+
+        <!-- B. Karta: Výzva týždňa -->
+        <div id="challenge-card-wrapper" class="px-3 pt-2.5 shrink-0">
+          <div class="bg-gradient-to-r from-amber-500/20 via-orange-500/10 to-slate-900/90 border border-amber-400/30 rounded-[24px] p-3.5 shadow-lg">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 shadow">
+                  🔥 Týždenná výzva
+                </span>
+                <span id="challenge-count" class="text-[11px] text-amber-300/90 font-semibold">0 fotiek</span>
+              </div>
+              <button id="reply-challenge-btn" class="text-xs bg-white/10 hover:bg-white/20 border border-white/15 text-amber-300 font-bold px-3 py-1 rounded-full transition">
+                + Zapojiť sa
+              </button>
+            </div>
+            <h2 id="challenge-title" class="text-sm font-extrabold text-white mt-2">Načítavam...</h2>
+            <p id="challenge-desc" class="text-xs text-slate-300 mt-0.5 leading-relaxed"></p>
+          </div>
+        </div>
+
+        <!-- C. Banner pri zapnutej 1v1 súkromnej konverzácii -->
+        <div id="dm-active-banner" class="hidden mx-3 mt-2.5 bg-gradient-to-r from-sky-500/20 to-indigo-500/15 border border-sky-400/30 rounded-2xl px-4 py-2.5 flex items-center justify-between text-xs shrink-0 shadow">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
+            <span class="text-sky-200">Súkromný chat (1v1) s <b id="dm-partner-name" class="text-white text-sm ml-0.5"></b></span>
+          </div>
+          <button id="exit-dm-btn" class="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-full text-[11px] font-bold transition">
+            Späť ku všetkým ✕
+          </button>
+        </div>
+
+        <!-- D. Prúd správ -->
+        <div id="chat-stream" class="flex-1 overflow-y-auto px-3.5 py-3 space-y-3.5 no-scrollbar"></div>
+
+        <!-- E. Odznak odpovede na výzvu -->
+        <div id="composer-badge" class="hidden mx-3 mb-1.5 px-3.5 py-1.5 bg-amber-500/20 border border-amber-400/40 rounded-2xl text-amber-200 text-xs flex items-center justify-between">
+          <span>🎯 Príspevok sa označí ako <b>Výzva týždňa</b></span>
+          <button id="cancel-challenge-tag" class="text-white font-bold px-1.5">✕</button>
+        </div>
+
+        <!-- F. Spodný panel na písanie -->
+        <div class="px-3 pb-2 pt-1 shrink-0">
+          <div class="glass-card rounded-full p-1.5 flex items-center gap-1.5 shadow-xl">
+            <input type="file" id="image-input" accept="image/*" class="hidden" />
+            <button id="photo-btn" title="Poslať fotku" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/15 text-slate-200 flex items-center justify-center text-lg shrink-0 transition active:scale-90">
+              📷
+            </button>
+
+            <button id="voice-btn" title="Nahrať hlasovku" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/15 text-slate-200 flex items-center justify-center text-lg shrink-0 transition active:scale-90">
+              🎙️
+            </button>
+
+            <input id="msg-input" type="text" placeholder="Napíš niečo chalanom..."
+              class="flex-1 bg-transparent px-2 py-2 text-sm text-white placeholder-slate-400 outline-none" />
+
+            <button id="send-btn" class="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-extrabold flex items-center justify-center text-base shrink-0 transition shadow-md shadow-amber-500/20 active:scale-90">
+              ➤
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- -------- TAB 2: STRETÁVKY -------- -->
+      <section id="tab-events" class="hidden flex-1 flex flex-col h-full overflow-y-auto px-4 pt-4 pb-6 space-y-4 no-scrollbar">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-lg font-extrabold text-white tracking-tight">🍻 Stretávky & Výlety</h2>
+            <p class="text-xs text-slate-400">Žiadne zložité tabuľky. Klikni či ideš a hotovo.</p>
+          </div>
+          <button id="open-event-modal" class="bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 text-xs font-extrabold px-4 py-2.5 rounded-full shadow-lg shadow-amber-500/20 active:scale-95 transition">
+            + Zvolať partiu
+          </button>
+        </div>
+
+        <div id="events-list" class="space-y-3.5"></div>
+      </section>
+
+      <!-- -------- TAB 3: CHLADNIČKA -------- -->
+      <section id="tab-vault" class="hidden flex-1 flex flex-col h-full overflow-y-auto px-4 pt-4 pb-6 space-y-6 no-scrollbar">
+        <div>
+          <h2 class="text-lg font-extrabold text-white tracking-tight mb-0.5">📌 Naša chladnička</h2>
+          <p class="text-xs text-slate-400 mb-3">Legendárne fotky a hlášky, ktoré ste pripli v chate.</p>
+          <div id="pinned-list" class="space-y-3"></div>
+        </div>
+
+        <div>
+          <h2 class="text-sm font-extrabold uppercase tracking-wider text-slate-400 mb-2.5">🗂️ Archív starých výziev</h2>
+          <div id="past-challenges-list" class="space-y-2.5"></div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ================= 4. PLÁVAJÚCA SPODNÁ NAVIGÁCIA ================= -->
+    <div class="absolute bottom-3 inset-x-4 z-30 pointer-events-none flex justify-center">
+      <nav class="glass-nav pointer-events-auto rounded-full px-3 py-1.5 flex items-center gap-2 shadow-2xl">
+        <button data-tab="tab-feed" class="nav-tab px-4 py-2 rounded-full flex items-center gap-2 text-xs font-extrabold bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 transition shadow">
+          <span>💬</span>
+          <span>Chat</span>
+        </button>
+        <button data-tab="tab-events" class="nav-tab px-4 py-2 rounded-full flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white transition">
+          <span>🍻</span>
+          <span>Stretávky</span>
+        </button>
+        <button data-tab="tab-vault" class="nav-tab px-4 py-2 rounded-full flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white transition">
+          <span>📌</span>
+          <span>Chladnička</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- ================= MODÁL 1: ÚPRAVA VLASTNÉHO PROFILU A FOTKY ================= -->
+    <div id="profile-modal" class="hidden absolute inset-0 z-40 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div class="glass-card rounded-[32px] p-6 w-full max-w-sm shadow-2xl space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-extrabold text-white">👤 Môj profil</h3>
+          <button id="close-profile-modal" class="w-8 h-8 rounded-full bg-white/10 text-slate-300 font-bold">✕</button>
+        </div>
+
+        <!-- Náhľad avatara + nahranie fotky -->
+        <div class="flex flex-col items-center py-2">
+          <div id="prof-preview-box" class="w-24 h-24 rounded-[28px] overflow-hidden shadow-xl border-2 border-amber-400/50 flex items-center justify-center mb-3">
+            <!-- Náhľad fotky alebo iniciály -->
+          </div>
+          <input type="file" id="avatar-file-input" accept="image/*" class="hidden" />
+          <div class="flex gap-2">
+            <button id="upload-avatar-btn" class="bg-white/10 hover:bg-white/20 border border-white/15 text-amber-300 text-xs font-bold px-3.5 py-2 rounded-full transition">
+              📷 Nahrať vlastnú fotku
+            </button>
+            <button id="remove-avatar-btn" class="bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-xs font-bold px-3 py-2 rounded-full transition">
+              Zmazať fotku
+            </button>
+          </div>
+        </div>
+
+        <!-- Výber farby pozadia (ak nemá fotku) -->
+        <div>
+          <label class="block text-[11px] uppercase tracking-wider text-slate-400 font-bold mb-2">Alebo si vyber farbu avatara:</label>
+          <div id="gradient-picker" class="flex items-center justify-between gap-2">
+            <!-- Dynamické farebné krúžky -->
+          </div>
+        </div>
+
+        <!-- Prezývka a krátky status -->
+        <div class="space-y-2.5 pt-1">
+          <div>
+            <label class="block text-[11px] uppercase tracking-wider text-slate-400 font-bold mb-1">Moja prezývka</label>
+            <input id="prof-nickname" type="text" class="w-full bg-slate-950/90 border border-white/10 rounded-2xl px-4 py-2.5 text-sm text-white outline-none focus:border-amber-400" />
+          </div>
+          <div>
+            <label class="block text-[11px] uppercase tracking-wider text-slate-400 font-bold mb-1">Krátky status (voliteľné)</label>
+            <input id="prof-status" type="text" placeholder="napr. 🍺 Voľný na pivo / 🛠️ V práci" class="w-full bg-slate-950/90 border border-white/10 rounded-2xl px-4 py-2.5 text-xs text-white outline-none focus:border-amber-400" />
+          </div>
+        </div>
+
+        <button id="save-profile-btn" class="w-full bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 py-3 rounded-2xl text-xs font-extrabold shadow-lg shadow-amber-500/20">
+          Uložiť môj profil
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= MODÁL 2: ZVOLAŤ STRETÁVKU (S KLIKACÍMI IKONAMI) ================= -->
+    <div id="event-modal" class="hidden absolute inset-0 z-40 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div class="glass-card rounded-[32px] p-6 w-full max-w-sm shadow-2xl space-y-3.5">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-extrabold text-white">🍻 Zvolať stretávku</h3>
+          <button id="close-event-modal" class="w-8 h-8 rounded-full bg-white/10 text-slate-300 font-bold">✕</button>
+        </div>
+
+        <!-- Klikací výber ikony namiesto písania -->
+        <div>
+          <label class="block text-[11px] uppercase tracking-wider text-slate-400 font-bold mb-2">1. Ťukni na ikonu akcie:</label>
+          <div id="emoji-picker-grid" class="grid grid-cols-5 gap-2">
+            <!-- Tlačidlá so smajlíkmi sa vygenerujú cez JS -->
+          </div>
+        </div>
+
+        <div class="space-y-2.5 pt-1">
+          <label class="block text-[11px] uppercase tracking-wider text-slate-400 font-bold">2. Detaily stretávky:</label>
+          <input id="ev-title" type="text" placeholder="Čo ideme robiť? (napr. Pivo a pokec)" class="w-full bg-slate-950/80 border border-white/10 rounded-2xl px-4 py-2.5 text-sm text-white outline-none focus:border-amber-400" />
+          <input id="ev-when" type="text" placeholder="Kedy? (napr. Tento piatok o 19:00)" class="w-full bg-slate-950/80 border border-white/10 rounded-2xl px-4 py-2.5 text-sm text-white outline-none focus:border-amber-400" />
+          <input id="ev-where" type="text" placeholder="Kde? (napr. V meste na terase)" class="w-full bg-slate-950/80 border border-white/10 rounded-2xl px-4 py-2.5 text-sm text-white outline-none focus:border-amber-400" />
+        </div>
+
+        <button id="save-event-btn" class="w-full bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 py-3 rounded-2xl text-xs font-extrabold shadow-lg shadow-amber-500/20 mt-2">
+          Zavesiť pozvánku pre partiu
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= MODÁL 3: ADMIN PANEL ================= -->
+    <div id="admin-modal" class="hidden absolute inset-0 z-40 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div class="glass-card rounded-[32px] p-6 w-full max-w-sm max-h-[88vh] overflow-y-auto space-y-5 no-scrollbar">
+        <div class="flex items-center justify-between">
+          <h3 class="text-base font-extrabold text-amber-400">⚙️ Admin Klubovne</h3>
+          <button id="close-admin-modal" class="w-8 h-8 rounded-full bg-white/10 text-slate-300 font-bold">✕</button>
+        </div>
+
+        <div class="space-y-2.5">
+          <h4 class="text-xs font-extrabold uppercase tracking-wider text-white">🔥 Nová Výzva týždňa</h4>
+          <input id="adm-ch-title" type="text" placeholder="Zadanie výzvy..." class="w-full bg-slate-950/90 border border-white/10 rounded-2xl px-3.5 py-2.5 text-xs text-white outline-none" />
+          <input id="adm-ch-desc" type="text" placeholder="Krátky vtipný popis..." class="w-full bg-slate-950/90 border border-white/10 rounded-2xl px-3.5 py-2.5 text-xs text-white outline-none" />
+          <button id="adm-save-challenge" class="w-full bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-extrabold py-2.5 rounded-2xl text-xs">
+            Prepnúť na túto výzvu
+          </button>
+        </div>
+
+        <hr class="border-white/10" />
+
+        <div class="space-y-2.5">
+          <h4 class="text-xs font-extrabold uppercase tracking-wider text-white">👤 Pridať člena</h4>
+          <input id="adm-user-name" type="text" placeholder="Meno kamoša" class="w-full bg-slate-950/90 border border-white/10 rounded-2xl px-3.5 py-2.5 text-xs text-white outline-none" />
+          <button id="adm-add-user" class="w-full bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-extrabold py-2.5 rounded-2xl text-xs">
+            + Pridať člena (bez hesla)
+          </button>
+          <div id="adm-users-list" class="pt-2 space-y-1.5 text-xs text-slate-300"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= MODÁL 4: LIGHTBOX NA FOTKY ================= -->
+    <div id="lightbox" class="hidden absolute inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4" onclick="this.classList.add('hidden')">
+      <img id="lightbox-img" src="" class="max-w-full max-h-[82vh] rounded-3xl shadow-2xl object-contain border border-white/10" />
+      <p class="text-xs text-slate-400 mt-4 bg-white/10 px-4 py-1.5 rounded-full">Ťukni kamkoľvek pre zatvorenie</p>
+    </div>
+
+  </div>
+
+  <!-- ================= APLIKAČNÁ LOGIKA (V2.1) ================= -->
+  <script>
+    const STORAGE_KEY = "klubovna-local-v2";
+    const LEGACY_STORAGE_KEY = "klubovna_v2_1_state";
+    const SESSION_KEY = "klubovna-active-user";
+
+    const EVENT_EMOJIS = ["🍻", "⚽", "🏔️", "🍖", "🎮", "☕", "🍕", "🎣", "🚴", "🎲"];
+    const AVATAR_GRADIENTS = [
+      "from-amber-400 to-orange-500",
+      "from-sky-400 to-blue-600",
+      "from-emerald-400 to-teal-600",
+      "from-purple-400 to-indigo-600",
+      "from-rose-400 to-pink-600",
+      "from-lime-400 to-green-600"
+    ];
+
+    const DEFAULT_STATE = {
+      profiles: [
+        { id: "u1", nickname: "Števo", status: "👑 Zakladateľ", gradient: "from-amber-400 to-orange-500", avatar_url: null, is_admin: true, last_seen_at: new Date(Date.now() - 86400000).toISOString() },
+        { id: "u2", nickname: "Mišo", status: "🍺 Za každú srandu", gradient: "from-sky-400 to-blue-600", avatar_url: null, is_admin: false, last_seen_at: new Date().toISOString() },
+        { id: "u3", nickname: "Palo", status: "🎸 Majster grilu", gradient: "from-emerald-400 to-teal-600", avatar_url: null, is_admin: false, last_seen_at: new Date().toISOString() },
+        { id: "u4", nickname: "Fero", status: "⚽ Halový strelec", gradient: "from-purple-400 to-indigo-600", avatar_url: null, is_admin: false, last_seen_at: new Date().toISOString() }
+      ],
+      challenges: [
+        {
+          id: "ch1",
+          title: "Najlepšie (alebo najhoršie) jedlo týždňa",
+          description: "Hoď sem fotku toho, čo máš práve na tanieri alebo čo si dnes ukuchtil!",
+          is_active: true,
+          created_by: "u1",
+          created_at: new Date(Date.now() - 86400000 * 2).toISOString()
+        },
+        {
+          id: "ch0",
+          title: "Kreatívny bordel v dielni alebo na stole",
+          description: "Bez upratovania pred fotením!",
+          is_active: false,
+          created_by: "u1",
+          created_at: new Date(Date.now() - 86400000 * 10).toISOString()
+        }
+      ],
+      messages: [
+        {
+          id: "m_tb",
+          sender_id: "u3",
+          recipient_id: null,
+          content: "Chlapi, pamätáte na tú rybačku pred rokom? Tri dni lialo a jediné, čo sme ulovili, bola nádcha 😂",
+          media_url: null,
+          media_type: null,
+          is_pinned: true,
+          challenge_id: null,
+          is_throwback: true,
+          read_by: ["u1", "u2", "u3", "u4"],
+          created_at: new Date(Date.now() - 86400000 * 365).toISOString()
+        },
+        {
+          id: "m1",
+          sender_id: "u2",
+          recipient_id: null,
+          content: "Nazdar partia! Hore vľavo si teraz viete kliknúť na svoj avatar a nahrať si vlastnú profilovú fotku.",
+          media_url: null,
+          media_type: null,
+          is_pinned: false,
+          challenge_id: null,
+          read_by: ["u2"],
+          created_at: new Date(Date.now() - 3600000 * 4).toISOString()
+        },
+        {
+          id: "m2",
+          sender_id: "u3",
+          recipient_id: null,
+          content: "Môj polnočný chlieb vo vajci s cibuľou do týždennej výzvy. Michelin sa môže schovať!",
+          media_url: null,
+          media_type: null,
+          is_pinned: true,
+          challenge_id: "ch1",
+          read_by: ["u3"],
+          created_at: new Date(Date.now() - 3600000 * 2).toISOString()
+        },
+        {
+          id: "m_dm_demo",
+          sender_id: "u2",
+          recipient_id: "u1",
+          content: "Čau Števo, píšem ti sem do súkromky (1v1) – vezmeš mi v piatok na pivo ten kľúč?",
+          media_url: null,
+          media_type: null,
+          is_pinned: false,
+          challenge_id: null,
+          read_by: ["u2"],
+          created_at: new Date(Date.now() - 1800000).toISOString()
+        }
+      ],
+      events: [
+        {
+          id: "ev1",
+          emoji: "🍻",
+          title: "Piatkové pivo & pokec",
+          when: "Piatok o 19:00",
+          where: "V meste na terase",
+          created_by: "u1",
+          going_ids: ["u1", "u2"],
+          maybe_ids: ["u3"]
+        },
+        {
+          id: "ev2",
+          emoji: "⚽",
+          title: "Halový futbal v telocvični",
+          when: "Utorok o 18:30",
+          where: "Telocvičňa ZŠ",
+          created_by: "u2",
+          going_ids: ["u1", "u2", "u3", "u4"],
+          maybe_ids: []
+        }
+      ]
+    };
+
+    let state = loadState();
+    let currentUser = null;
+    let activeDmPartnerId = null;
+    let attachToChallenge = false;
+    let selectedEventEmoji = "🍻";
+    let tempAvatarDataUrl = null;
+    let tempGradient = "from-amber-400 to-orange-500";
+    let mediaRecorder = null;
+    let audioChunks = [];
+
+    function stripSecrets(data) {
+      if (!data || !Array.isArray(data.profiles)) return data;
+      data.profiles.forEach(p => {
+        delete p.pin_code;
+        delete p.password;
+        delete p.pin;
+        delete p.heslo;
+      });
+      return data;
+    }
+    function loadState() {
+      try {
+        let raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw && typeof LEGACY_STORAGE_KEY === "string") raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+        if (!raw) return structuredClone(DEFAULT_STATE);
+        return stripSecrets(JSON.parse(raw));
+      } catch (e) {
+        return structuredClone(DEFAULT_STATE);
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    window.addEventListener("storage", (e) => {
+      if (e.key === STORAGE_KEY) {
+        state = loadState();
+        if (currentUser) {
+          currentUser = state.profiles.find(p => p.id === currentUser.id) || currentUser;
+          renderAll();
+        }
+      }
+    });
+
+    function getProfile(id) {
+      return state.profiles.find(p => p.id === id) || { nickname: "Kamoš", gradient: "from-slate-500 to-slate-700", avatar_url: null };
+    }
+
+    function formatTime(iso) {
+      const d = new Date(iso);
+      return d.toLocaleTimeString("sk-SK", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    // Univerzálna funkcia na vykreslenie Avatara (Fotka vs. Farebné iniciály)
+    function renderAvatarHTML(profile, sizeClasses = "w-6 h-6 text-[11px]", roundedClass = "rounded-full") {
+      if (profile.avatar_url) {
+        return `<img src="${profile.avatar_url}" class="${sizeClasses} ${roundedClass} object-cover shrink-0 border border-white/15" />`;
+      }
+      const letter = (profile.nickname || "?")[0].toUpperCase();
+      const grad = profile.gradient || "from-amber-400 to-orange-500";
+      return `<span class="${sizeClasses} ${roundedClass} bg-gradient-to-br ${grad} text-slate-950 font-extrabold flex items-center justify-center shrink-0">${letter}</span>`;
+    }
+
+    /*************************************************************************
+     * PRIHLÁSENIE A HLAVIČKA PROFILU
+     *************************************************************************/
+    function esc(s) {
+      return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function renderWelcomeMembers() {
+      const box = document.getElementById("welcome-members");
+      if (!box) return;
+      state = loadState();
+      if (!state.profiles.length) {
+        box.innerHTML = `<p class="text-xs text-slate-400 text-center">Zatiaľ tu nikto nie je. Pridaj sa dolu.</p>`;
+        return;
+      }
+      box.innerHTML = state.profiles.map(p => `
+        <button type="button" data-enter="${esc(p.id)}" class="w-full flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 py-2.5 px-3 rounded-2xl text-left transition">
+          ${renderAvatarHTML(p, "w-9 h-9 text-sm", "rounded-2xl")}
+          <span class="flex-1 min-w-0">
+            <span class="block text-sm font-extrabold text-white truncate">${esc(p.nickname)}${p.is_admin ? " 👑" : ""}</span>
+            <span class="block text-[11px] text-slate-400 truncate">${esc(p.status || "")}</span>
+          </span>
+        </button>`).join("");
+      box.querySelectorAll("[data-enter]").forEach(btn => {
+        btn.addEventListener("click", () => enterAs(btn.getAttribute("data-enter")));
+      });
+    }
+
+    function enterAs(userId) {
+      state = loadState();
+      const found = state.profiles.find(p => p.id === userId);
+      const errEl = document.getElementById("login-error");
+      if (!found) {
+        if (errEl) { errEl.textContent = "Tohto člena sa nepodarilo nájsť."; errEl.classList.remove("hidden"); }
+        return;
+      }
+      if (errEl) errEl.classList.add("hidden");
+      currentUser = found;
+      activeDmPartnerId = null;
+      localStorage.setItem(SESSION_KEY, found.id);
+      document.getElementById("login-screen").classList.add("hidden");
+      document.getElementById("admin-btn").classList.toggle("hidden", !currentUser.is_admin);
+      document.getElementById("dm-active-banner").classList.add("hidden");
+      document.getElementById("challenge-card-wrapper").classList.remove("hidden");
+      renderAll();
+    }
+
+    function addLocalMember(nickname, enter) {
+      const name = (nickname || "").trim();
+      const errEl = document.getElementById("login-error");
+      if (name.length < 2) {
+        if (errEl) { errEl.textContent = "Napíš prezývku, aspoň dve písmená."; errEl.classList.remove("hidden"); }
+        return null;
+      }
+      if (state.profiles.some(p => p.nickname.toLowerCase() === name.toLowerCase())) {
+        if (errEl) { errEl.textContent = "Taká prezývka tu už je. Vyber si ju hore, alebo zvol inú."; errEl.classList.remove("hidden"); }
+        return null;
+      }
+      const profile = {
+        id: "u_" + Date.now(),
+        nickname: name,
+        status: "Nový člen",
+        gradient: AVATAR_GRADIENTS[state.profiles.length % AVATAR_GRADIENTS.length],
+        avatar_url: null,
+        is_admin: state.profiles.length === 0,
+        last_seen_at: new Date().toISOString()
+      };
+      state.profiles.push(profile);
+      saveState();
+      if (enter) enterAs(profile.id);
+      else { renderWelcomeMembers(); renderAll(); }
+      return profile;
+    }
+
+    function touchSeen() {
+      if (!currentUser) return;
+      const now = new Date().toISOString();
+      currentUser.last_seen_at = now;
+      const p = state.profiles.find(x => x.id === currentUser.id);
+      if (p) p.last_seen_at = now;
+      saveState();
+    }
+
+    function missedGroupMessages() {
+      if (!currentUser) return [];
+      const last = currentUser.last_seen_at ? new Date(currentUser.last_seen_at).getTime() : 0;
+      return state.messages.filter(m =>
+        !m.is_throwback &&
+        m.recipient_id === null &&
+        m.sender_id !== currentUser.id &&
+        new Date(m.created_at).getTime() > last &&
+        !(m.read_by || []).includes(currentUser.id)
+      );
+    }
+
+    function renderCatchup() {
+      const bar = document.getElementById("catchup-bar");
+      const txt = document.getElementById("catchup-text");
+      if (!bar || !currentUser) return;
+      const missed = missedGroupMessages();
+      if (!missed.length) { bar.classList.add("hidden"); return; }
+      const n = missed.length;
+      txt.textContent = n === 1 ? "✨ Ušla ti 1 správa v klubovni" : `✨ Ušli ti ${n} správy v klubovni`;
+      bar.classList.remove("hidden");
+    }
+
+    function dismissCatchup() {
+      const missed = missedGroupMessages();
+      missed.forEach(m => {
+        m.read_by = m.read_by || [];
+        if (!m.read_by.includes(currentUser.id)) m.read_by.push(currentUser.id);
+      });
+      document.getElementById("catchup-bar").classList.add("hidden");
+      touchSeen();
+      renderAll();
+    }
+
+    function renderHeaderProfile() {
+      if (!currentUser) return;
+      currentUser = state.profiles.find(p => p.id === currentUser.id) || currentUser;
+      const box = document.getElementById("my-avatar-container");
+      box.innerHTML = renderAvatarHTML(currentUser, "w-full h-full text-sm", "rounded-2xl");
+      const statusText = currentUser.status ? ` · ${currentUser.status}` : " · Upraviť profil";
+      document.getElementById("current-user-label").textContent = `${currentUser.nickname}${statusText}`;
+    }
+
+    /*************************************************************************
+     * MODÁL: ÚPRAVA VLASTNÉHO PROFILU A NAHRANIE AVATARA
+     *************************************************************************/
+    function openProfileModal() {
+      tempAvatarDataUrl = currentUser.avatar_url || null;
+      tempGradient = currentUser.gradient || AVATAR_GRADIENTS[0];
+
+      document.getElementById("prof-nickname").value = currentUser.nickname || "";
+      document.getElementById("prof-status").value = currentUser.status || "";
+
+      renderProfileModalPreview();
+      renderGradientPicker();
+      document.getElementById("profile-modal").classList.remove("hidden");
+    }
+
+    function renderProfileModalPreview() {
+      const preview = document.getElementById("prof-preview-box");
+      const tempProfile = {
+        nickname: document.getElementById("prof-nickname").value || currentUser.nickname,
+        avatar_url: tempAvatarDataUrl,
+        gradient: tempGradient
+      };
+      preview.innerHTML = renderAvatarHTML(tempProfile, "w-full h-full text-3xl", "rounded-[26px]");
+    }
+
+    function renderGradientPicker() {
+      const container = document.getElementById("gradient-picker");
+      container.innerHTML = "";
+      AVATAR_GRADIENTS.forEach(grad => {
+        const isSelected = tempGradient === grad && !tempAvatarDataUrl;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `w-10 h-10 rounded-2xl bg-gradient-to-br ${grad} transition transform ${
+          isSelected ? "scale-110 ring-2 ring-white shadow-lg" : "opacity-65 hover:opacity-100"
+        }`;
+        btn.onclick = () => {
+          tempGradient = grad;
+          tempAvatarDataUrl = null; // Ak klikne na farbu, prepne na farebný iniciál
+          renderProfileModalPreview();
+          renderGradientPicker();
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    // Oreže a skomprimuje avatar do štvorca 300x300px
+    async function compressAvatarSquare(file, size = 300) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext("2d");
+            const minSide = Math.min(img.width, img.height);
+            const sx = (img.width - minSide) / 2;
+            const sy = (img.height - minSide) / 2;
+            ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
+            resolve(canvas.toDataURL("image/webp", 0.85));
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    /*************************************************************************
+     * HORNÁ LIŠTA S PARTIOU (VŠETCI + 1v1 S FOTKAMI A ODZNAKMI)
+     *************************************************************************/
+    function renderCrewBar() {
+      const bar = document.getElementById("crew-bar");
+      bar.innerHTML = "";
+
+      const allBtn = document.createElement("button");
+      const isAllActive = activeDmPartnerId === null;
+      allBtn.className = `px-3.5 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 shrink-0 transition ${
+        isAllActive
+          ? "bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 shadow-md shadow-amber-500/20"
+          : "bg-white/5 text-slate-300 hover:bg-white/10 border border-white/10"
+      }`;
+      allBtn.innerHTML = `<span>🏠</span><span>Všetci</span>`;
+      allBtn.onclick = () => selectChatPartner(null);
+      bar.appendChild(allBtn);
+
+      state.profiles.filter(p => p.id !== currentUser.id).forEach(member => {
+        const isSelected = activeDmPartnerId === member.id;
+        const unreadCount = state.messages.filter(m =>
+          m.sender_id === member.id &&
+          m.recipient_id === currentUser.id &&
+          !(m.read_by || []).includes(currentUser.id)
+        ).length;
+
+        const btn = document.createElement("button");
+        btn.className = `relative pl-1.5 pr-3 py-1 rounded-full text-xs font-bold flex items-center gap-2 shrink-0 transition ${
+          isSelected
+            ? "bg-sky-500 text-slate-950 shadow-md shadow-sky-500/30"
+            : "bg-white/5 text-slate-200 hover:bg-white/10 border border-white/10"
+        }`;
+
+        const badgeHtml = unreadCount > 0
+          ? `<span class="ml-0.5 px-1.5 py-0.2 bg-rose-500 text-white text-[10px] font-extrabold rounded-full animate-bounce">${unreadCount}</span>`
+          : "";
+
+        btn.innerHTML = `
+          ${renderAvatarHTML(member, "w-6 h-6 text-[11px]", "rounded-full")}
+          <span>${esc(member.nickname)}</span>
+          ${badgeHtml}
+        `;
+        btn.onclick = () => selectChatPartner(member.id);
+        bar.appendChild(btn);
+      });
+    }
+
+    function selectChatPartner(partnerId) {
+      activeDmPartnerId = partnerId;
+
+      if (!partnerId) {
+        document.getElementById("dm-active-banner").classList.add("hidden");
+        document.getElementById("challenge-card-wrapper").classList.remove("hidden");
+        document.getElementById("msg-input").placeholder = "Napíš niečo chalanom...";
+      } else {
+        const partner = getProfile(partnerId);
+        document.getElementById("dm-partner-name").textContent = partner.nickname;
+        document.getElementById("dm-active-banner").classList.remove("hidden");
+        document.getElementById("challenge-card-wrapper").classList.add("hidden");
+        document.getElementById("msg-input").placeholder = `Súkromná správa pre ${partner.nickname}...`;
+
+        let changed = false;
+        state.messages.forEach(m => {
+          if (m.sender_id === partnerId && m.recipient_id === currentUser.id) {
+            m.read_by = m.read_by || [];
+            if (!m.read_by.includes(currentUser.id)) {
+              m.read_by.push(currentUser.id);
+              changed = true;
+            }
+          }
+        });
+        if (changed) saveState();
+      }
+
+      switchTab("tab-feed");
+      renderAll();
+    }
+
+    /*************************************************************************
+     * VYKRESLENIE SPRÁV A VÝZVY
+     *************************************************************************/
+    function renderChallengeBanner() {
+      const active = state.challenges.find(c => c.is_active);
+      if (!active) return;
+      document.getElementById("challenge-title").textContent = active.title;
+      document.getElementById("challenge-desc").textContent = active.description || "";
+      const count = state.messages.filter(m => m.challenge_id === active.id).length;
+      document.getElementById("challenge-count").textContent = `${count} príspevkov`;
+    }
+
+    function renderChatStream() {
+      const container = document.getElementById("chat-stream");
+      container.innerHTML = "";
+      const activeChallenge = state.challenges.find(c => c.is_active);
+
+      const throwbackMsg = state.messages.find(m => m.is_throwback);
+      if (!activeDmPartnerId && throwbackMsg) {
+        const author = getProfile(throwbackMsg.sender_id);
+        const tbEl = document.createElement("div");
+        tbEl.className = "glass-card rounded-3xl p-3.5 text-xs space-y-1 border-amber-400/20";
+        tbEl.innerHTML = `
+          <div class="flex items-center justify-between text-amber-300 font-bold text-[11px]">
+            <span>⏳ Spomienka spred roka</span>
+            <span>${author.nickname}</span>
+          </div>
+          <p class="text-slate-300 italic">"${esc(throwbackMsg.content)}"</p>
+        `;
+        container.appendChild(tbEl);
+      }
+
+      const filtered = state.messages.filter(m => {
+        if (m.is_throwback) return false;
+        if (!activeDmPartnerId) {
+          return m.recipient_id === null;
+        } else {
+          return (
+            (m.sender_id === currentUser.id && m.recipient_id === activeDmPartnerId) ||
+            (m.sender_id === activeDmPartnerId && m.recipient_id === currentUser.id)
+          );
+        }
+      });
+
+      if (filtered.length === 0 && activeDmPartnerId) {
+        const partner = getProfile(activeDmPartnerId);
+        container.innerHTML = `
+          <div class="text-center py-12 px-4 flex flex-col items-center">
+            ${renderAvatarHTML(partner, "w-16 h-16 text-2xl mb-3 shadow-xl", "rounded-3xl")}
+            <p class="text-sm font-bold text-white">Súkromná linka s ${esc(partner.nickname)}</p>
+            <p class="text-xs text-slate-400 mt-1 max-w-xs">Čo napíšeš sem, uvidíte iba vy dvaja.</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(msg => {
+        const isMe = msg.sender_id === currentUser.id;
+        const sender = getProfile(msg.sender_id);
+        const isChallengePost = activeChallenge && msg.challenge_id === activeChallenge.id;
+
+        const row = document.createElement("div");
+        row.className = `flex flex-col ${isMe ? "items-end" : "items-start"}`;
+
+        let mediaHtml = "";
+        if (msg.media_type === "image" && msg.media_url) {
+          mediaHtml = `<img src="${msg.media_url}" onclick="openLightbox('${msg.media_url}')" class="mt-2 rounded-2xl max-h-60 object-cover cursor-pointer border border-white/15 shadow-md" />`;
+        } else if (msg.media_type === "audio" && msg.media_url) {
+          mediaHtml = `<audio controls src="${msg.media_url}" class="mt-2 h-9 w-56 max-w-full rounded-full"></audio>`;
+        }
+
+        const challengeTag = isChallengePost
+          ? `<div class="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-black/25 text-amber-200 mb-1.5 inline-block">🔥 Výzva týždňa</div>`
+          : "";
+
+        row.innerHTML = `
+          <div class="flex items-center gap-1.5 mb-1 px-2">
+            ${renderAvatarHTML(sender, "w-5 h-5 text-[10px]", "rounded-full")}
+            <span class="text-[11px] font-bold text-slate-300">${esc(sender.nickname)}</span>
+            <span class="text-[10px] text-slate-500">${formatTime(msg.created_at)}</span>
+          </div>
+          <div class="max-w-[82%] rounded-[24px] px-4 py-2.5 text-sm shadow-lg ${
+            isMe
+              ? "bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 font-semibold rounded-br-md"
+              : "glass-card text-slate-100 rounded-bl-md"
+          }">
+            ${challengeTag}
+            ${msg.content ? `<p class="leading-relaxed break-words">${esc(msg.content)}</p>` : ""}
+            ${mediaHtml}
+            <div class="flex items-center justify-end mt-1 pt-1 border-t ${isMe ? 'border-slate-950/10' : 'border-white/10'} text-[10px]">
+              <button onclick="togglePinMessage('${msg.id}')" class="hover:opacity-100 flex items-center gap-1 ${msg.is_pinned ? 'font-extrabold' : 'opacity-70'}">
+                📌 ${msg.is_pinned ? "Pripnuté" : "Na chladničku"}
+              </button>
+            </div>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+
+      container.scrollTop = container.scrollHeight;
+    }
+
+    /*************************************************************************
+     * STRETÁVKY + KLIKACÍ VÝBER IKONY (EMOJI PICKER GRID)
+     *************************************************************************/
+    function renderEmojiPicker() {
+      const grid = document.getElementById("emoji-picker-grid");
+      grid.innerHTML = "";
+      EVENT_EMOJIS.forEach(emo => {
+        const isSelected = selectedEventEmoji === emo;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `h-12 rounded-2xl text-2xl flex items-center justify-center transition ${
+          isSelected
+            ? "bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-amber-500/30 scale-105 border-2 border-white"
+            : "bg-slate-950/80 hover:bg-white/10 border border-white/10"
+        }`;
+        btn.textContent = emo;
+        btn.onclick = () => {
+          selectedEventEmoji = emo;
+          renderEmojiPicker();
+        };
+        grid.appendChild(btn);
+      });
+    }
+
+    function renderEvents() {
+      const container = document.getElementById("events-list");
+      container.innerHTML = "";
+
+      if (!state.events.length) {
+        container.innerHTML = `<div class="glass-card rounded-3xl p-6 text-center text-xs text-slate-400">Zatiaľ žiadna stretávka. Zvolaj partiu tlačidlom hore.</div>`;
+        return;
+      }
+      state.events.forEach(ev => {
+        const goingList = ev.going_ids || [];
+        const maybeList = ev.maybe_ids || [];
+        const amIGoing = goingList.includes(currentUser.id);
+        const amIMaybe = maybeList.includes(currentUser.id);
+
+        const avatarsHtml = goingList.map(uid => {
+          const p = getProfile(uid);
+          return `
+            <div class="flex items-center gap-1.5 bg-white/5 border border-white/10 pl-1 pr-2.5 py-1 rounded-full">
+              ${renderAvatarHTML(p, "w-5 h-5 text-[10px]", "rounded-full")}
+              <span class="text-xs font-bold text-white">${esc(p.nickname)}</span>
+            </div>
+          `;
+        }).join("");
+
+        const maybeNames = maybeList.map(uid => getProfile(uid).nickname).join(", ");
+
+        const card = document.createElement("div");
+        card.className = "glass-card rounded-[28px] p-4 space-y-3.5 shadow-xl";
+        card.innerHTML = `
+          <div class="flex items-start gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400/20 to-orange-500/20 border border-amber-400/30 flex items-center justify-center text-2xl shrink-0">
+              ${ev.emoji || "🍻"}
+            </div>
+            <div class="flex-1">
+              <h3 class="text-base font-extrabold text-white leading-tight">${esc(ev.title)}</h3>
+              <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-amber-300 font-semibold mt-1">
+                <span>🗓️ ${esc(ev.when)}</span>
+                <span>📍 ${esc(ev.where)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-950/60 rounded-2xl p-3 space-y-2 border border-white/5">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-slate-400 font-semibold">Kto ide (${goingList.length}):</span>
+              ${maybeNames ? `<span class="text-[11px] text-amber-300/80">Možno: ${maybeNames}</span>` : ""}
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              ${avatarsHtml || `<span class="text-xs text-slate-500 italic">Zatiaľ nikto nepotvrdil – buď prvý!</span>`}
+            </div>
+          </div>
+
+          <div class="flex gap-2">
+            <button onclick="toggleEventAttendance('${ev.id}', 'going')" class="flex-1 py-2.5 rounded-2xl text-xs font-extrabold transition shadow-md ${
+              amIGoing
+                ? "bg-emerald-400 text-slate-950 shadow-emerald-500/20"
+                : "bg-white/10 hover:bg-white/15 text-white border border-white/10"
+            }">
+              ${amIGoing ? "✅ Idem! (Klikni pre zrušenie)" : "🍺 Idem do toho!"}
+            </button>
+            <button onclick="toggleEventAttendance('${ev.id}', 'maybe')" class="px-4 py-2.5 rounded-2xl text-xs font-bold transition ${
+              amIMaybe
+                ? "bg-amber-400 text-slate-950"
+                : "bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10"
+            }">
+              🤔 Ešte neviem
+            </button>
+            ${(ev.created_by === currentUser.id || currentUser.is_admin) ? `<button onclick="deleteEvent('${ev.id}')" class="px-3 py-2.5 rounded-2xl text-xs font-bold bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-200 border border-white/10">Zrušiť</button>` : ""}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    window.toggleEventAttendance = function(eventId, mode) {
+      const ev = state.events.find(e => e.id === eventId);
+      if (!ev) return;
+      ev.going_ids = ev.going_ids || [];
+      ev.maybe_ids = ev.maybe_ids || [];
+
+      if (mode === "going") {
+        ev.maybe_ids = ev.maybe_ids.filter(id => id !== currentUser.id);
+        if (ev.going_ids.includes(currentUser.id)) {
+          ev.going_ids = ev.going_ids.filter(id => id !== currentUser.id);
+        } else {
+          ev.going_ids.push(currentUser.id);
+        }
+      } else {
+        ev.going_ids = ev.going_ids.filter(id => id !== currentUser.id);
+        if (ev.maybe_ids.includes(currentUser.id)) {
+          ev.maybe_ids = ev.maybe_ids.filter(id => id !== currentUser.id);
+        } else {
+          ev.maybe_ids.push(currentUser.id);
+        }
+      }
+
+      saveState();
+      renderEvents();
+    };
+
+    window.deleteEvent = function(eventId) {
+      const ev = state.events.find(e => e.id === eventId);
+      if (!ev) return;
+      if (ev.created_by !== currentUser.id && !currentUser.is_admin) return;
+      if (!confirm("Zrušiť stretávku „" + ev.title + "“?")) return;
+      state.events = state.events.filter(e => e.id !== eventId);
+      saveState();
+      renderEvents();
+    };
+
+    /*************************************************************************
+     * CHLADNIČKA & ARCHÍV
+     *************************************************************************/
+    function renderVault() {
+      const pinContainer = document.getElementById("pinned-list");
+      pinContainer.innerHTML = "";
+      const pinned = state.messages.filter(m => m.is_pinned);
+
+      if (pinned.length === 0) {
+        pinContainer.innerHTML = `<div class="glass-card rounded-3xl p-6 text-center text-xs text-slate-400">Zatiaľ nie je na chladničke nič pripnuté. V chate klikni pri správe na <b>📌 Na chladničku</b>.</div>`;
+      } else {
+        pinned.forEach(m => {
+          const author = getProfile(m.sender_id);
+          const item = document.createElement("div");
+          item.className = "glass-card rounded-3xl p-4 text-xs space-y-2 border-amber-400/25";
+          item.innerHTML = `
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                ${renderAvatarHTML(author, "w-5 h-5 text-[10px]", "rounded-full")}
+                <span class="font-extrabold text-amber-300">${esc(author.nickname)}</span>
+              </div>
+              <button onclick="togglePinMessage('${m.id}')" class="text-[11px] text-slate-400 hover:text-white">Odopnúť ✕</button>
+            </div>
+            <p class="text-slate-100 text-sm leading-relaxed">${esc(m.content || "")}</p>
+            ${m.media_type === "image" && m.media_url ? `<img src="${m.media_url}" onclick="openLightbox('${m.media_url}')" class="rounded-2xl max-h-48 mt-2 object-cover cursor-pointer" />` : ""}
+          `;
+          pinContainer.appendChild(item);
+        });
+      }
+
+      const pastContainer = document.getElementById("past-challenges-list");
+      pastContainer.innerHTML = "";
+      const past = state.challenges.filter(c => !c.is_active);
+      if (!past.length) {
+        pastContainer.innerHTML = `<div class="text-xs text-slate-500">Zatiaľ tu nie je žiadna stará výzva.</div>`;
+      }
+      past.forEach(ch => {
+        const el = document.createElement("div");
+        el.className = "glass-card rounded-2xl p-3.5 text-xs";
+        el.innerHTML = `
+          <div class="font-extrabold text-white">${esc(ch.title)}</div>
+          <div class="text-slate-400 text-[11px] mt-0.5">${esc(ch.description || "")}</div>
+        `;
+        pastContainer.appendChild(el);
+      });
+    }
+
+    function renderAdminUsers() {
+      const list = document.getElementById("adm-users-list");
+      list.innerHTML = state.profiles.map(p =>
+        `<div class="flex justify-between items-center bg-slate-950/80 px-3.5 py-2 rounded-2xl border border-white/10">
+          <div class="flex items-center gap-2 min-w-0">
+            ${renderAvatarHTML(p, "w-5 h-5 text-[10px]", "rounded-full")}
+            <span class="truncate"><b>${esc(p.nickname)}</b> ${p.is_admin ? "👑" : ""}</span>
+          </div>
+          ${p.id !== currentUser.id ? `<button type="button" onclick="removeMember('${esc(p.id)}')" class="text-[11px] text-rose-300 font-bold px-2">Odstrániť</button>` : `<span class="text-[11px] text-slate-500">to si ty</span>`}
+        </div>`
+      ).join("");
+    }
+
+    window.removeMember = function(id) {
+      const p = state.profiles.find(x => x.id === id);
+      if (!p || p.id === currentUser.id) return;
+      if (p.is_admin && state.profiles.filter(x => x.is_admin).length < 2) {
+        alert("Posledného správcu sa nedá odstrániť.");
+        return;
+      }
+      if (!confirm("Odstrániť člena " + p.nickname + " z tejto klubovne?")) return;
+      state.profiles = state.profiles.filter(x => x.id !== id);
+      saveState();
+      renderAll();
+    };
+
+    function renderAll() {
+      if (!currentUser) return;
+      renderHeaderProfile();
+      renderCrewBar();
+      renderChallengeBanner();
+      renderCatchup();
+      renderChatStream();
+      renderEvents();
+      renderVault();
+      renderAdminUsers();
+    }
+
+    /*************************************************************************
+     * ODOSIELANIE SPRÁV, FOTIEK A HLASOVIEK
+     *************************************************************************/
+    function sendMessage({ content = "", mediaUrl = null, mediaType = null }) {
+      const text = content.trim();
+      if (!text && !mediaUrl) return;
+
+      const activeCh = state.challenges.find(c => c.is_active);
+      const newMsg = {
+        id: "m_" + Date.now(),
+        sender_id: currentUser.id,
+        recipient_id: activeDmPartnerId,
+        content: text,
+        media_url: mediaUrl,
+        media_type: mediaType,
+        is_pinned: false,
+        challenge_id: (!activeDmPartnerId && attachToChallenge && activeCh) ? activeCh.id : null,
+        read_by: [currentUser.id],
+        created_at: new Date().toISOString()
+      };
+
+      state.messages.push(newMsg);
+      saveState();
+
+      document.getElementById("msg-input").value = "";
+      attachToChallenge = false;
+      document.getElementById("composer-badge").classList.add("hidden");
+      renderAll();
+    }
+
+    async function compressImageFile(file, maxWidth = 1200, quality = 0.8) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            let { width, height } = img;
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/webp", quality));
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function toggleVoiceRecording() {
+      const voiceBtn = document.getElementById("voice-btn");
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        mediaRecorder.stop();
+        voiceBtn.classList.remove("rec-active");
+        voiceBtn.textContent = "🎙️";
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || "audio/mp4" });
+          const reader = new FileReader();
+          reader.onloadend = () => sendMessage({ content: "🎙️ Hlasová správa", mediaUrl: reader.result, mediaType: "audio" });
+          reader.readAsDataURL(blob);
+          stream.getTracks().forEach(t => t.stop());
+        };
+        mediaRecorder.start();
+        voiceBtn.classList.add("rec-active");
+        voiceBtn.textContent = "⏹️";
+      } catch (e) {
+        alert("Povoľ mikrofón v prehliadači pre nahrávanie hlasovky.");
+      }
+    }
+
+    window.togglePinMessage = function(msgId) {
+      const msg = state.messages.find(m => m.id === msgId);
+      if (msg) {
+        msg.is_pinned = !msg.is_pinned;
+        saveState();
+        renderAll();
+      }
+    };
+
+    window.openLightbox = function(url) {
+      document.getElementById("lightbox-img").src = url;
+      document.getElementById("lightbox").classList.remove("hidden");
+    };
+
+    function switchTab(tabId) {
+      ["tab-feed", "tab-events", "tab-vault"].forEach(id => {
+        document.getElementById(id).classList.toggle("hidden", id !== tabId);
+      });
+      document.querySelectorAll(".nav-tab").forEach(btn => {
+        const active = btn.getAttribute("data-tab") === tabId;
+        btn.className = active
+          ? "nav-tab px-4 py-2 rounded-full flex items-center gap-2 text-xs font-extrabold bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 transition shadow"
+          : "nav-tab px-4 py-2 rounded-full flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white transition";
+      });
+    }
+
+    /*************************************************************************
+     * EVENT LISTENERS
+     *************************************************************************/
+    document.getElementById("new-member-btn").addEventListener("click", () => {
+      addLocalMember(document.getElementById("new-member-name").value, true);
+    });
+    document.getElementById("new-member-name").addEventListener("keydown", e => {
+      if (e.key === "Enter") addLocalMember(document.getElementById("new-member-name").value, true);
+    });
+
+    document.getElementById("logout-btn").addEventListener("click", () => {
+      touchSeen();
+      currentUser = null;
+      localStorage.removeItem(SESSION_KEY);
+      document.getElementById("login-screen").classList.remove("hidden");
+      renderWelcomeMembers();
+    });
+    document.getElementById("catchup-close").addEventListener("click", dismissCatchup);
+
+    document.querySelectorAll(".nav-tab").forEach(btn => {
+      btn.addEventListener("click", () => switchTab(btn.getAttribute("data-tab")));
+    });
+
+    // Úprava vlastného profilu
+    document.getElementById("open-profile-btn").addEventListener("click", openProfileModal);
+    document.getElementById("close-profile-modal").addEventListener("click", () => {
+      document.getElementById("profile-modal").classList.add("hidden");
+    });
+    document.getElementById("upload-avatar-btn").addEventListener("click", () => {
+      document.getElementById("avatar-file-input").click();
+    });
+    document.getElementById("avatar-file-input").addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      tempAvatarDataUrl = await compressAvatarSquare(file, 300);
+      renderProfileModalPreview();
+      renderGradientPicker();
+      e.target.value = "";
+    });
+    document.getElementById("remove-avatar-btn").addEventListener("click", () => {
+      tempAvatarDataUrl = null;
+      renderProfileModalPreview();
+      renderGradientPicker();
+    });
+    document.getElementById("prof-nickname").addEventListener("input", renderProfileModalPreview);
+    document.getElementById("save-profile-btn").addEventListener("click", () => {
+      const newName = document.getElementById("prof-nickname").value.trim();
+      const newStatus = document.getElementById("prof-status").value.trim();
+      if (!newName) return alert("Prezývka nemôže byť prázdna.");
+
+      const userInState = state.profiles.find(p => p.id === currentUser.id);
+      if (userInState) {
+        userInState.nickname = newName;
+        userInState.status = newStatus;
+        userInState.avatar_url = tempAvatarDataUrl;
+        userInState.gradient = tempGradient;
+        currentUser = userInState;
+        saveState();
+        renderAll();
+      }
+      document.getElementById("profile-modal").classList.add("hidden");
+    });
+
+    // Odosielanie správ a fotiek
+    document.getElementById("send-btn").addEventListener("click", () => {
+      sendMessage({ content: document.getElementById("msg-input").value });
+    });
+    document.getElementById("msg-input").addEventListener("keydown", e => {
+      if (e.key === "Enter") sendMessage({ content: e.target.value });
+    });
+
+    document.getElementById("photo-btn").addEventListener("click", () => document.getElementById("image-input").click());
+    document.getElementById("image-input").addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const compressed = await compressImageFile(file);
+      const caption = document.getElementById("msg-input").value.trim() || "📸 Fotka";
+      sendMessage({ content: caption, mediaUrl: compressed, mediaType: "image" });
+      e.target.value = "";
+    });
+
+    document.getElementById("voice-btn").addEventListener("click", toggleVoiceRecording);
+
+    document.getElementById("reply-challenge-btn").addEventListener("click", () => {
+      attachToChallenge = true;
+      document.getElementById("composer-badge").classList.remove("hidden");
+      document.getElementById("msg-input").focus();
+    });
+    document.getElementById("cancel-challenge-tag").addEventListener("click", () => {
+      attachToChallenge = false;
+      document.getElementById("composer-badge").classList.add("hidden");
+    });
+
+    document.getElementById("exit-dm-btn").addEventListener("click", () => selectChatPartner(null));
+
+    // Stretávky modál s výberom ikony
+    document.getElementById("open-event-modal").addEventListener("click", () => {
+      selectedEventEmoji = "🍻";
+      renderEmojiPicker();
+      document.getElementById("event-modal").classList.remove("hidden");
+    });
+    document.getElementById("close-event-modal").addEventListener("click", () => {
+      document.getElementById("event-modal").classList.add("hidden");
+    });
+    document.getElementById("save-event-btn").addEventListener("click", () => {
+      const title = document.getElementById("ev-title").value.trim();
+      const when = document.getElementById("ev-when").value.trim();
+      const where = document.getElementById("ev-where").value.trim();
+
+      if (!title || !when) return alert("Napíš aspoň názov a kedy sa stretávate.");
+
+      state.events.unshift({
+        id: "ev_" + Date.now(),
+        emoji: selectedEventEmoji,
+        title,
+        when,
+        where: where || "Dohodneme v chate",
+        created_by: currentUser.id,
+        going_ids: [currentUser.id],
+        maybe_ids: []
+      });
+      saveState();
+      document.getElementById("ev-title").value = "";
+      document.getElementById("ev-when").value = "";
+      document.getElementById("ev-where").value = "";
+      document.getElementById("event-modal").classList.add("hidden");
+      renderEvents();
+    });
+
+    // Admin modál
+    document.getElementById("admin-btn").addEventListener("click", () => {
+      document.getElementById("admin-modal").classList.remove("hidden");
+    });
+    document.getElementById("close-admin-modal").addEventListener("click", () => {
+      document.getElementById("admin-modal").classList.add("hidden");
+    });
+
+    document.getElementById("adm-save-challenge").addEventListener("click", () => {
+      const title = document.getElementById("adm-ch-title").value.trim();
+      const desc = document.getElementById("adm-ch-desc").value.trim();
+      if (!title) return alert("Zadaj názov výzvy.");
+
+      state.challenges.forEach(c => c.is_active = false);
+      state.challenges.unshift({
+        id: "ch_" + Date.now(),
+        title,
+        description: desc,
+        is_active: true,
+        created_by: currentUser.id,
+        created_at: new Date().toISOString()
+      });
+      saveState();
+      document.getElementById("adm-ch-title").value = "";
+      document.getElementById("adm-ch-desc").value = "";
+      document.getElementById("admin-modal").classList.add("hidden");
+      renderAll();
+    });
+
+    document.getElementById("adm-add-user").addEventListener("click", () => {
+      const nickname = document.getElementById("adm-user-name").value.trim();
+      const created = addLocalMember(nickname, false);
+      if (created) document.getElementById("adm-user-name").value = "";
+    });
+
+    renderWelcomeMembers();
+    const savedUser = localStorage.getItem(SESSION_KEY);
+    if (savedUser && state.profiles.some(p => p.id === savedUser)) {
+      enterAs(savedUser);
+    }
+
+    window.__KLUB = {
+      enterAs,
+      addLocalMember,
+      switchTab,
+      getState: () => ({ user: currentUser && currentUser.id, nick: currentUser && currentUser.nickname, messages: state.messages.length, events: state.events.length }),
+      send: (text) => sendMessage({ content: text })
+    };
+  </script>
+</body>
+</html>
