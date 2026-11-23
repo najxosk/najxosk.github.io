@@ -335,8 +335,24 @@
       font-size: 15px;
     }
     .lvl-btn.done { background: #d7f3ea; color: #0b7d5f; }
-    .lvl-btn.lock { opacity: 0.38; cursor: not-allowed; }
     .lvl-btn.current { background: #5b4fd1; color: #fff; }
+    .jump-row {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      margin: 4px 0 10px;
+    }
+    .jump-row button {
+      flex: 1;
+      background: #efeae0;
+      border: 0;
+      border-radius: 16px;
+      min-height: 48px;
+      font-size: 18px;
+      font-weight: 800;
+      color: #2b3338;
+    }
+    .toolbar { gap: 10px; }
 
     #levelsScreen { justify-content: flex-start; padding-top: 22px; }
     #levelsScreen h1 { margin-bottom: 4px; }
@@ -371,12 +387,14 @@
       <div class="options" id="options"></div>
       <div class="toolbar">
         <button class="ghost-btn" id="undoBtn" type="button" disabled>Späť</button>
+        <button class="ghost-btn" id="playJumpMinus" type="button">−10</button>
+        <button class="ghost-btn" id="playJumpPlus" type="button">+10</button>
       </div>
 
       <div class="screen" id="startScreen">
         <div class="big-emoji">📚</div>
         <h1>Slabiková hra</h1>
-        <p>Poskladaj slovo zo slabík. Je tu 100 slov, od krátkych po dlhšie. Postup sa ukladá.</p>
+        <p>Poskladaj slovo zo slabík. Ktorúkoľvek z 100 úrovní si môžeš vybrať. Keď odídeš, vieš pokračovať tam, kde si skončil.</p>
         <button class="play-btn" id="startBtn" type="button">Hrať od začiatku</button>
         <button class="play-btn secondary hidden" id="continueBtn" type="button">Pokračovať</button>
         <button class="play-btn secondary" id="selectBtn" type="button">Výber úrovní</button>
@@ -392,7 +410,11 @@
 
       <div class="screen hidden" id="levelsScreen">
         <h1>Výber úrovní</h1>
-        <p>Zelené už máš hotové. Ostatné odomkneš poporadí.</p>
+        <p>Ťukni na číslo alebo preskoč po desiatich. Zelené už máš za sebou.</p>
+        <div class="jump-row">
+          <button type="button" id="jumpMinus" aria-label="O desať úrovní späť">−10</button>
+          <button type="button" id="jumpPlus" aria-label="O desať úrovní dopredu">+10</button>
+        </div>
         <div class="level-grid" id="levelGrid"></div>
         <button class="play-btn secondary" id="levelsBackBtn" type="button">Späť</button>
       </div>
@@ -1944,6 +1966,7 @@
     let stars = 0;
     let completed = [];
     let maxUnlocked = 0;
+    let hasPlayed = false;
     let lastLevel = 0;
     let soundOn = true;
     let picked = [];
@@ -1974,9 +1997,11 @@
         if (data.soundOn === false) soundOn = false;
         completed = data.completed.filter((n) => n >= 0 && n < LEVELS.length);
         stars = typeof data.stars === "number" ? data.stars : completed.length;
-        maxUnlocked = Math.max(0, Math.min(LEVELS.length - 1, data.maxUnlocked || 0));
-        if (completed.length) maxUnlocked = Math.max(maxUnlocked, Math.min(LEVELS.length - 1, Math.max(...completed) + 1));
-        lastLevel = Math.max(0, Math.min(LEVELS.length - 1, data.lastLevel || 0));
+        lastLevel = Math.max(0, Math.min(LEVELS.length - 1, Number(data.lastLevel) || 0));
+        hasPlayed = !!(data.hasPlayed || completed.length || data.lastLevel > 0 || data.maxUnlocked > 0);
+        // lastLevel 0 after playing úroveň 1 still counts if hasPlayed
+        if (data.hasPlayed === true) hasPlayed = true;
+        maxUnlocked = LEVELS.length - 1;
         return data;
       } catch (e) {
         return null;
@@ -1989,8 +2014,8 @@
           completed: completed,
           stars: stars,
           soundOn: soundOn,
-          maxUnlocked: maxUnlocked,
-          lastLevel: lastLevel
+          lastLevel: lastLevel,
+          hasPlayed: hasPlayed
         }));
       } catch (e) {}
     }
@@ -2120,6 +2145,7 @@
       picked = [];
       locked = false;
       lastLevel = currentLevel;
+      hasPlayed = true;
       pendingAdvance = null;
       els.levelBadge.textContent = "Úroveň " + (currentLevel + 1) + " z " + LEVELS.length;
       setStars();
@@ -2271,16 +2297,23 @@
         const btn = document.createElement("button");
         btn.type = "button";
         const done = completed.includes(i);
-        const open = i <= maxUnlocked || done;
-        btn.className = "lvl-btn" + (done ? " done" : open ? "" : " lock") + (i === currentLevel && open ? " current" : "");
+        const here = i === lastLevel || i === currentLevel;
+        btn.className = "lvl-btn" + (done ? " done" : "") + (here ? " current" : "");
         btn.textContent = done ? (i + 1) + " ✓" : String(i + 1);
-        btn.disabled = !open;
-        if (open) btn.addEventListener("click", () => {
+        btn.addEventListener("click", () => {
           initAudio();
           startFrom(i);
         });
         els.levelGrid.appendChild(btn);
       });
+      const cur = els.levelGrid.querySelector(".lvl-btn.current") || els.levelGrid.children[lastLevel];
+      if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: "center", inline: "nearest" });
+    }
+
+    function jumpBy(delta) {
+      const next = Math.max(0, Math.min(LEVELS.length - 1, lastLevel + delta));
+      initAudio();
+      startFrom(next);
     }
 
     function showLevelSelect() {
@@ -2298,20 +2331,21 @@
       loadSave();
       updateSoundBtn();
       setStars();
-      const canContinue = completed.length > 0 && completed.length < LEVELS.length;
-      if (canContinue) {
+      if (hasPlayed) {
         els.continueBtn.classList.remove("hidden");
-        const next = completed.includes(lastLevel) && lastLevel + 1 < LEVELS.length ? lastLevel + 1 : Math.min(lastLevel, maxUnlocked);
-        els.continueBtn.textContent = "Pokračovať (" + (next + 1) + ")";
+        els.continueBtn.textContent = "Pokračovať (" + (lastLevel + 1) + ")";
       }
     }
 
     els.startBtn.addEventListener("click", () => { initAudio(); startFrom(0); });
     els.continueBtn.addEventListener("click", () => {
       initAudio();
-      const next = completed.includes(lastLevel) && lastLevel + 1 < LEVELS.length ? lastLevel + 1 : Math.min(lastLevel, maxUnlocked);
-      startFrom(next);
+      startFrom(lastLevel);
     });
+    document.getElementById("jumpMinus").addEventListener("click", () => jumpBy(-10));
+    document.getElementById("jumpPlus").addEventListener("click", () => jumpBy(10));
+    document.getElementById("playJumpMinus").addEventListener("click", () => jumpBy(-10));
+    document.getElementById("playJumpPlus").addEventListener("click", () => jumpBy(10));
     els.selectBtn.addEventListener("click", () => { initAudio(); showLevelSelect(); });
     els.levelsOpenBtn.addEventListener("click", () => { initAudio(); showLevelSelect(); });
     els.levelsBackBtn = document.getElementById("levelsBackBtn");
@@ -2337,7 +2371,7 @@
       LEVELS,
       startFrom,
       getState() {
-        return { currentLevel, stars, completed: completed.slice(), maxUnlocked, lastLevel, locked, word: LEVELS[currentLevel] && LEVELS[currentLevel].word };
+        return { currentLevel, stars, completed: completed.slice(), lastLevel, hasPlayed, locked, word: LEVELS[currentLevel] && LEVELS[currentLevel].word };
       },
       completeCurrent() {
         const data = LEVELS[currentLevel];
