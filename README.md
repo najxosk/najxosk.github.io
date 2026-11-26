@@ -1,2 +1,4 @@
 # najxosk.github.io
-Mobilný prehľad projektov (GitHub Pages)
+
+- `/` — osobný rozcestník: všetky hry, nástroje a svet EchoWorlds
+- `/prehlad/` — mobilný prehľad úloh, kalendára a predplatného (PWA)
