@@ -195,7 +195,7 @@
 
     .glass-stats {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 10px;
     }
 
@@ -209,7 +209,7 @@
 
     .stat-num {
       display: block;
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 700;
       line-height: 1.15;
       color: var(--text);
@@ -774,6 +774,10 @@
                 <span class="stat-num" id="stat-tools">0</span>
                 <span class="stat-label">nástrojov</span>
               </div>
+              <div class="stat-box">
+                <span class="stat-num" id="stat-web">0</span>
+                <span class="stat-label">web</span>
+              </div>
             </div>
           </div>
         </div>
@@ -947,6 +951,7 @@
       document.getElementById("stat-games").textContent = PROJECTS.filter(p => p.c === "hry").length;
       document.getElementById("stat-world").textContent = PROJECTS.filter(p => p.c === "svet").length;
       document.getElementById("stat-tools").textContent = PROJECTS.filter(p => p.c === "nastroje").length;
+      document.getElementById("stat-web").textContent = PROJECTS.filter(p => p.c === "weby").length;
     }
 
     function renderCategoryFilters() {
