@@ -663,6 +663,12 @@
         bottom: 8px;
       }
     }
+
+    .hint-mobil { display: none; }
+    @media (max-width: 900px) {
+      .hint-desktop { display: none; }
+      .hint-mobil { display: inline; }
+    }
   </style>
 </head>
 <body>
@@ -744,7 +750,8 @@
 
   <!-- Spodný riadok s nápovedou ovládania -->
   <footer id="spodny-riadok">
-    Ťahaj myšou = otáčanie · koliesko = priblíženie · klik na zariadenie = karta
+    <span class="hint-desktop">Ťahaj myšou = otáčanie · koliesko = priblíženie · klik na zariadenie = karta</span>
+    <span class="hint-mobil">Ťahaj prstom = otáčanie · dva prsty = priblíženie · ťukni na zariadenie = karta</span>
   </footer>
 
   <!-- Načítanie lokálneho Three.js -->
