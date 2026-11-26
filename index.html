@@ -226,8 +226,8 @@
     .stat-label {
       display: block;
       margin-top: 4px;
-      font-size: 12px;
-      letter-spacing: 0.02em;
+      font-size: 11.5px;
+      letter-spacing: 0.01em;
       color: var(--muted);
     }
 
@@ -707,6 +707,161 @@
         align-items: flex-start;
       }
     }
+
+    .socials {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .social {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 11px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text);
+      background: rgba(148, 163, 184, 0.07);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      transition: border-color 0.16s ease, background-color 0.16s ease, transform 0.16s ease;
+    }
+
+    .social:hover {
+      border-color: rgba(103, 232, 249, 0.5);
+      background: rgba(103, 232, 249, 0.1);
+      transform: translateY(-1px);
+    }
+
+    .social-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--cyan);
+    }
+
+    .group {
+      margin-top: 44px;
+    }
+
+    .group-head {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .group-title {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 750;
+      letter-spacing: -0.015em;
+    }
+
+    .group-count {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .group-hint {
+      margin: 0 0 18px;
+      font-size: 14px;
+      color: var(--muted);
+      max-width: 62ch;
+    }
+
+    .group--world {
+      margin-top: 44px;
+    }
+
+    .world-box {
+      border-radius: 20px;
+      border: 1px solid rgba(167, 166, 255, 0.22);
+      background: linear-gradient(160deg, rgba(27, 23, 48, 0.75) 0%, rgba(20, 28, 49, 0.75) 100%);
+      padding: 4px;
+    }
+
+    .world-box > summary {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      padding: 18px 20px;
+      cursor: pointer;
+      list-style: none;
+      border-radius: 16px;
+    }
+
+    .world-box > summary::-webkit-details-marker { display: none; }
+
+    .world-box > summary:focus-visible {
+      outline: 2px solid var(--cyan);
+      outline-offset: 2px;
+    }
+
+    .world-title {
+      font-size: 20px;
+      font-weight: 750;
+      letter-spacing: -0.015em;
+      margin: 0;
+    }
+
+    .world-sub {
+      font-size: 14px;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .world-toggle {
+      margin-left: auto;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--cyan);
+      padding: 7px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(103, 232, 249, 0.4);
+      background: rgba(103, 232, 249, 0.08);
+    }
+
+    .world-box[open] .world-toggle::after { content: "Rozbaliť"; }
+    .world-toggle::after { content: "Zbaliť"; }
+
+    .world-body {
+      padding: 4px 16px 18px;
+    }
+
+    .group[hidden] { display: none; }
+
+    .section-intro {
+      margin: 10px 0 0;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--muted);
+      max-width: 60ch;
+    }
+
+    .micro-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--cyan);
+      flex: none;
+    }
+
+    .tag-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-right: 2px;
+      align-self: center;
+    }
+
+    .world-box > summary .micro-dot {
+      box-shadow: 0 0 12px rgba(103, 232, 249, 0.8);
+    }
   </style>
 </head>
 <body>
@@ -726,6 +881,14 @@
             Volám sa Štefan Papp (najxosk). Pracujem v kotolni na zmeny a vo voľnom čase skladám malé hry, nástroje do prehliadača a učím sa pracovať s AI.
           </p>
           <p class="hero-helper">Vyber si projekt a vyskúšaj ho priamo v prehliadači.</p>
+          <div class="socials">
+          <a class="social" href="https://www.youtube.com/@axodose" target="_blank" rel="noopener noreferrer"><span class="social-dot" aria-hidden="true"></span>YouTube · Dosi</a>
+          <a class="social" href="https://www.tiktok.com/@axodose" target="_blank" rel="noopener noreferrer"><span class="social-dot" aria-hidden="true"></span>TikTok · Dosi</a>
+          <a class="social" href="https://www.youtube.com/@MusicDose-k2l" target="_blank" rel="noopener noreferrer"><span class="social-dot" aria-hidden="true"></span>MusicDose</a>
+          <a class="social" href="https://www.instagram.com/axodose_" target="_blank" rel="noopener noreferrer"><span class="social-dot" aria-hidden="true"></span>Instagram</a>
+          <a class="social" href="https://github.com/najxosk" target="_blank" rel="noopener noreferrer"><span class="social-dot" aria-hidden="true"></span>GitHub</a>
+          <a class="social" href="https://najxo.itch.io" target="_blank" rel="noopener noreferrer"><span class="social-dot" aria-hidden="true"></span>itch.io</a>
+          </div>
         </div>
 
         <div class="hero-panel-wrap" aria-hidden="true">
@@ -769,7 +932,7 @@
               </div>
               <div class="stat-box">
                 <span class="stat-num stat-num--lavender" id="stat-world">0</span>
-                <span class="stat-label">svetov</span>
+                <span class="stat-label">EchoWorlds</span>
               </div>
               <div class="stat-box">
                 <span class="stat-num" id="stat-tools">0</span>
@@ -785,12 +948,12 @@
       </div>
     </div>
   </header>
-
   <main class="projects-section">
     <div class="container">
       <div class="section-head">
         <span class="micro-label">PREHĽAD</span>
         <h2 class="section-title">Projekty</h2>
+        <p class="section-intro">Všetko, čo som kedy dokončil, rozdelené tak, aby sa v tom dalo chodiť. Hry a nástroje nájdeš hneď, svet EchoWorlds je zbalený nižšie.</p>
       </div>
 
       <div class="controls">
@@ -801,13 +964,7 @@
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input
-              id="search-input"
-              class="search-input"
-              type="search"
-              placeholder="Názov, téma alebo štítok…"
-              autocomplete="off"
-            >
+            <input id="search-input" class="search-input" type="search" placeholder="Názov, téma alebo štítok…" autocomplete="off">
             <button id="search-clear" class="search-clear" type="button" aria-label="Vymazať hľadanie" hidden>×</button>
           </div>
           <p class="results-count" id="results-count" aria-live="polite"></p>
@@ -817,7 +974,7 @@
         <div class="tag-row" id="tag-filters" role="group" aria-label="Filter podľa štítku"></div>
       </div>
 
-      <div class="grid" id="projects-grid"></div>
+      <div id="sections"></div>
 
       <div class="empty-state" id="empty-state" hidden>
         <p class="empty-title">Žiadny projekt nezodpovedá filtru</p>
@@ -829,12 +986,12 @@
 
   <footer class="site-footer">
     <div class="container footer-inner">
-      <div>
-        <span class="footer-name">Štefan Papp (najxosk)</span>
-      </div>
+      <div><span class="footer-name">Štefan Papp (najxosk)</span></div>
       <div class="footer-links">
         <a href="https://github.com/najxosk" target="_blank" rel="noopener noreferrer">GitHub</a>
         <a href="https://najxo.itch.io" target="_blank" rel="noopener noreferrer">itch.io</a>
+        <a href="https://www.youtube.com/@axodose" target="_blank" rel="noopener noreferrer">YouTube</a>
+        <a href="https://www.tiktok.com/@axodose" target="_blank" rel="noopener noreferrer">TikTok</a>
       </div>
       <div>Vytvorené s AI · 2026</div>
     </div>
@@ -842,323 +999,820 @@
 
   <script>
     const PROJECTS = [
-      {"n":"Until I Wake","d":"Sen ženy v kóme — 10 etáp života, skladanie spomienok. Jam DREAM + STAGE.","t":["hra","puzzle","jam"],"c":"hry","i":"🛏️","u":"https://najxosk.github.io/until-i-wake/","alt":"https://najxo.itch.io/until-i-wake"},
-      {"n":"Glow Globe","d":"Rozsvieť každé mesto, krajinu a kontinent. Puzzle + geografia v jednom.","t":["hra","puzzle","geografia"],"c":"hry","i":"🌍","u":"https://najxosk.github.io/GlowGlobe/","alt":"https://najxo.itch.io/glow-globe"},
-      {"n":"The Spark","d":"Osloboď mestá a rozsvieť svet. Tmavá logická hra o svetle.","t":["hra","logika"],"c":"hry","i":"⚡","u":"https://najxosk.github.io/electric-ghost/"},
-      {"n":"Little Alchemist","d":"Skladanie vecí podľa skutočnej chémie — 150 úrovní, SK/EN.","t":["hra","vzdelávanie"],"c":"hry","i":"⚗️","u":"https://najxosk.github.io/dielnicka/","alt":"https://najxo.itch.io/little-alchemist"},
-      {"n":"Polnočná pošta","d":"Triedenie obálok pred posledným vlakom snov.","t":["hra","logika"],"c":"hry","i":"✉️","u":"https://najxosk.github.io/polnocna-posta/","alt":"https://najxo.itch.io/midnight-mail"},
-      {"n":"Doodle Alive","d":"Nakresli zvieratko a ono ožije. Kreslenie pre najmenších.","t":["hra","deti"],"c":"hry","i":"🐾","u":"https://najxosk.github.io/doodlealive/"},
-      {"n":"Kocka jedál","d":"3D kocka na náhodný výber jedla. PWA, funguje v mobile.","t":["nástroj","pwa"],"c":"hry","i":"🎲","u":"https://najxosk.github.io/kocka-jedal/"},
-      {"n":"Robokocka","d":"AR kocka, ktorá ožije ako robot na reálnom stole.","t":["hra","AR"],"c":"hry","i":"🤖","u":"https://najxosk.github.io/robokocka/"},
-      {"n":"Affix Merchant","d":"ARPG obchod s kovaním predmetov. Postav si výbavu.","t":["hra","RPG"],"c":"hry","i":"🛠️","u":"https://najxo.itch.io/affix-merchant"},
-      {"n":"Haunted Core","d":"Duch skáče po strojoch v šachte serverov. Jam Ghost in the Machine.","t":["hra","jam"],"c":"hry","i":"👻","u":"https://najxo.itch.io/haunted-core"},
-      {"n":"Zvieratková škôlka","d":"Detská hra pre najmenších — zvieratká, farby, zvuky.","t":["hra","deti"],"c":"hry","i":"🐣","u":"https://najxosk.github.io/zvieratkova-skolka/","alt":"https://najxo.itch.io/zvieratkova-skolka-1"},
-      {"n":"Zvieratková škôlka 2","d":"Pokračovanie detskej hry s novými zvieratkami.","t":["hra","deti"],"c":"hry","i":"🐤","u":"https://najxosk.github.io/zvieratkova-skolka-2/","alt":"https://najxo.itch.io/zvieratkova-skolka-2"},
-      {"n":"ResonanceChess","d":"6×6 echo-šach z univerza EchoWorlds — Hulaxy vs Neid.","t":["hra","šach"],"c":"hry","i":"♟️","u":"https://najxo.itch.io/resonancechess"},
-      {"n":"ECHOCHESS","d":"Šachová stratégia s vlastným lore a rasami. Ozvena ostrov.","t":["hra","šach"],"c":"hry","i":"♜","u":"https://najxo.itch.io/echochess-ozvena-ost"},
-      {"n":"Dark Forge: Blood & Iron","d":"Dokončená hra, ďalej sa nevyvíja. Nechávam ju tak, ako je.","t":["hra","archív"],"c":"hry","i":"🔥","u":"https://najxo.itch.io/dark-forge","s":"archiv"},
-      {"n":"Slabiková hra","d":"Učenie slabík pre deti — čítanie hrou.","t":["hra","deti","vzdelávanie"],"c":"hry","i":"🔤","u":"https://najxosk.github.io/hry-test/slabikova-hra/"},
-      {"n":"CRYPT-MAN: Maze of Lies","d":"Bludisko plné lží — nájdi cestu von.","t":["hra","bludisko"],"c":"hry","i":"🕵️","u":"https://najxosk.github.io/hry-test/crypt-man/"},
-      {"n":"Apokalypsa — Obrana hradu","d":"Obrana hradu pred vlnami nepriateľov.","t":["hra","akcia"],"c":"hry","i":"🏰","u":"https://najxosk.github.io/hry-test/apokalypsa/"},
-      {"n":"BeastForged","d":"Fitness RPG — tréning ako súboj s príšerami.","t":["hra","fitness"],"c":"hry","i":"💪","u":"https://najxosk.github.io/hry-test/beastforged/"},
-      {"n":"Klubovňa","d":"Malá hra o mieste, kde sa všetci poznajú.","t":["hra"],"c":"hry","i":"🎱","u":"https://najxosk.github.io/hry-test/klubovna/"},
-      {"n":"Rozprávkový kiosk","d":"Kiosk s rozprávkami — vyber si a čítaj.","t":["hra","deti"],"c":"hry","i":"📖","u":"https://najxosk.github.io/hry-test/rozpravkovy-kiosk/"},
-      {"n":"Línie hrdinov","d":"Kresli línie a spoj hrdinov bez prekriženia ciest.","t":["hra","logika"],"c":"hry","i":"🧩","u":"https://najxosk.github.io/test/hero-lines/"},
-      {"n":"ShadowShelf","d":"Terénny skener knižných chrbtov — odfoť poličku, dostaneš zoznam kníh (Gemini Vision).","t":["nástroj","AI","knihy"],"c":"nastroje","i":"📚","u":"https://najxosk.github.io/shadowshelf/"},
-      {"n":"Kotolňa — nástroje operátora","d":"Denník prevádzky, alarm tree, optimalizácia a školenie. Robené pre moju prácu v kotolni. Súkromné.","t":["nástroj","práca"],"c":"nastroje","i":"🏭"},
-      {"n":"Kotolňa Junior","d":"Hrateľný tréning obsluhy kotolne — voda, plyn, vzduch, ťah, čerpadlá. Učí bez rizika. Súkromné.","t":["hra","vzdelávanie","práca"],"c":"nastroje","i":"🎓"},
-      {"n":"Moje výdavky","d":"Jednoduchá evidencia výdavkov, ktorá ide aj z mobilu.","t":["nástroj","peniaze"],"c":"nastroje","i":"💰","u":"https://najxosk.github.io/test/vydavky/"},
-      {"n":"PixoLotl (AxoDose)","d":"Záväzný vizuálny popis baby axolotla — podklad pre AI obrázky a video.","t":["AI","vizuál"],"c":"nastroje","i":"🦎","u":"https://github.com/najxosk/AxoDose"},
-      {"n":"Project-Nexus","d":"Osobný veliteľský prehľad: projekty, úlohy, limity AI. Súkromné.","t":["nástroj","prehľad"],"c":"nastroje","i":"🗂️"},
-      {"n":"Vedomosti","d":"Kvíz o vedomostiach. Staršia verzia učenia — dnes žije v hre dielnicka.","t":["hra","archív","vzdelávanie"],"c":"nastroje","i":"🧠","u":"https://najxosk.github.io/vedomosti/","s":"archiv"},
-      {"n":"Prehľad projektov","d":"Mobilná PWA s úlohami, kalendárom, predplatným a botmi. Živé dáta z Google tabuľky.","t":["nástroj","pwa"],"c":"nastroje","i":"📊","u":"/prehlad/"},
-      {"n":"EchoWorlds — svet","d":"Univerzum, v ktorom sa odohrávajú moje hry. Lore, rasy, mapa, monštrá.","t":["svet","lore"],"c":"svet","i":"🌌","u":"https://najxo.itch.io/"},
-      {"n":"The First Crossing","d":"Prvý prechod — príbehová kapitola zo sveta EchoWorlds.","t":["svet","príbeh"],"c":"svet","i":"📜","u":"https://najxo.itch.io/the-first-crossing"},
-      {"n":"First Crossing Printables","d":"Tlačové doplnky k prvému prechodu — na stôl.","t":["svet","print"],"c":"svet","i":"🖨️","u":"https://najxo.itch.io/first-crossing-printables"},
-      {"n":"GM Toolkit","d":"Nástroje pre rozprávača — ukotvenie sveta a pravidiel.","t":["svet","nástroj"],"c":"svet","i":"🎲","u":"https://najxo.itch.io/echoworlds-gm-toolkit"},
-      {"n":"Crossing Kit","d":"Sada na prechod svetom — karty a podklady.","t":["svet","karty"],"c":"svet","i":"🧳","u":"https://najxo.itch.io/echoworlds-crossing-kit"},
-      {"n":"Hulaxy Gear Catalog","d":"Katalóg výbavy z Hulaxy — zbrane, nástroje, zvyšky.","t":["svet","katalóg"],"c":"svet","i":"⚙️","u":"https://najxo.itch.io/echoworlds-hulaxy-gear-catalog"},
-      {"n":"Seven Pillars Map","d":"Mapa siedmich pilierov sveta EchoWorlds.","t":["svet","mapa"],"c":"svet","i":"🗺️","u":"https://najxo.itch.io/echoworlds-seven-pillars-map"},
-      {"n":"Gate Sites Battle Map Pack","d":"Bočné mapy brán pre hry na stole.","t":["svet","mapa"],"c":"svet","i":"🏛️","u":"https://najxo.itch.io/gate-sites-battle-map-pack"},
-      {"n":"Token Pack","d":"Žetóny postáv a príšer do hry.","t":["svet","tokeny"],"c":"svet","i":"🎭","u":"https://najxo.itch.io/echoworlds-token-pack"},
-      {"n":"Wallpapers","d":"Tapety zo sveta EchoWorlds.","t":["svet","vizuál"],"c":"svet","i":"🖼️","u":"https://najxo.itch.io/echoworlds-wallpapers"},
-      {"n":"Races of the Echo","d":"Rasy ozveny — kto v tom svete žije a prečo.","t":["svet","lore"],"c":"svet","i":"🧬","u":"https://najxo.itch.io/races-of-the-echo"},
-      {"n":"Monsters of the Echo","d":"Príšery ozveny — opis, správanie, slabiny.","t":["svet","lore"],"c":"svet","i":"🐉","u":"https://najxo.itch.io/monsters-of-the-echo"},
-      {"n":"Grove and Void","d":"Háj a prázdnota — ďalšia časť lore.","t":["svet","príbeh"],"c":"svet","i":"🌲","u":"https://najxo.itch.io/grove-and-void"},
-      {"n":"Lanterns over Hallowmere","d":"Lampáše nad Hallowmere — atmosférická kapitola.","t":["svet","príbeh"],"c":"svet","i":"🏮","u":"https://najxo.itch.io/lanterns-over-hallowmere"},
-      {"n":"The Hollow Lantern","d":"Dutá lampa — príbeh zo sveta.","t":["svet","príbeh"],"c":"svet","i":"🕯️","u":"https://najxo.itch.io/the-hollow-lantern"},
-      {"n":"The Long Night Festival","d":"Festival dlhej noci — udalosť zo sveta.","t":["svet","príbeh"],"c":"svet","i":"🎪","u":"https://najxo.itch.io/the-long-night-festival"},
-      {"n":"The Bearer of the Longest Night","d":"Nositeľ najdlhšej noci — uzatváracia kapitola.","t":["svet","príbeh"],"c":"svet","i":"🌑","u":"https://najxo.itch.io/the-bearer-of-the-longest-night"},
-      {"n":"Midnight Mail — Supporter Edition","d":"Podporovateľská verzia Polnočnej pošty s bonusmi.","t":["hra","sada"],"c":"svet","i":"📬","u":"https://najxo.itch.io/midnight-mail-supporter-edition"},
-      {"n":"najxosk — profil projektov","d":"Prehľad všetkého, čo som vytvoril, po kategóriách. Zdroj pravdy.","t":["web"],"c":"weby","i":"🌐","u":"https://github.com/najxosk/najxosk"}
+  {
+    "n": "Until I Wake",
+    "d": "Sen ženy v kóme — 10 etáp života, skladanie spomienok. Jam DREAM + STAGE.",
+    "t": [
+      "hra",
+      "puzzle",
+      "jam"
+    ],
+    "c": "hry",
+    "i": "🛏️",
+    "u": "https://najxosk.github.io/until-i-wake/",
+    "alt": "https://najxo.itch.io/until-i-wake"
+  },
+  {
+    "n": "Glow Globe",
+    "d": "Rozsvieť každé mesto, krajinu a kontinent. Puzzle + geografia v jednom.",
+    "t": [
+      "hra",
+      "puzzle",
+      "geografia"
+    ],
+    "c": "hry",
+    "i": "🌍",
+    "u": "https://najxosk.github.io/GlowGlobe/",
+    "alt": "https://najxo.itch.io/glow-globe"
+  },
+  {
+    "n": "The Spark",
+    "d": "Osloboď mestá a rozsvieť svet. Tmavá logická hra o svetle.",
+    "t": [
+      "hra",
+      "logika"
+    ],
+    "c": "hry",
+    "i": "⚡",
+    "u": "https://najxosk.github.io/electric-ghost/"
+  },
+  {
+    "n": "Little Alchemist",
+    "d": "Skladanie vecí podľa skutočnej chémie — 150 úrovní, SK/EN.",
+    "t": [
+      "hra",
+      "vzdelávanie"
+    ],
+    "c": "hry",
+    "i": "⚗️",
+    "u": "https://najxosk.github.io/dielnicka/",
+    "alt": "https://najxo.itch.io/little-alchemist"
+  },
+  {
+    "n": "Polnočná pošta",
+    "d": "Triedenie obálok pred posledným vlakom snov.",
+    "t": [
+      "hra",
+      "logika"
+    ],
+    "c": "hry",
+    "i": "✉️",
+    "u": "https://najxosk.github.io/polnocna-posta/",
+    "alt": "https://najxo.itch.io/midnight-mail"
+  },
+  {
+    "n": "Doodle Alive",
+    "d": "Nakresli zvieratko a ono ožije. Kreslenie pre najmenších.",
+    "t": [
+      "hra",
+      "deti"
+    ],
+    "c": "hry",
+    "i": "🐾",
+    "u": "https://najxosk.github.io/doodlealive/"
+  },
+  {
+    "n": "Kocka jedál",
+    "d": "3D kocka na náhodný výber jedla. PWA, funguje v mobile.",
+    "t": [
+      "nástroj",
+      "pwa"
+    ],
+    "c": "hry",
+    "i": "🎲",
+    "u": "https://najxosk.github.io/kocka-jedal/"
+  },
+  {
+    "n": "Robokocka",
+    "d": "AR kocka, ktorá ožije ako robot na reálnom stole.",
+    "t": [
+      "hra",
+      "AR"
+    ],
+    "c": "hry",
+    "i": "🤖",
+    "u": "https://najxosk.github.io/robokocka/"
+  },
+  {
+    "n": "Affix Merchant",
+    "d": "ARPG obchod s kovaním predmetov. Postav si výbavu.",
+    "t": [
+      "hra",
+      "RPG"
+    ],
+    "c": "hry",
+    "i": "🛠️",
+    "u": "https://najxo.itch.io/affix-merchant"
+  },
+  {
+    "n": "Haunted Core",
+    "d": "Duch skáče po strojoch v šachte serverov. Jam Ghost in the Machine.",
+    "t": [
+      "hra",
+      "jam"
+    ],
+    "c": "hry",
+    "i": "👻",
+    "u": "https://najxo.itch.io/haunted-core"
+  },
+  {
+    "n": "Zvieratková škôlka",
+    "d": "Detská hra pre najmenších — zvieratká, farby, zvuky.",
+    "t": [
+      "hra",
+      "deti"
+    ],
+    "c": "hry",
+    "i": "🐣",
+    "u": "https://najxosk.github.io/zvieratkova-skolka/",
+    "alt": "https://najxo.itch.io/zvieratkova-skolka-1"
+  },
+  {
+    "n": "Zvieratková škôlka 2",
+    "d": "Pokračovanie detskej hry s novými zvieratkami.",
+    "t": [
+      "hra",
+      "deti"
+    ],
+    "c": "hry",
+    "i": "🐤",
+    "u": "https://najxosk.github.io/zvieratkova-skolka-2/",
+    "alt": "https://najxo.itch.io/zvieratkova-skolka-2"
+  },
+  {
+    "n": "ResonanceChess",
+    "d": "6×6 echo-šach z univerza EchoWorlds — Hulaxy vs Neid.",
+    "t": [
+      "hra",
+      "šach",
+      "hra zo sveta"
+    ],
+    "c": "svet",
+    "i": "♟️",
+    "u": "https://najxo.itch.io/resonancechess"
+  },
+  {
+    "n": "ECHOCHESS",
+    "d": "Šachová stratégia s vlastným lore a rasami. Ozvena ostrov.",
+    "t": [
+      "hra",
+      "šach",
+      "hra zo sveta"
+    ],
+    "c": "svet",
+    "i": "♜",
+    "u": "https://najxo.itch.io/echochess-ozvena-ost"
+  },
+  {
+    "n": "Dark Forge: Blood & Iron",
+    "d": "Dokončená hra, ďalej sa nevyvíja. Nechávam ju tak, ako je.",
+    "t": [
+      "hra",
+      "archív"
+    ],
+    "c": "hry",
+    "i": "🔥",
+    "u": "https://najxo.itch.io/dark-forge",
+    "s": "archiv"
+  },
+  {
+    "n": "Slabiková hra",
+    "d": "Učenie slabík pre deti — čítanie hrou.",
+    "t": [
+      "hra",
+      "deti",
+      "vzdelávanie"
+    ],
+    "c": "hry",
+    "i": "🔤",
+    "u": "https://najxosk.github.io/hry-test/slabikova-hra/"
+  },
+  {
+    "n": "CRYPT-MAN: Maze of Lies",
+    "d": "Bludisko plné lží — nájdi cestu von.",
+    "t": [
+      "hra",
+      "bludisko"
+    ],
+    "c": "hry",
+    "i": "🕵️",
+    "u": "https://najxosk.github.io/hry-test/crypt-man/"
+  },
+  {
+    "n": "Apokalypsa — Obrana hradu",
+    "d": "Obrana hradu pred vlnami nepriateľov.",
+    "t": [
+      "hra",
+      "akcia"
+    ],
+    "c": "hry",
+    "i": "🏰",
+    "u": "https://najxosk.github.io/hry-test/apokalypsa/"
+  },
+  {
+    "n": "BeastForged",
+    "d": "Fitness RPG — tréning ako súboj s príšerami.",
+    "t": [
+      "hra",
+      "fitness"
+    ],
+    "c": "hry",
+    "i": "💪",
+    "u": "https://najxosk.github.io/hry-test/beastforged/"
+  },
+  {
+    "n": "Klubovňa",
+    "d": "Malá hra o mieste, kde sa všetci poznajú.",
+    "t": [
+      "hra"
+    ],
+    "c": "hry",
+    "i": "🎱",
+    "u": "https://najxosk.github.io/hry-test/klubovna/"
+  },
+  {
+    "n": "Rozprávkový kiosk",
+    "d": "Kiosk s rozprávkami — vyber si a čítaj.",
+    "t": [
+      "hra",
+      "deti"
+    ],
+    "c": "hry",
+    "i": "📖",
+    "u": "https://najxosk.github.io/hry-test/rozpravkovy-kiosk/"
+  },
+  {
+    "n": "Línie hrdinov",
+    "d": "Kresli línie a spoj hrdinov bez prekriženia ciest.",
+    "t": [
+      "hra",
+      "logika"
+    ],
+    "c": "hry",
+    "i": "🧩",
+    "u": "https://najxosk.github.io/test/hero-lines/"
+  },
+  {
+    "n": "ShadowShelf",
+    "d": "Terénny skener knižných chrbtov — odfoť poličku, dostaneš zoznam kníh (Gemini Vision).",
+    "t": [
+      "nástroj",
+      "AI",
+      "knihy"
+    ],
+    "c": "nastroje",
+    "i": "📚",
+    "u": "https://najxosk.github.io/shadowshelf/"
+  },
+  {
+    "n": "Kotolňa — nástroje operátora",
+    "d": "Denník prevádzky, alarm tree, optimalizácia a školenie. Robené pre moju prácu v kotolni. Súkromné.",
+    "t": [
+      "nástroj",
+      "práca"
+    ],
+    "c": "nastroje",
+    "i": "🏭"
+  },
+  {
+    "n": "Kotolňa Junior",
+    "d": "Hrateľný tréning obsluhy kotolne — voda, plyn, vzduch, ťah, čerpadlá. Učí bez rizika. Súkromné.",
+    "t": [
+      "hra",
+      "vzdelávanie",
+      "práca"
+    ],
+    "c": "nastroje",
+    "i": "🎓"
+  },
+  {
+    "n": "Moje výdavky",
+    "d": "Jednoduchá evidencia výdavkov, ktorá ide aj z mobilu.",
+    "t": [
+      "nástroj",
+      "peniaze"
+    ],
+    "c": "nastroje",
+    "i": "💰",
+    "u": "https://najxosk.github.io/test/vydavky/"
+  },
+  {
+    "n": "PixoLotl (AxoDose)",
+    "d": "Záväzný vizuálny popis baby axolotla — podklad pre AI obrázky a video.",
+    "t": [
+      "AI",
+      "vizuál"
+    ],
+    "c": "nastroje",
+    "i": "🦎",
+    "u": "https://github.com/najxosk/AxoDose"
+  },
+  {
+    "n": "Project-Nexus",
+    "d": "Osobný veliteľský prehľad: projekty, úlohy, limity AI. Súkromné.",
+    "t": [
+      "nástroj",
+      "prehľad"
+    ],
+    "c": "nastroje",
+    "i": "🗂️"
+  },
+  {
+    "n": "Vedomosti",
+    "d": "Kvíz o vedomostiach. Staršia verzia učenia — dnes žije v hre dielnicka.",
+    "t": [
+      "hra",
+      "archív",
+      "vzdelávanie"
+    ],
+    "c": "nastroje",
+    "i": "🧠",
+    "u": "https://najxosk.github.io/vedomosti/",
+    "s": "archiv"
+  },
+  {
+    "n": "Prehľad projektov",
+    "d": "Mobilná PWA s úlohami, kalendárom, predplatným a botmi. Živé dáta z Google tabuľky.",
+    "t": [
+      "nástroj",
+      "pwa"
+    ],
+    "c": "nastroje",
+    "i": "📊",
+    "u": "/prehlad/"
+  },
+  {
+    "n": "EchoWorlds — svet",
+    "d": "Univerzum, v ktorom sa odohrávajú moje hry. Lore, rasy, mapa, monštrá.",
+    "t": [
+      "svet",
+      "lore"
+    ],
+    "c": "svet",
+    "i": "🌌",
+    "u": "https://najxo.itch.io/"
+  },
+  {
+    "n": "The First Crossing",
+    "d": "Prvý prechod — príbehová kapitola zo sveta EchoWorlds.",
+    "t": [
+      "svet",
+      "príbeh"
+    ],
+    "c": "svet",
+    "i": "📜",
+    "u": "https://najxo.itch.io/the-first-crossing"
+  },
+  {
+    "n": "First Crossing Printables",
+    "d": "Tlačové doplnky k prvému prechodu — na stôl.",
+    "t": [
+      "svet",
+      "print"
+    ],
+    "c": "svet",
+    "i": "🖨️",
+    "u": "https://najxo.itch.io/first-crossing-printables"
+  },
+  {
+    "n": "GM Toolkit",
+    "d": "Nástroje pre rozprávača — ukotvenie sveta a pravidiel.",
+    "t": [
+      "svet",
+      "nástroj"
+    ],
+    "c": "svet",
+    "i": "🎲",
+    "u": "https://najxo.itch.io/echoworlds-gm-toolkit"
+  },
+  {
+    "n": "Crossing Kit",
+    "d": "Sada na prechod svetom — karty a podklady.",
+    "t": [
+      "svet",
+      "karty"
+    ],
+    "c": "svet",
+    "i": "🧳",
+    "u": "https://najxo.itch.io/echoworlds-crossing-kit"
+  },
+  {
+    "n": "Hulaxy Gear Catalog",
+    "d": "Katalóg výbavy z Hulaxy — zbrane, nástroje, zvyšky.",
+    "t": [
+      "svet",
+      "katalóg"
+    ],
+    "c": "svet",
+    "i": "⚙️",
+    "u": "https://najxo.itch.io/echoworlds-hulaxy-gear-catalog"
+  },
+  {
+    "n": "Seven Pillars Map",
+    "d": "Mapa siedmich pilierov sveta EchoWorlds.",
+    "t": [
+      "svet",
+      "mapa"
+    ],
+    "c": "svet",
+    "i": "🗺️",
+    "u": "https://najxo.itch.io/echoworlds-seven-pillars-map"
+  },
+  {
+    "n": "Gate Sites Battle Map Pack",
+    "d": "Bočné mapy brán pre hry na stole.",
+    "t": [
+      "svet",
+      "mapa"
+    ],
+    "c": "svet",
+    "i": "🏛️",
+    "u": "https://najxo.itch.io/gate-sites-battle-map-pack"
+  },
+  {
+    "n": "Token Pack",
+    "d": "Žetóny postáv a príšer do hry.",
+    "t": [
+      "svet",
+      "tokeny"
+    ],
+    "c": "svet",
+    "i": "🎭",
+    "u": "https://najxo.itch.io/echoworlds-token-pack"
+  },
+  {
+    "n": "Wallpapers",
+    "d": "Tapety zo sveta EchoWorlds.",
+    "t": [
+      "svet",
+      "vizuál"
+    ],
+    "c": "svet",
+    "i": "🖼️",
+    "u": "https://najxo.itch.io/echoworlds-wallpapers"
+  },
+  {
+    "n": "Races of the Echo",
+    "d": "Rasy ozveny — kto v tom svete žije a prečo.",
+    "t": [
+      "svet",
+      "lore"
+    ],
+    "c": "svet",
+    "i": "🧬",
+    "u": "https://najxo.itch.io/races-of-the-echo"
+  },
+  {
+    "n": "Monsters of the Echo",
+    "d": "Príšery ozveny — opis, správanie, slabiny.",
+    "t": [
+      "svet",
+      "lore"
+    ],
+    "c": "svet",
+    "i": "🐉",
+    "u": "https://najxo.itch.io/monsters-of-the-echo"
+  },
+  {
+    "n": "Grove and Void",
+    "d": "Háj a prázdnota — ďalšia časť lore.",
+    "t": [
+      "svet",
+      "príbeh"
+    ],
+    "c": "svet",
+    "i": "🌲",
+    "u": "https://najxo.itch.io/grove-and-void"
+  },
+  {
+    "n": "Lanterns over Hallowmere",
+    "d": "Lampáše nad Hallowmere — atmosférická kapitola.",
+    "t": [
+      "svet",
+      "príbeh"
+    ],
+    "c": "svet",
+    "i": "🏮",
+    "u": "https://najxo.itch.io/lanterns-over-hallowmere"
+  },
+  {
+    "n": "The Hollow Lantern",
+    "d": "Dutá lampa — príbeh zo sveta.",
+    "t": [
+      "svet",
+      "príbeh"
+    ],
+    "c": "svet",
+    "i": "🕯️",
+    "u": "https://najxo.itch.io/the-hollow-lantern"
+  },
+  {
+    "n": "The Long Night Festival",
+    "d": "Festival dlhej noci — udalosť zo sveta.",
+    "t": [
+      "svet",
+      "príbeh"
+    ],
+    "c": "svet",
+    "i": "🎪",
+    "u": "https://najxo.itch.io/the-long-night-festival"
+  },
+  {
+    "n": "The Bearer of the Longest Night",
+    "d": "Nositeľ najdlhšej noci — uzatváracia kapitola.",
+    "t": [
+      "svet",
+      "príbeh"
+    ],
+    "c": "svet",
+    "i": "🌑",
+    "u": "https://najxo.itch.io/the-bearer-of-the-longest-night"
+  },
+  {
+    "n": "Midnight Mail — Supporter Edition",
+    "d": "Podporovateľská verzia Polnočnej pošty s bonusmi.",
+    "t": [
+      "hra",
+      "sada"
+    ],
+    "c": "svet",
+    "i": "📬",
+    "u": "https://najxo.itch.io/midnight-mail-supporter-edition"
+  },
+  {
+    "n": "najxosk — profil projektov",
+    "d": "Prehľad všetkého, čo som vytvoril, po kategóriách. Zdroj pravdy.",
+    "t": [
+      "web"
+    ],
+    "c": "weby",
+    "i": "🌐",
+    "u": "https://github.com/najxosk/najxosk"
+  }
+];
+
+    const GROUPS = [
+      { key: "hry", title: "Hry", hint: "Hrajú sa v prehliadači, nič neinštaluješ. Klikni na kartu." },
+      { key: "nastroje", title: "Nástroje", hint: "Veci, ktoré mi šetria čas v práci alebo pri učení." },
+      { key: "svet", title: "EchoWorlds", hint: "Jeden svet, veľa vecí okolo neho — hry, mapy, príbehy a doplnky.", collapsible: true },
+      { key: "weby", title: "Weby", hint: "Rozcestníky a prehľady." }
     ];
 
-    const CATEGORIES = [
-      { id: "all", label: "Všetky" },
-      { id: "hry", label: "Hry" },
-      { id: "nastroje", label: "Nástroje" },
-      { id: "svet", label: "Svet EchoWorlds" },
-      { id: "weby", label: "Weby" }
-    ];
+    const STORAGE_KEY = "najxosk-view-v2";
+    const state = { q: "", category: "all", tag: null, tagsOpen: false };
 
-    const FEATURED_TAGS = ["deti", "logika", "puzzle", "vzdelávanie", "príbeh", "lore", "AI", "pwa", "jam", "archív"];
-    const STORAGE_KEY = "najxosk_filter_v1";
-
-    const state = {
-      category: "all",
-      tag: "",
-      query: ""
-    };
-
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && CATEGORIES.some(c => c.id === parsed.category)) {
-          state.category = parsed.category;
-        }
-        if (parsed && typeof parsed.tag === "string" && FEATURED_TAGS.includes(parsed.tag)) {
-          state.tag = parsed.tag;
-        }
-      }
-    } catch (e) {}
-
-    const gridEl = document.getElementById("projects-grid");
-    const countEl = document.getElementById("results-count");
+    const sectionsEl = document.getElementById("sections");
+    const resultsEl = document.getElementById("results-count");
     const emptyEl = document.getElementById("empty-state");
-    const categoryEl = document.getElementById("category-filters");
-    const tagEl = document.getElementById("tag-filters");
     const searchInput = document.getElementById("search-input");
     const searchClear = document.getElementById("search-clear");
-    const resetBtn = document.getElementById("reset-filters");
+    const categoryEl = document.getElementById("category-filters");
+    const tagEl = document.getElementById("tag-filters");
 
-    function normalizeText(value) {
-      return String(value || "")
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
-    }
+    const norm = v => String(v || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    PROJECTS.forEach(p => { p._s = norm([p.n, p.d, (p.t || []).join(" "), p.c].join(" ")); });
+
+    const CATS = [
+      { key: "all", label: "Všetky" },
+      { key: "hry", label: "Hry" },
+      { key: "nastroje", label: "Nástroje" },
+      { key: "svet", label: "EchoWorlds" },
+      { key: "weby", label: "Weby" }
+    ];
 
     function saveState() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ category: state.category, tag: state.tag })); } catch (e) {}
+    }
+
+    function loadState() {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
-          category: state.category,
-          tag: state.tag
-        }));
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const p = JSON.parse(raw);
+        if (p.category && CATS.some(c => c.key === p.category)) state.category = p.category;
+        if (p.tag) state.tag = p.tag;
       } catch (e) {}
     }
 
-    function updateHeroStats() {
+    function matches(p) {
+      if (state.category !== "all" && p.c !== state.category) return false;
+      if (state.tag && !(p.t || []).includes(state.tag)) return false;
+      if (state.q && !p._s.includes(state.q)) return false;
+      return true;
+    }
+
+    function createCard(p) {
+      const card = document.createElement("article");
+      card.dataset.idx = PROJECTS.indexOf(p);
+      card.className = "card" + (p.s === "archiv" ? " card--archive" : "") + (p.u ? "" : " card--private");
+
+      const top = document.createElement("div");
+      top.className = "card-top";
+      const icon = document.createElement("div");
+      icon.className = "card-icon";
+      icon.setAttribute("aria-hidden", "true");
+      icon.textContent = p.i || "✨";
+      top.appendChild(icon);
+      if (p.s === "archiv") {
+        const badge = document.createElement("span");
+        badge.className = "card-badge";
+        badge.textContent = "archív";
+        top.appendChild(badge);
+      }
+      card.appendChild(top);
+
+      const title = document.createElement("h3");
+      title.className = "card-title";
+      if (p.u) {
+        const a = document.createElement("a");
+        a.className = "card-link";
+        a.href = p.u;
+        if (p.u.startsWith("http")) { a.target = "_blank"; a.rel = "noopener noreferrer"; }
+        a.textContent = p.n;
+        title.appendChild(a);
+      } else {
+        title.textContent = p.n;
+      }
+      card.appendChild(title);
+
+      const desc = document.createElement("p");
+      desc.className = "card-desc";
+      desc.textContent = p.d || "";
+      card.appendChild(desc);
+
+      const tags = document.createElement("div");
+      tags.className = "card-tags";
+      (p.t || []).forEach(t => {
+        const pill = document.createElement("span");
+        pill.className = "card-tag";
+        pill.textContent = t;
+        tags.appendChild(pill);
+      });
+      card.appendChild(tags);
+
+      const foot = document.createElement("div");
+      foot.className = "card-footer";
+      if (p.u) {
+        const cta = document.createElement("span");
+        cta.className = "card-cta";
+        cta.setAttribute("aria-hidden", "true");
+        cta.textContent = "Otvoriť →";
+        foot.appendChild(cta);
+      } else {
+        const priv = document.createElement("span");
+        priv.className = "card-private-label";
+        priv.textContent = "súkromné";
+        foot.appendChild(priv);
+      }
+      if (p.alt) {
+        const alt = document.createElement("a");
+        alt.className = "card-alt";
+        alt.href = p.alt;
+        alt.target = "_blank";
+        alt.rel = "noopener noreferrer";
+        alt.textContent = "itch.io";
+        foot.appendChild(alt);
+      }
+      card.appendChild(foot);
+      return card;
+    }
+
+    function buildSections() {
+      sectionsEl.innerHTML = "";
+      GROUPS.forEach(g => {
+        const items = PROJECTS.filter(p => p.c === g.key);
+        if (!items.length) return;
+
+        const wrap = document.createElement("section");
+        wrap.className = "group" + (g.collapsible ? " group--world" : "");
+        wrap.dataset.group = g.key;
+
+        let target = wrap;
+        let details = null;
+
+        if (g.collapsible) {
+          details = document.createElement("details");
+          details.className = "world-box";
+          details.dataset.group = g.key;
+          const sum = document.createElement("summary");
+          sum.innerHTML = `<span class="micro-dot" aria-hidden="true"></span>
+            <div><p class="world-title">${g.title}</p><p class="world-sub">${items.length} vecí · hry, mapy, príbehy, doplnky</p></div>
+            <span class="world-toggle"></span>`;
+          details.appendChild(sum);
+          const inner = document.createElement("div");
+          inner.className = "world-body";
+          const grid = document.createElement("div");
+          grid.className = "grid";
+          grid.id = "grid-" + g.key;
+          inner.appendChild(grid);
+          details.appendChild(inner);
+          wrap.appendChild(details);
+          target = grid;
+        } else {
+          const head = document.createElement("div");
+          head.className = "group-head";
+          head.innerHTML = '<h3 class="group-title">' + g.title + '</h3><span class="group-count">' + items.length + "</span>";
+          wrap.appendChild(head);
+          const hint = document.createElement("p");
+          hint.className = "group-hint";
+          hint.textContent = g.hint;
+          wrap.appendChild(hint);
+          const grid = document.createElement("div");
+          grid.className = "grid";
+          grid.id = "grid-" + g.key;
+          wrap.appendChild(grid);
+          target = grid;
+        }
+
+        items.forEach(p => target.appendChild(createCard(p)));
+        sectionsEl.appendChild(wrap);
+      });
+    }
+
+    function renderCategories() {
+      categoryEl.innerHTML = "";
+      CATS.forEach(c => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "chip" + (state.category === c.key ? " chip--active" : "");
+        b.setAttribute("aria-pressed", String(state.category === c.key));
+        b.dataset.key = c.key;
+        b.textContent = c.label;
+        b.addEventListener("click", () => { state.category = c.key; saveState(); apply(); });
+        categoryEl.appendChild(b);
+      });
+    }
+
+    function renderTags() {
+      const counts = {};
+      PROJECTS.forEach(p => (p.t || []).forEach(t => { counts[t] = (counts[t] || 0) + 1; }));
+      const tags = Object.keys(counts).sort((a, b) => counts[b] - counts[a] || a.localeCompare(b, "sk"));
+      const LIMIT = 10;
+      const shownTags = state.tagsOpen ? tags : tags.slice(0, LIMIT);
+      tagEl.innerHTML = '<span class="tag-label">Štítky:</span>';
+      shownTags.forEach(t => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "tag-chip" + (state.tag === t ? " tag-chip--active" : "");
+        b.setAttribute("aria-pressed", String(state.tag === t));
+        b.textContent = t;
+        b.addEventListener("click", () => { state.tag = state.tag === t ? null : t; saveState(); apply(); });
+        tagEl.appendChild(b);
+      });
+      if (tags.length > LIMIT) {
+        const more = document.createElement("button");
+        more.type = "button";
+        more.className = "tag-chip tag-chip--more";
+        more.textContent = state.tagsOpen ? "menej" : "+" + (tags.length - LIMIT) + " ďalších";
+        more.addEventListener("click", () => { state.tagsOpen = !state.tagsOpen; apply(); });
+        tagEl.appendChild(more);
+      }
+    }
+
+    function apply() {
+      let shown = 0;
+      const q = norm(state.q);
+
+      sectionsEl.querySelectorAll(".grid").forEach(grid => {
+        let visibleInGrid = 0;
+        grid.querySelectorAll(".card").forEach(card => {
+          const p = PROJECTS[Number(card.dataset.idx)];
+          const ok = p && matches(p);
+          card.hidden = !ok;
+          if (ok) visibleInGrid++;
+        });
+        shown += visibleInGrid;
+        const groupEl = grid.closest(".group");
+        if (groupEl) groupEl.hidden = visibleInGrid === 0;
+        const details = grid.closest("details");
+        if (details) details.open = visibleInGrid > 0 && (state.q !== "" || state.category === "svet" || state.tag !== null);
+      });
+
+      resultsEl.textContent = "Zobrazené projekty: " + shown + " z " + PROJECTS.length;
+      emptyEl.hidden = shown > 0;
+      searchClear.hidden = state.q === "";
+      renderCategories();
+      renderTags();
+    }
+
+    searchInput.addEventListener("input", () => { state.q = searchInput.value; apply(); });
+    searchClear.addEventListener("click", () => { searchInput.value = ""; state.q = ""; apply(); searchInput.focus(); });
+    document.getElementById("reset-filters").addEventListener("click", () => {
+      state.category = "all"; state.tag = null; state.q = ""; searchInput.value = ""; saveState(); apply();
+    });
+
+    function updateStats() {
       document.getElementById("stat-games").textContent = PROJECTS.filter(p => p.c === "hry").length;
       document.getElementById("stat-world").textContent = PROJECTS.filter(p => p.c === "svet").length;
       document.getElementById("stat-tools").textContent = PROJECTS.filter(p => p.c === "nastroje").length;
       document.getElementById("stat-web").textContent = PROJECTS.filter(p => p.c === "weby").length;
     }
 
-    function renderCategoryFilters() {
-      categoryEl.innerHTML = "";
-      CATEGORIES.forEach(cat => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "filter-pill";
-        btn.textContent = cat.label;
-        btn.setAttribute("aria-pressed", String(state.category === cat.id));
-        btn.addEventListener("click", () => {
-          state.category = cat.id;
-          saveState();
-          renderCategoryFilters();
-          renderProjects();
-        });
-        categoryEl.appendChild(btn);
-      });
-    }
-
-    function renderTagFilters() {
-      tagEl.innerHTML = "";
-      const label = document.createElement("span");
-      label.className = "tag-row-label";
-      label.textContent = "Štítky:";
-      tagEl.appendChild(label);
-
-      FEATURED_TAGS.forEach(tag => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "tag-pill-btn";
-        btn.textContent = tag;
-        btn.setAttribute("aria-pressed", String(state.tag === tag));
-        btn.addEventListener("click", () => {
-          state.tag = state.tag === tag ? "" : tag;
-          saveState();
-          renderTagFilters();
-          renderProjects();
-        });
-        tagEl.appendChild(btn);
-      });
-    }
-
-    function getFilteredProjects() {
-      const q = normalizeText(state.query.trim());
-      return PROJECTS.filter(p => {
-        if (state.category !== "all" && p.c !== state.category) {
-          return false;
-        }
-        if (state.tag) {
-          const tags = Array.isArray(p.t) ? p.t : [];
-          const hasTag = tags.includes(state.tag) || (state.tag === "archív" && p.s === "archiv");
-          if (!hasTag) {
-            return false;
-          }
-        }
-        if (q) {
-          const tagsText = Array.isArray(p.t) ? p.t.join(" ") : "";
-          const haystack = normalizeText(p.n + " " + p.d + " " + tagsText + " " + (p.s === "archiv" ? "archív" : ""));
-          if (!haystack.includes(q)) {
-            return false;
-          }
-        }
-        return true;
-      });
-    }
-
-    function createCard(project) {
-      const isArchive = project.s === "archiv";
-      const hasUrl = Boolean(project.u);
-
-      const card = document.createElement("article");
-      card.className = "card" + (isArchive ? " card--archive" : "") + (hasUrl ? "" : " card--private");
-
-      const top = document.createElement("div");
-      top.className = "card-top";
-
-      const icon = document.createElement("div");
-      icon.className = "card-icon";
-      icon.setAttribute("aria-hidden", "true");
-      icon.textContent = project.i || "✨";
-      top.appendChild(icon);
-
-      if (isArchive) {
-        const badge = document.createElement("span");
-        badge.className = "card-badge";
-        badge.textContent = "archív";
-        top.appendChild(badge);
-      }
-
-      card.appendChild(top);
-
-      const title = document.createElement("h3");
-      title.className = "card-title";
-
-      if (hasUrl) {
-        const link = document.createElement("a");
-        link.className = "card-link";
-        link.href = project.u;
-        if (project.u.startsWith("http")) {
-          link.target = "_blank";
-          link.rel = "noopener noreferrer";
-        }
-        link.textContent = project.n;
-        title.appendChild(link);
-      } else {
-        title.textContent = project.n;
-      }
-
-      card.appendChild(title);
-
-      const desc = document.createElement("p");
-      desc.className = "card-desc";
-      desc.textContent = project.d || "";
-      card.appendChild(desc);
-
-      const tagsWrap = document.createElement("div");
-      tagsWrap.className = "card-tags";
-      const tags = Array.isArray(project.t) ? project.t : [];
-      tags.forEach(tag => {
-        const pill = document.createElement("span");
-        pill.className = "card-tag";
-        pill.textContent = tag;
-        tagsWrap.appendChild(pill);
-      });
-      card.appendChild(tagsWrap);
-
-      const footer = document.createElement("div");
-      footer.className = "card-footer";
-
-      if (hasUrl) {
-        const cta = document.createElement("span");
-        cta.className = "card-cta";
-        cta.setAttribute("aria-hidden", "true");
-        cta.textContent = "Otvoriť →";
-        footer.appendChild(cta);
-      } else {
-        const priv = document.createElement("span");
-        priv.className = "card-private-label";
-        priv.textContent = "Súkromný projekt";
-        footer.appendChild(priv);
-      }
-
-      if (project.alt) {
-        const altLink = document.createElement("a");
-        altLink.className = "card-alt";
-        altLink.href = project.alt;
-        altLink.target = "_blank";
-        altLink.rel = "noopener noreferrer";
-        altLink.textContent = "itch.io";
-        altLink.setAttribute("aria-label", project.n + " na itch.io");
-        footer.appendChild(altLink);
-      }
-
-      card.appendChild(footer);
-      return card;
-    }
-
-    function renderProjects() {
-      const filtered = getFilteredProjects();
-      countEl.innerHTML = "Zobrazené projekty: <strong>" + filtered.length + "</strong> z " + PROJECTS.length;
-
-      gridEl.innerHTML = "";
-      if (filtered.length === 0) {
-        emptyEl.hidden = false;
-        return;
-      }
-
-      emptyEl.hidden = true;
-      const frag = document.createDocumentFragment();
-      filtered.forEach(project => {
-        frag.appendChild(createCard(project));
-      });
-      gridEl.appendChild(frag);
-    }
-
-    searchInput.addEventListener("input", () => {
-      state.query = searchInput.value;
-      searchClear.hidden = state.query.length === 0;
-      renderProjects();
-    });
-
-    searchClear.addEventListener("click", () => {
-      searchInput.value = "";
-      state.query = "";
-      searchClear.hidden = true;
-      searchInput.focus();
-      renderProjects();
-    });
-
-    resetBtn.addEventListener("click", () => {
-      state.category = "all";
-      state.tag = "";
-      state.query = "";
-      searchInput.value = "";
-      searchClear.hidden = true;
-      saveState();
-      renderCategoryFilters();
-      renderTagFilters();
-      renderProjects();
-    });
-
-    updateHeroStats();
-    renderCategoryFilters();
-    renderTagFilters();
-    renderProjects();
+    buildSections();
+    loadState();
+    updateStats();
+    apply();
   </script>
 </body>
 </html>
