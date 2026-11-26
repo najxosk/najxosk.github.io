@@ -1,0 +1,19 @@
+{
+  "name": "Mapa kotla — PK3",
+  "short_name": "Mapa kotla",
+  "description": "Interaktívna 3D mapa parného kotla PK3 so zariadeniami.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#12151c",
+  "theme_color": "#12151c",
+  "lang": "sk",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

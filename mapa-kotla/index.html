@@ -1,0 +1,2559 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Mapa kotla — PK3</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <style>
+    :root {
+      --bg-dark: #12151c;
+      --panel-bg: rgba(30, 41, 59, 0.93);
+      --panel-solid: #1e293b;
+      --panel-border: rgba(148, 163, 184, 0.18);
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.16);
+      --accent-hover: rgba(56, 189, 248, 0.26);
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --warn: #fbbf24;
+      --warn-bg: rgba(251, 191, 36, 0.14);
+      --shadow: 0 10px 28px rgba(0, 0, 0, 0.42), 0 2px 8px rgba(0, 0, 0, 0.25);
+      --radius: 14px;
+      --radius-sm: 9px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-dark);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, sans-serif;
+      font-size: 14px;
+      line-height: 1.45;
+      user-select: none;
+    }
+
+    #platno-obal {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      background: linear-gradient(180deg, #b8dff8 0%, #dff0fc 65%, #d6d1c6 100%);
+      transition: background 0.45s ease;
+    }
+
+    #platno-obal.noc {
+      background: linear-gradient(180deg, #090d18 0%, #111a2e 68%, #161f30 100%);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      outline: none;
+    }
+
+    /* Chyba ak chýba Three.js */
+    #chyba-three {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: var(--bg-dark);
+      color: var(--text);
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+
+    #chyba-three .chyba-box {
+      max-width: 520px;
+      background: var(--panel-solid);
+      border: 1px solid rgba(248, 113, 113, 0.45);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      box-shadow: var(--shadow);
+    }
+
+    #chyba-three .chyba-ikona {
+      font-size: 34px;
+      margin-bottom: 12px;
+      color: #f87171;
+    }
+
+    #chyba-three .chyba-text {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* Horná lišta */
+    #horna-lista {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .lista-skupina {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      padding: 8px 14px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      pointer-events: auto;
+    }
+
+    .brand-bodka {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #fb923c, #38bdf8);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.7);
+      flex-shrink: 0;
+    }
+
+    #hlavny-nadpis {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .tlacidla-lista {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .btn-lista {
+      appearance: none;
+      border: 1px solid var(--panel-border);
+      background: rgba(18, 21, 28, 0.55);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.16s ease;
+      white-space: nowrap;
+    }
+
+    .btn-lista:hover {
+      background: var(--accent-soft);
+      border-color: rgba(56, 189, 248, 0.45);
+      color: #fff;
+    }
+
+    .btn-lista.aktivne {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.25);
+    }
+
+    #btn-mobil-zoznam {
+      display: none;
+    }
+
+    /* Ľavý panel: Zariadenia */
+    #panel-zariadenia {
+      position: fixed;
+      top: 68px;
+      left: 14px;
+      bottom: 50px;
+      width: 256px;
+      z-index: 15;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform 0.25s ease, opacity 0.25s ease;
+    }
+
+    .panel-hlavicka {
+      padding: 12px 14px 10px;
+      border-bottom: 1px solid var(--panel-border);
+    }
+
+    .panel-titulok-riadok {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .panel-titulok {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-muted);
+    }
+
+    .pocet-odznak {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 1px 7px;
+      border-radius: 999px;
+    }
+
+    .hladanie-obal {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    #hladanie-vstup {
+      width: 100%;
+      background: rgba(18, 21, 28, 0.72);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13px;
+      padding: 7px 28px 7px 10px;
+      outline: none;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    #hladanie-vstup::placeholder {
+      color: var(--text-muted);
+    }
+
+    #hladanie-vstup:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+    }
+
+    #hladanie-vymazat {
+      position: absolute;
+      right: 6px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 15px;
+      cursor: pointer;
+      padding: 2px 4px;
+      display: none;
+      line-height: 1;
+    }
+
+    #hladanie-vymazat:hover {
+      color: var(--text);
+    }
+
+    #zoznam-poloziek {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+    }
+
+    #zoznam-poloziek::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #zoznam-poloziek::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.3);
+      border-radius: 3px;
+    }
+
+    .polozka-zariadenia {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      padding: 7px 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.14s ease, border-color 0.14s ease, transform 0.1s ease;
+      margin-bottom: 2px;
+    }
+
+    .polozka-zariadenia:hover {
+      background: rgba(148, 163, 184, 0.1);
+      border-color: rgba(148, 163, 184, 0.18);
+    }
+
+    .polozka-zariadenia.aktivna {
+      background: var(--accent-soft);
+      border-color: rgba(56, 189, 248, 0.55);
+      color: #fff;
+    }
+
+    .polozka-cislo {
+      min-width: 26px;
+      height: 24px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: rgba(18, 21, 28, 0.78);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .polozka-zariadenia.aktivna .polozka-cislo {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #0b1320;
+    }
+
+    .polozka-nazov {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 500;
+    }
+
+    .polozka-otaznik {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--warn-bg);
+      border: 1px solid rgba(251, 191, 36, 0.38);
+      color: var(--warn);
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .prazdny-zoznam {
+      padding: 18px 12px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    /* Pravý panel: Karta zariadenia */
+    #karta-zariadenia {
+      position: fixed;
+      top: 68px;
+      right: 14px;
+      width: 336px;
+      max-height: calc(100vh - 122px);
+      z-index: 16;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: translateX(370px);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+    }
+
+    #karta-zariadenia.viditelna {
+      transform: translateX(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .karta-hlavicka {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 16px 16px 14px;
+      border-bottom: 1px solid var(--panel-border);
+      background: linear-gradient(180deg, rgba(56, 189, 248, 0.08) 0%, transparent 100%);
+    }
+
+    #karta-cislo {
+      min-width: 44px;
+      height: 44px;
+      padding: 0 10px;
+      border-radius: 12px;
+      background: var(--accent);
+      color: #0b1320;
+      font-size: 20px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
+    }
+
+    .karta-titulok-blok {
+      flex: 1;
+      min-width: 0;
+    }
+
+    #karta-nazov {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.28;
+      word-break: break-word;
+    }
+
+    #karta-overit {
+      display: none;
+      margin-top: 5px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--warn);
+      background: var(--warn-bg);
+      border: 1px solid rgba(251, 191, 36, 0.35);
+      padding: 2px 8px;
+      border-radius: 999px;
+      width: fit-content;
+    }
+
+    #karta-zavriet {
+      appearance: none;
+      background: rgba(18, 21, 28, 0.55);
+      border: 1px solid var(--panel-border);
+      color: var(--text-muted);
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+    }
+
+    #karta-zavriet:hover {
+      background: rgba(248, 113, 113, 0.16);
+      border-color: rgba(248, 113, 113, 0.45);
+      color: #fca5a5;
+    }
+
+    .karta-obsah {
+      padding: 14px 16px 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+      user-select: text;
+    }
+
+    .karta-sekcia {
+      background: rgba(18, 21, 28, 0.46);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+    }
+
+    .karta-sekcia-nadpis {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .karta-sekcia-text {
+      font-size: 13.5px;
+      color: var(--text);
+      line-height: 1.48;
+    }
+
+    .karta-suvisi-sekcia {
+      padding-top: 2px;
+    }
+
+    .karta-suvisi-nadpis {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 7px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    #karta-suvisi-cipy {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .suvisi-cip {
+      appearance: none;
+      background: rgba(18, 21, 28, 0.72);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+
+    .suvisi-cip .cip-cislo {
+      color: var(--accent);
+      font-weight: 800;
+    }
+
+    .suvisi-cip:hover {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    /* Plávajúci tooltip pri prechode myšou */
+    #hover-bublina {
+      position: fixed;
+      z-index: 25;
+      pointer-events: none;
+      background: rgba(18, 21, 28, 0.92);
+      border: 1px solid rgba(56, 189, 248, 0.55);
+      color: var(--text);
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+      white-space: nowrap;
+      display: none;
+      transform: translate(14px, -14px);
+    }
+
+    #hover-bublina .bublina-cislo {
+      color: var(--accent);
+      font-weight: 800;
+      margin-right: 5px;
+    }
+
+    /* Spodný riadok s ovládaním */
+    #spodny-riadok {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 14;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 999px;
+      padding: 6px 16px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      white-space: nowrap;
+      pointer-events: none;
+      max-width: calc(100vw - 28px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Responzívne zobrazenie pre mobil a menšie okná */
+    @media (max-width: 820px) {
+      #btn-mobil-zoznam {
+        display: inline-flex;
+      }
+
+      #panel-zariadenia {
+        top: 66px;
+        left: 10px;
+        bottom: 48px;
+        width: 260px;
+        transform: translateX(-285px);
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      #panel-zariadenia.otvoreny-mobil {
+        transform: translateX(0);
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      #karta-zariadenia {
+        top: auto;
+        bottom: 46px;
+        left: 10px;
+        right: 10px;
+        width: auto;
+        max-height: 54vh;
+        transform: translateY(110%);
+      }
+
+      #karta-zariadenia.viditelna {
+        transform: translateY(0);
+      }
+
+      #horna-lista {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .lista-skupina {
+        padding: 6px 10px;
+      }
+
+      .btn-lista {
+        padding: 5px 9px;
+        font-size: 12px;
+      }
+
+      #spodny-riadok {
+        font-size: 11px;
+        padding: 5px 12px;
+        bottom: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Chybová hláška ak chýba libs/three.min.js -->
+  <div id="chyba-three" role="alert">
+    <div class="chyba-box">
+      <div class="chyba-ikona">⚠</div>
+      <div class="chyba-text">Chýba súbor libs/three.min.js — priečinok libs musí ležať vedľa index.html.</div>
+    </div>
+  </div>
+
+  <!-- 3D Plátno -->
+  <div id="platno-obal"></div>
+
+  <!-- Horná lišta -->
+  <header id="horna-lista">
+    <div class="lista-skupina">
+      <button type="button" id="btn-mobil-zoznam" class="btn-lista" title="Zobraziť alebo skryť zoznam zariadení">Zoznam</button>
+      <span class="brand-bodka"></span>
+      <h1 id="hlavny-nadpis">Mapa kotla — PK3</h1>
+    </div>
+
+    <div class="lista-skupina tlacidla-lista">
+      <button type="button" id="btn-rez" class="btn-lista aktivne" title="Prepína priesvitnosť prednej steny pece a plášťa">Rez</button>
+      <button type="button" id="btn-popisy" class="btn-lista aktivne" title="Skryje alebo zobrazí číselné štítky v 3D scéne">Popisy</button>
+      <button type="button" id="btn-obnovit" class="btn-lista" title="Vráti kameru do úvodného pohľadu">Obnoviť pohľad</button>
+      <button type="button" id="btn-svetlo" class="btn-lista" title="Prepína denné a nočné osvetlenie">Svetlo</button>
+    </div>
+  </header>
+
+  <!-- Ľavý panel so zoznamom zariadení -->
+  <aside id="panel-zariadenia" aria-label="Zariadenia">
+    <div class="panel-hlavicka">
+      <div class="panel-titulok-riadok">
+        <span class="panel-titulok">Zariadenia</span>
+        <span id="pocet-zariadeni" class="pocet-odznak">1–30</span>
+      </div>
+      <div class="hladanie-obal">
+        <input type="text" id="hladanie-vstup" placeholder="Hľadať číslo alebo názov..." autocomplete="off" />
+        <button type="button" id="hladanie-vymazat" title="Vymazať hľadanie">×</button>
+      </div>
+    </div>
+    <div id="zoznam-poloziek" role="list"></div>
+  </aside>
+
+  <!-- Pravý panel: Karta vybraného zariadenia -->
+  <aside id="karta-zariadenia" aria-label="Karta zariadenia">
+    <div class="karta-hlavicka">
+      <div id="karta-cislo">1</div>
+      <div class="karta-titulok-blok">
+        <h2 id="karta-nazov">Názov zariadenia</h2>
+        <div id="karta-overit">(názov na overenie)</div>
+      </div>
+      <button type="button" id="karta-zavriet" title="Zavrieť kartu (Esc)">×</button>
+    </div>
+    <div class="karta-obsah">
+      <div class="karta-sekcia">
+        <div class="karta-sekcia-nadpis">Čo to je</div>
+        <p id="karta-co" class="karta-sekcia-text"></p>
+      </div>
+      <div class="karta-sekcia">
+        <div class="karta-sekcia-nadpis">Kde to je</div>
+        <p id="karta-kde" class="karta-sekcia-text"></p>
+      </div>
+      <div class="karta-sekcia">
+        <div class="karta-sekcia-nadpis">Funkcia</div>
+        <p id="karta-funkcia" class="karta-sekcia-text"></p>
+      </div>
+      <div class="karta-suvisi-sekcia">
+        <div class="karta-suvisi-nadpis">Súvisí s:</div>
+        <div id="karta-suvisi-cipy"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Tooltip pri prechode myšou -->
+  <div id="hover-bublina"></div>
+
+  <!-- Spodný riadok s nápovedou ovládania -->
+  <footer id="spodny-riadok">
+    Ťahaj myšou = otáčanie · koliesko = priblíženie · klik na zariadenie = karta
+  </footer>
+
+  <!-- Načítanie lokálneho Three.js -->
+  <script src="libs/three.min.js"></script>
+  <script>
+    // tu si upravíš názvy a texty
+    const ZARIADENIA = [
+      {
+        cislo: '1',
+        nazov: 'Výparník — membránové steny',
+        co: 'Plynotesné steny zvarené zo zvislých oceľových rúrok spojených kovovými pásikmi do súvislého plášťa.',
+        kde: 'Tvoria všetky štyri obvodové steny vysokej spaľovacej komory (pece) v ľavej časti kotla vrátane spodnej výsypky.',
+        funkcia: 'Zachytávajú sálavé teplo priamo z plameňa v peci a premieňajú prúdiacu napájaciu vodu v rúrkach na sýtu paru, pričom zároveň chladia a chránia konštrukciu kotla.',
+        suvisi: ['2', '4', '6', '14', '22'],
+        overit: false,
+        pos: [-5.5, 13.5, 0.0]
+      },
+      {
+        cislo: '2',
+        nazov: 'Kotlové teleso',
+        co: 'Mohutná nosná oceľová konštrukcia s obvodovými výstuhami, vonkajším izolačným oplechovaním, lávkami a rebríkmi.',
+        kde: 'Obopína celý parný kotol od základovej dosky až po stropnú nosnú konštrukciu okolo pece aj konvekčného ťahu.',
+        funkcia: 'Nesie hmotnosť všetkých tlakových častí zavesených v kotle, drží tvar spalinových ťahov a tepelnou izoláciou bráni úniku tepla do kotolne.',
+        suvisi: ['1', '3', '4', '21'],
+        overit: false,
+        pos: [-1.0, 14.5, 4.4]
+      },
+      {
+        cislo: '3',
+        nazov: 'Prepájacie potrubie',
+        co: 'Skupina parných zberných komôr a prepojovacích rúr vedených nad stropom kotla.',
+        kde: 'V hornej časti nad stropným prehrievačom medzi výparníkovým systémom a jednotlivými stupňami prehrievačov.',
+        funkcia: 'Prevádza sýtu a čiastočne prehriatu paru medzi komorami výparníka, stropným prehrievačom a nadväzujúcimi stupňami prehrievačov pary.',
+        suvisi: ['1', '4', '5a', '8'],
+        overit: false,
+        pos: [-2.4, 23.7, -1.4]
+      },
+      {
+        cislo: '4',
+        nazov: 'Stropný membránový prehrievač',
+        co: 'Horizontálny rúrkový panel z tesne zvarených rúrok, ktorý tvorí plynotesný strop spaľovacej komory.',
+        kde: 'Na samom vrchu spaľovacej komory a prechodového horizontálneho ťahu pod strechou kotla.',
+        funkcia: 'Odoberá teplo horúcim spalinám stúpajúcim z pece a zabezpečuje prvotné prehrievanie pary pred jej vstupom do zavesených prehrievačov.',
+        suvisi: ['1', '3', '5a', '7b', '8'],
+        overit: false,
+        pos: [-4.5, 22.8, 0.0]
+      },
+      {
+        cislo: '5a',
+        nazov: 'Vstupný prehrievač',
+        co: 'Hustý zväzok zavesených rúrkových hadov (platní) prvej sekcie konvekčného prehrievača.',
+        kde: 'Zavesený v hornom prechodovom ťahu na vstupe spalín z pece do pravého konvekčného ťahu.',
+        funkcia: 'Ohrieva paru prichádzajúcu zo stropného prehrievača prúdom horúcich spalín a zvyšuje jej teplotu pred ďalším stupňom prehrievania.',
+        suvisi: ['3', '4', '5b', '14'],
+        overit: false,
+        pos: [-0.2, 20.1, -1.0]
+      },
+      {
+        cislo: '5b',
+        nazov: 'Výstupná časť vstupného prehrievača',
+        co: 'Nadväzujúca sekcia zavesených rúrkových platní vstupného prehrievača s výstupnými zbernými komorami.',
+        kde: 'Hneď vedľa vstupnej sekcie 5a, posunutá bližšie k horúcemu výstupu zo spaľovacej komory.',
+        funkcia: 'Dokončuje prehriatie pary v primárnom stupni a odvádza ju cez prepájacie komory do výstupného prehrievača.',
+        suvisi: ['5a', '6', '7a', '3'],
+        overit: false,
+        pos: [-1.8, 20.1, 1.0]
+      },
+      {
+        cislo: '6',
+        nazov: 'Kotlový (bočný) prehrievač',
+        co: 'Sálavé rúrkové panely uložené pozdĺž bočných stien v hornej polovici spaľovacej komory.',
+        kde: 'Pri vnútorných bočných stenách pece v oblasti nad horákovým pásmom.',
+        funkcia: 'Využíva intenzívne sálanie plameňa v hornej časti pece na priebežné dohrievanie pary medzi jednotlivými stupňami prehrievačov.',
+        suvisi: ['1', '5b', '7a'],
+        overit: false,
+        pos: [-5.5, 17.8, -3.7]
+      },
+      {
+        cislo: '7a',
+        nazov: 'Vstupná časť výstupného prehrievača',
+        co: 'Zavesené rúrkové steny finálneho stupňa prehrievača z tepelne odolnej ocele.',
+        kde: 'Zavesená pod stropom pece v strednej časti horného spalinového priestoru.',
+        funkcia: 'Prijíma paru z predchádzajúcich stupňov a v pásme vysokých teplôt spalín ju ďalej prehrieva smerom k záverečnej sekcii.',
+        suvisi: ['5b', '6', '7b', '8'],
+        overit: false,
+        pos: [-3.6, 20.3, -0.8]
+      },
+      {
+        cislo: '7b',
+        nazov: 'Výstupný prehrievač',
+        co: 'Koncový zväzok zavesených rúrkových platní vystavený najteplejším spalinám nad ohniskom.',
+        kde: 'Pod stropom priamo nad jadrom spaľovacej komory vľavo od sekcie 7a.',
+        funkcia: 'Dodáva pare konečnú prevádzkovú teplotu pred jej odchodom do hlavného parovodu; prehriata para má výrazne vyššiu teplotu a energetický obsah než sýta para.',
+        suvisi: ['4', '7a', '8', '10'],
+        overit: false,
+        pos: [-5.8, 20.3, 0.8]
+      },
+      {
+        cislo: '8',
+        nazov: 'Parovod',
+        co: 'Hrubostenné zberné a rozvodné parné potrubie s tepelnou izoláciou a armatúrami.',
+        kde: 'Vedené vodorovne nad stropom kotla v najvyššej časti konštrukcie.',
+        funkcia: 'Sústreďuje hotovú prehriatu paru z výstupného prehrievača a vedie ju cez hlavné uzávery do výstupného potrubia smerom k strojovni.',
+        suvisi: ['3', '7b', '9', '10'],
+        overit: false,
+        pos: [-4.2, 25.0, 0.5]
+      },
+      {
+        cislo: '9',
+        nazov: 'Impulzné poistné ventily',
+        co: 'Sústava hlavných a riadiacich poistných ventilov s výfukovými tlmičmi nad strechou kotla.',
+        kde: 'Osadené priamo na hornej časti hlavného parovodu nad stropom kotla.',
+        funkcia: 'Chránia tlakový celok kotla pred prekročením dovoleného tlaku tým, že pri pretlaku automaticky odpustia prebytočnú paru do atmosféry.',
+        suvisi: ['8', '10'],
+        overit: false,
+        pos: [-4.8, 26.3, 0.5]
+      },
+      {
+        cislo: '10',
+        nazov: 'Výstup prehriatej pary',
+        co: 'Hlavné izolované parné potrubie veľkej svetlosti odvádzajúce vyrobenú paru z kotla.',
+        kde: 'Zostupuje z hlavného parovodu na strope po ľavej prednej strane kotla smerom do strojovne.',
+        funkcia: 'Dopravuje vyrobenú prehriatu paru z kotla PK3 do parného kolektora a ďalej na turbínu v strojovni.',
+        suvisi: ['7b', '8', '9'],
+        overit: false,
+        pos: [-8.8, 23.8, 2.3]
+      },
+      {
+        cislo: '11',
+        nazov: 'Potrubie studeného vzduchu',
+        co: 'Rozmerný plechový vzduchovod kruhového a hranatého prierezu privádzajúci čerstvý spaľovací vzduch.',
+        kde: 'V pravej dolnej časti kotla, vedie od ventilátorov cez parný ohrievač vzduchu do rúrkového ohrievača.',
+        funkcia: 'Privádza studený atmosférický vzduch tlačený ventilátorom najprv na predohrev v POV a následne do rúrkového ohrievača vzduchu.',
+        suvisi: ['12', '26'],
+        overit: false,
+        pos: [9.4, 5.2, -2.5]
+      },
+      {
+        cislo: '12',
+        nazov: 'Rúrkový ohrievač vzduchu',
+        co: 'Veľký výmenník tepla tvorený tisíckami tenkostenných oceľových rúrok v spalinovom ťahu.',
+        kde: 'V spodnej časti pravého zvislého konvekčného ťahu pod reaktorom SCR.',
+        funkcia: 'Odovzdáva zvyškové teplo odchádzajúcich spalín spaľovaciemu vzduchu, čím zvyšuje účinnosť kotla a zlepšuje horenie paliva v horákoch.',
+        suvisi: ['11', '13', '15', '16', '26'],
+        overit: false,
+        pos: [2.8, 5.5, 0.0]
+      },
+      {
+        cislo: '13',
+        nazov: 'Potrubie horúceho vzduchu',
+        co: 'Tepelne izolované vzduchové kanály veľkého prierezu s kompenzátormi a regulačnými klapkami.',
+        kde: 'Vedie z výstupu rúrkového ohrievača vzduchu po zadnej a bočnej strane kotla k horákom na ľavej stene pece.',
+        funkcia: 'Rozvádza horúci spaľovací vzduch z ohrievača k jednotlivým plynovým horákom, práškovým hubiciam a do rozvodu sekundárneho vzduchu OPA.',
+        suvisi: ['12', '17', '18', '19', '20', '27'],
+        overit: false,
+        pos: [-2.5, 6.8, -4.4]
+      },
+      {
+        cislo: '14',
+        nazov: 'Ekonomizér',
+        co: 'Husté zväzky vodorovných hadovitých rúrok uložené v niekoľkých blokoch nad sebou.',
+        kde: 'V hornej časti pravého zvislého konvekčného ťahu priamo nad reaktorom SCR.',
+        funkcia: 'Využíva teplo spalín opúšťajúcich prehrievače na predohrev napájacej vody pred jej vstupom do výparníka (membránových stien pece).',
+        suvisi: ['1', '5a', '15', '29'],
+        overit: false,
+        pos: [2.8, 17.2, 0.0]
+      },
+      {
+        cislo: '15',
+        nazov: 'Reaktor SCR',
+        co: 'Rozmerná oceľová komora v spalinovom trakte osadená vrstvami voštinových katalyzátorových kaziet.',
+        kde: 'V strednej časti pravého konvekčného ťahu medzi ekonomizérom (hore) a rúrkovým ohrievačom vzduchu (dole).',
+        funkcia: 'Znižuje obsah oxidov dusíka (NOx) v spalinách: za prítomnosti vstreknutého reagentu sa NOx na povrchu katalyzátora menia na neškodný dusík a vodnú paru.',
+        suvisi: ['12', '14', '28', '29', '30'],
+        overit: false,
+        pos: [2.8, 11.2, 0.0]
+      },
+      {
+        cislo: '16',
+        nazov: 'Výstup spalín na elektroodlučovač',
+        co: 'Dvojica šikmých spalinových kanálov (dymovodov) s kompenzátormi a usmerňovacími plechmi.',
+        kde: 'Vychádza zo spodnej časti konvekčného ťahu pod ohrievačom vzduchu smerom doprava k elektroodlučovaču.',
+        funkcia: 'Odvádza vychladené spaliny z kotla do elektroodlučovača tuhých znečisťujúcich látok (popolčeka).',
+        suvisi: ['12', '24', '25'],
+        overit: false,
+        pos: [7.2, 2.6, 0.0]
+      },
+      {
+        cislo: '17',
+        nazov: 'Plynový horák Todd',
+        co: 'Výkonný priemyselný plynový horák s vírivým registrom vzduchu, plynovou dýzou a zapaľovacím horáčikom.',
+        kde: 'Osadený v hornej-strednej etáži horákového poľa na ľavej čelnej stene spaľovacej komory.',
+        funkcia: 'Zabezpečuje intenzívne premiešanie zemného plynu s horúcim spaľovacím vzduchom a stabilné horenie plameňa v spaľovacej komore.',
+        suvisi: ['1', '13', '18', '19', '20'],
+        overit: false,
+        pos: [-10.2, 12.8, -1.0]
+      },
+      {
+        cislo: '18',
+        nazov: 'Britvová hubica',
+        co: 'Plochá štrbinová hubica tvarovaná ako úzky obdĺžnikový výustok v membránovej stene.',
+        kde: 'Na ľavej stene pece v hornom pásme horákov nad plynovým horákom Todd.',
+        funkcia: 'Privádza prídavný prúd vzduchu alebo zmesi do hornej zóny plameňa na tvarovanie horenia a obmedzenie tvorby oxidov dusíka.',
+        suvisi: ['13', '17', '19', '27'],
+        overit: true,
+        pos: [-10.2, 14.8, 0.9]
+      },
+      {
+        cislo: '19',
+        nazov: 'Prášková hubica',
+        co: 'Horáková hubica s oderuvzdornou vložkou určená na vstrekovanie uhoľného prášku nosným vzduchom.',
+        kde: 'V strednej etáži horákového poľa na ľavej stene pece medzi horákmi Weishaupt a Todd.',
+        funkcia: 'Dávkuje práškové palivo so vzduchom do ohniska pece a vytvára stabilný práškový plameň.',
+        suvisi: ['1', '13', '17', '18', '20'],
+        overit: true,
+        pos: [-10.2, 10.5, 0.2]
+      },
+      {
+        cislo: '20',
+        nazov: 'Plynový horák Weishaupt & Steinmüller',
+        co: 'Kombinovaný nízkoemisný plynový horák s regulačnou vzduchovou skriňou a plynovou armatúrnou radou.',
+        kde: 'V spodnej etáži horákového poľa na ľavej stene spaľovacej komory.',
+        funkcia: 'Spaľuje plynové palivo v spodnej zóne ohniska, slúži pri nábehu kotla aj pri trvalej prevádzke na plyne s nízkou tvorbou emisií.',
+        suvisi: ['1', '13', '17', '19'],
+        overit: false,
+        pos: [-10.2, 8.2, 1.1]
+      },
+      {
+        cislo: '21',
+        nazov: 'Os výťahového otvoru',
+        co: 'Montážny a revízny otvor v stene pece so zvislou vodiacou osou pre závesnú montážnu plošinu.',
+        kde: 'V strednej výške steny spaľovacej komory pri obslužnej lávke.',
+        funkcia: 'Umožňuje pri odstávke kotla spustiť a vytiahnuť dovnútra pece závesnú plošinu, náradie a materiál na kontrolu a opravy membránových stien.',
+        suvisi: ['1', '2'],
+        overit: true,
+        pos: [-5.5, 10.5, 4.2]
+      },
+      {
+        cislo: '22',
+        nazov: 'Granulačná nádrž',
+        co: 'Oceľová vaňa napustená chladiacou vodou s hrebeňovým vynášacím dopravníkom na dne.',
+        kde: 'Na podlahe kotolne priamo pod výsypkou spaľovacej komory a skriňou dezintegrátora.',
+        funkcia: 'Zachytáva žeravú trosku padajúcu z pece, prudkým ochladením vo vode ju granuluje na drobné zrná a zároveň vodným uzáverom utesňuje spodok pece.',
+        suvisi: ['1', '23'],
+        overit: false,
+        pos: [-5.5, 0.9, 0.0]
+      },
+      {
+        cislo: '23',
+        nazov: 'Skriňa dezintegrátora (drviace valce)',
+        co: 'Masívna oceľová skriňa s ozubenými drviacimi valcami a vonkajším pohonom.',
+        kde: 'Namontovaná v hrdle pod výsypkou pece tesne nad hladinou granulačnej nádrže.',
+        funkcia: 'Drví väčšie kusy spečenej trosky vypadávajúce zo spaľovacej komory na menšie frakcie, aby sa dala bezpečne schladiť a vyniesť z granulačnej nádrže.',
+        suvisi: ['1', '22'],
+        overit: false,
+        pos: [-5.5, 2.3, 0.0]
+      },
+      {
+        cislo: '24',
+        nazov: 'Výstupná časť elektroodlučovača',
+        co: 'Samostatná komora elektrostatického odlučovača s výsypkami popolčeka a výstupným hrdlom.',
+        kde: 'Stojí vpravo mimo hlavného kotlového telesa na konci spalinového kanála (16).',
+        funkcia: 'Pomocou vysokého napätia na elektródach zachytáva jemný popolček zo spalín pred tým, než čistejšie spaliny odídu cez ťahový ventilátor do komína.',
+        suvisi: ['16', '25'],
+        overit: true,
+        pos: [12.5, 4.5, 0.0]
+      },
+      {
+        cislo: '25',
+        nazov: 'Recirkulácia spalín',
+        co: 'Izolované oceľové potrubie s recirkulačným ventilátorom a uzatváracími klapkami.',
+        kde: 'Odbočuje z výstupu spalín za konvekčným ťahom a vracia sa po zadnej strane kotla späť k peci.',
+        funkcia: 'Vracia časť vychladených spalín späť do spaľovacej komory, čím znižuje špičkovú teplotu plameňa (menej NOx) a pomáha regulovať teplotu prehriatej pary.',
+        suvisi: ['1', '16', '24'],
+        overit: false,
+        pos: [0.8, 3.3, -3.9]
+      },
+      {
+        cislo: '26',
+        nazov: 'Parný ohrievač vzduchu (POV)',
+        co: 'Lamelový výmenník tepla vyhrievaný pomocnou parou, vložený do kanála studeného vzduchu.',
+        kde: 'Na potrubí studeného vzduchu (11) vpravo dole pred vstupom do rúrkového ohrievača vzduchu (12).',
+        funkcia: 'Predohrieva studený nasávaný vzduch parou, aby steny rúrkového ohrievača vzduchu nepodliehali nízkoteplotnej korózii a roseniu kyslých zložiek zo spalín.',
+        suvisi: ['11', '12'],
+        overit: false,
+        pos: [7.8, 5.2, -1.8]
+      },
+      {
+        cislo: '27',
+        nazov: 'Potrubie OPA',
+        co: 'Vzduchové odbočné potrubie s regulačnými klapkami napájané z rozvodu horúceho vzduchu.',
+        kde: 'Vedie po ľavej strane pece do trysiek nad hlavným horákovým pásmom.',
+        funkcia: 'Privádza sekundárny/terciárny vzduch nad zónu horákov (Overfire Air) pre stupňovité doháranie paliva s nižšou tvorbou oxidov dusíka.',
+        suvisi: ['13', '17', '18'],
+        overit: true,
+        pos: [-9.8, 16.6, -1.4]
+      },
+      {
+        cislo: '28',
+        nazov: 'Systém prípravy reagentu',
+        co: 'Technologický blok s valcovým zásobníkom roztoku (močovina/čpavková voda), dávkovacími čerpadlami a rozvádzačom.',
+        kde: 'Umiestnený na podlahe vpravo vpredu vedľa konvekčného ťahu kotla.',
+        funkcia: 'Skladuje, pripravuje a presne dávkuje redukčný reagent pod tlakom do rozprašovacej hubice (29) podľa aktuálneho obsahu NOx v spalinách.',
+        suvisi: ['15', '29'],
+        overit: false,
+        pos: [9.2, 1.8, 3.2]
+      },
+      {
+        cislo: '29',
+        nazov: 'Rozprašovacia hubica reagentu',
+        co: 'Vstrekovacia mreža s rozprašovacími dýzami a prívodnými lamelami v spalinovom kanáli.',
+        kde: 'V hornej časti reaktora SCR (15) tesne pod ekonomizérom (14), v prúde horúcich spalín.',
+        funkcia: 'Rozprašuje kvapalný reagent na jemnú hmlu rovnomerne do celého prierezu spalinového ťahu pred vstupom spalín do katalyzátora SCR.',
+        suvisi: ['14', '15', '28'],
+        overit: false,
+        pos: [2.8, 14.3, 0.5]
+      },
+      {
+        cislo: '30',
+        nazov: 'Zvukové generátory SCR',
+        co: 'Akustické húkačky (sonické ofukovače) napájané stlačeným vzduchom na plášti reaktora.',
+        kde: 'Osadené na vonkajšej bočnej stene reaktora SCR (15) nad jednotlivými vrstvami katalyzátora.',
+        funkcia: 'Pravidelnými silnými zvukovými vlnami rozkmitávajú čiastočky popolčeka na katalyzátore a bránia upchávaniu kanálikov bez mechanického opotrebenia.',
+        suvisi: ['15', '29'],
+        overit: false,
+        pos: [5.5, 11.4, 1.6]
+      }
+    ];
+
+    (function () {
+      'use strict';
+
+      // Kontrola prítomnosti Three.js
+      if (typeof window.THREE === 'undefined') {
+        var chybaEl = document.getElementById('chyba-three');
+        if (chybaEl) chybaEl.style.display = 'flex';
+        return;
+      }
+
+      var THREE = window.THREE;
+
+      // Stav aplikácie
+      var stav = {
+        vybraneCislo: null,
+        hoverCislo: null,
+        rezAktivny: true,
+        popisyAktivne: true,
+        nocnyRezim: false,
+        tieneAktivne: true,
+        fpsVzorky: [],
+        fpsCas: 0
+      };
+
+      // Slovník pre rýchle vyhľadanie podľa čísla
+      var mapaPodlaCisla = {};
+      ZARIADENIA.forEach(function (z) {
+        mapaPodlaCisla[z.cislo] = z;
+      });
+
+      // Inicializácia scény, kamery a renderera
+      var obalEl = document.getElementById('platno-obal');
+      var scena = new THREE.Scene();
+      scena.background = new THREE.Color(0xcfe8fa);
+      scena.fog = new THREE.Fog(0xcfe8fa, 58, 138);
+
+      var kamera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.5, 250);
+
+      var renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      if (renderer.outputEncoding !== undefined && THREE.sRGBEncoding !== undefined) {
+        renderer.outputEncoding = THREE.sRGBEncoding;
+      }
+      obalEl.appendChild(renderer.domElement);
+
+      // Osvetlenie scény
+      var hemiLight = new THREE.HemisphereLight(0xf2f9ff, 0xd8cfc0, 0.85);
+      hemiLight.position.set(0, 45, 0);
+      scena.add(hemiLight);
+
+      var slnkoLight = new THREE.DirectionalLight(0xfff8e7, 0.92);
+      slnkoLight.position.set(-26, 42, 32);
+      slnkoLight.castShadow = true;
+      slnkoLight.shadow.mapSize.width = 2048;
+      slnkoLight.shadow.mapSize.height = 2048;
+      slnkoLight.shadow.camera.near = 10;
+      slnkoLight.shadow.camera.far = 110;
+      slnkoLight.shadow.camera.left = -26;
+      slnkoLight.shadow.camera.right = 26;
+      slnkoLight.shadow.camera.top = 34;
+      slnkoLight.shadow.camera.bottom = -10;
+      slnkoLight.shadow.bias = -0.0005;
+      scena.add(slnkoLight);
+
+      var doplnkoveLight = new THREE.DirectionalLight(0xbae6fd, 0.35);
+      doplnkoveLight.position.set(28, 22, -24);
+      scena.add(doplnkoveLight);
+
+      // Oranžová žiara pece
+      var pecLight = new THREE.PointLight(0xff6a1a, 2.3, 24, 1.6);
+      pecLight.position.set(-5.5, 11.5, 0.5);
+      scena.add(pecLight);
+
+      var pecLightHorn = new THREE.PointLight(0xff8c38, 1.4, 18, 1.6);
+      pecLightHorn.position.set(-5.5, 17.5, 0.2);
+      scena.add(pecLightHorn);
+
+      // Podlaha v štýle minimapa.sk (piesková/sivá kruhová základňa + jemná mriežka)
+      var podlahaSkupina = new THREE.Group();
+      scena.add(podlahaSkupina);
+
+      var podlahaMat = new THREE.MeshStandardMaterial({
+        color: 0xd9d3c7,
+        roughness: 0.92,
+        metalness: 0.04
+      });
+      var podlahaDisk = new THREE.Mesh(new THREE.CylinderGeometry(36, 37, 0.6, 64), podlahaMat);
+      podlahaDisk.position.set(1.0, -0.3, 0);
+      podlahaDisk.receiveShadow = true;
+      podlahaSkupina.add(podlahaDisk);
+
+      // Betónová doska pod kotlom
+      var betonMat = new THREE.MeshStandardMaterial({
+        color: 0xc5c0b6,
+        roughness: 0.88,
+        metalness: 0.05
+      });
+      var betonDoska = new THREE.Mesh(new THREE.BoxGeometry(30, 0.16, 15), betonMat);
+      betonDoska.position.set(1.2, 0.08, 0);
+      betonDoska.receiveShadow = true;
+      podlahaSkupina.add(betonDoska);
+
+      var mriezka = new THREE.GridHelper(64, 32, 0xb2aca0, 0xc8c2b6);
+      mriezka.position.set(1.0, 0.02, 0);
+      if (mriezka.material) {
+        mriezka.material.transparent = true;
+        mriezka.material.opacity = 0.45;
+      }
+      podlahaSkupina.add(mriezka);
+
+      // Vnútorný efekt plameňa pece (vždy svieti vnútri pece)
+      var plamenSkupina = new THREE.Group();
+      scena.add(plamenSkupina);
+
+      var plamenJadroMat = new THREE.MeshBasicMaterial({
+        color: 0xff7b24,
+        transparent: true,
+        opacity: 0.36,
+        depthWrite: false
+      });
+      var plamenJadro = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.7, 10.5, 20), plamenJadroMat);
+      plamenJadro.position.set(-5.5, 11.8, -0.2);
+      plamenSkupina.add(plamenJadro);
+
+      var plamenStredMat = new THREE.MeshBasicMaterial({
+        color: 0xffb347,
+        transparent: true,
+        opacity: 0.28,
+        depthWrite: false
+      });
+      var plamenStred = new THREE.Mesh(new THREE.ConeGeometry(1.8, 8.5, 16), plamenStredMat);
+      plamenStred.position.set(-5.3, 13.5, -0.2);
+      plamenSkupina.add(plamenStred);
+
+      // Zoznam materiálov a telies pre prepínanie "Rez" (predná stena pece a plášť)
+      var rezTelesa = [];
+      // Zoznam všetkých klikateľných telies (Mesh) a štítkov (Sprite) pre raycasting
+      var klikatelneTelesa = [];
+      var stitkySprites = [];
+
+      // Pomocná funkcia na vytvorenie materiálu zariadenia (každé teleso má vlastný klon pre nezávislé zvýraznenie)
+      function matKov(farba, opts) {
+        opts = opts || {};
+        return new THREE.MeshStandardMaterial({
+          color: farba,
+          roughness: opts.roughness !== undefined ? opts.roughness : 0.48,
+          metalness: opts.metalness !== undefined ? opts.metalness : 0.25,
+          emissive: opts.emissive !== undefined ? new THREE.Color(opts.emissive) : new THREE.Color(0x000000),
+          emissiveIntensity: opts.emissiveIntensity !== undefined ? opts.emissiveIntensity : 0,
+          transparent: !!opts.transparent,
+          opacity: opts.opacity !== undefined ? opts.opacity : 1.0,
+          side: opts.doubleSide ? THREE.DoubleSide : THREE.FrontSide
+        });
+      }
+
+      // Pomocná funkcia na pridanie Meshu do skupiny zariadenia
+      function pridajTeleso(skupina, geo, mat, poz, rot, jeRez) {
+        var m = new THREE.Mesh(geo, mat.clone());
+        if (poz) m.position.set(poz[0], poz[1], poz[2]);
+        if (rot) m.rotation.set(rot[0], rot[1], rot[2]);
+        m.castShadow = !jeRez;
+        m.receiveShadow = true;
+        m.userData.cislo = skupina.userData.cislo;
+        m.userData.zakladEmissive = m.material.emissive.clone();
+        m.userData.zakladEmissiveInt = m.material.emissiveIntensity || 0;
+        m.userData.jeRez = !!jeRez;
+        if (jeRez) {
+          m.material.transparent = true;
+          rezTelesa.push(m);
+        }
+        skupina.add(m);
+        klikatelneTelesa.push(m);
+        return m;
+      }
+
+      // Pomocná funkcia na vytvorenie lomeného potrubia z bodov [x,y,z]
+      function pridajPotrubie(skupina, body, polomer, mat) {
+        for (var i = 0; i < body.length - 1; i++) {
+          var a = new THREE.Vector3(body[i][0], body[i][1], body[i][2]);
+          var b = new THREE.Vector3(body[i + 1][0], body[i + 1][1], body[i + 1][2]);
+          var smer = new THREE.Vector3().subVectors(b, a);
+          var dlzka = smer.length();
+          if (dlzka < 0.01) continue;
+          var stred = new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5);
+          var valec = new THREE.Mesh(new THREE.CylinderGeometry(polomer, polomer, dlzka, 14), mat.clone());
+          valec.position.copy(stred);
+          valec.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), smer.clone().normalize());
+          valec.castShadow = true;
+          valec.receiveShadow = true;
+          valec.userData.cislo = skupina.userData.cislo;
+          valec.userData.zakladEmissive = valec.material.emissive.clone();
+          valec.userData.zakladEmissiveInt = valec.material.emissiveIntensity || 0;
+          skupina.add(valec);
+          klikatelneTelesa.push(valec);
+
+          // Koleno (guľa v spoji)
+          var spoj = new THREE.Mesh(new THREE.SphereGeometry(polomer * 1.06, 12, 12), mat.clone());
+          spoj.position.copy(b);
+          spoj.userData.cislo = skupina.userData.cislo;
+          spoj.userData.zakladEmissive = spoj.material.emissive.clone();
+          spoj.userData.zakladEmissiveInt = spoj.material.emissiveIntensity || 0;
+          skupina.add(spoj);
+          klikatelneTelesa.push(spoj);
+        }
+      }
+
+      // Vytvorenie všetkých 32 skupín zariadení (1–30 vrátane 5a/5b a 7a/7b)
+      var skupinyZariadeni = {};
+      ZARIADENIA.forEach(function (z) {
+        var g = new THREE.Group();
+        g.name = 'zariadenie-' + z.cislo;
+        g.userData.cislo = z.cislo;
+        scena.add(g);
+        skupinyZariadeni[z.cislo] = g;
+        z.group = g;
+        z.skupina = g;
+      });
+
+      // =========================================================================
+      // STAVBA 3D MODELU KOTLA PK3
+      // =========================================================================
+
+      // --- 1: Výparník — membránové steny ---
+      (function () {
+        var g = skupinyZariadeni['1'];
+        var stenaMat = matKov(0x7c93ab, { roughness: 0.45, metalness: 0.3, emissive: 0xff5500, emissiveIntensity: 0.08 });
+        var rebroMat = matKov(0x93a8be, { roughness: 0.4, metalness: 0.35, emissive: 0xff6a1a, emissiveIntensity: 0.06 });
+
+        // Zadná membránová stena pece (Z = -3.9)
+        pridajTeleso(g, new THREE.BoxGeometry(7.6, 17.5, 0.22), stenaMat, [-5.5, 13.75, -3.9]);
+        // Ľavá membránová stena pece (X = -9.3)
+        pridajTeleso(g, new THREE.BoxGeometry(0.22, 17.5, 7.8), stenaMat, [-9.3, 13.75, 0]);
+        // Pravá deliaca membránová stena pece (X = -1.7, s otvorom hore pre spaliny Y = 18..22.5)
+        pridajTeleso(g, new THREE.BoxGeometry(0.24, 13.2, 7.8), stenaMat, [-1.7, 11.6, 0]);
+
+        // Zvlnené zvislé rúrky na zadnej a ľavej stene (charakteristický vzhľad membránovej steny)
+        for (var rx = -8.8; rx <= -2.2; rx += 0.65) {
+          pridajTeleso(g, new THREE.CylinderGeometry(0.09, 0.09, 17.2, 8), rebroMat, [rx, 13.75, -3.76]);
+        }
+        for (var rz = -3.3; rz <= 3.3; rz += 0.75) {
+          pridajTeleso(g, new THREE.CylinderGeometry(0.09, 0.09, 17.2, 8), rebroMat, [-9.16, 13.75, rz]);
+        }
+
+        // Šikmá výsypka pece dole (Y = 2.8 .. 5.0)
+        pridajTeleso(g, new THREE.BoxGeometry(3.2, 0.22, 7.6), stenaMat, [-7.7, 3.9, 0], [0, 0, -0.62]);
+        pridajTeleso(g, new THREE.BoxGeometry(3.2, 0.22, 7.6), stenaMat, [-3.3, 3.9, 0], [0, 0, 0.62]);
+
+        // Predná membránová stena pece (Z = +3.9) — prepínateľná tlačidlom "Rez"
+        var prednaStenaMat = matKov(0x88a0b8, { roughness: 0.42, metalness: 0.28, transparent: true, opacity: 0.15 });
+        pridajTeleso(g, new THREE.BoxGeometry(7.6, 17.5, 0.18), prednaStenaMat, [-5.5, 13.75, 3.9], null, true);
+      })();
+
+      // --- 2: Kotlové teleso (nosná konštrukcia, lávky, rebríky, plášť) ---
+      (function () {
+        var g = skupinyZariadeni['2'];
+        var ocelMat = matKov(0x64748b, { roughness: 0.55, metalness: 0.35 });
+        var lavkaMat = matKov(0x94a3b8, { roughness: 0.5, metalness: 0.3 });
+        var plastMat = matKov(0x9fb1c4, { roughness: 0.5, metalness: 0.2, doubleSide: true });
+
+        // Hlavné zvislé oceľové stĺpy konštrukcie
+        var stlpyX = [-9.8, -1.3, 6.2];
+        var stlpyZ = [-4.4, 4.4];
+        stlpyX.forEach(function (sx) {
+          stlpyZ.forEach(function (sz) {
+            pridajTeleso(g, new THREE.BoxGeometry(0.34, 24.5, 0.34), ocelMat, [sx, 12.25, sz]);
+          });
+        });
+
+        // Vodorovné nosníky a obvodové výstuhy (buckstays)
+        var vyskyNosnikov = [5.0, 9.5, 14.0, 18.5, 23.8];
+        vyskyNosnikov.forEach(function (vy) {
+          pridajTeleso(g, new THREE.BoxGeometry(16.4, 0.28, 0.28), ocelMat, [-1.8, vy, 4.4]);
+          pridajTeleso(g, new THREE.BoxGeometry(16.4, 0.28, 0.28), ocelMat, [-1.8, vy, -4.4]);
+          pridajTeleso(g, new THREE.BoxGeometry(0.28, 0.28, 9.0), ocelMat, [-9.8, vy, 0]);
+          pridajTeleso(g, new THREE.BoxGeometry(0.28, 0.28, 9.0), ocelMat, [6.2, vy, 0]);
+        });
+
+        // Zadný a pravý plášť konvekčného ťahu
+        pridajTeleso(g, new THREE.BoxGeometry(7.2, 20.2, 0.16), plastMat, [2.5, 13.2, -4.1]);
+        pridajTeleso(g, new THREE.BoxGeometry(0.16, 19.0, 8.2), plastMat, [6.0, 13.8, 0]);
+
+        // Obslužné lávky so zábradlím na prednej strane
+        [7.5, 13.5, 19.5].forEach(function (ly) {
+          pridajTeleso(g, new THREE.BoxGeometry(16.2, 0.12, 0.9), lavkaMat, [-1.8, ly, 4.85]);
+          pridajTeleso(g, new THREE.BoxGeometry(16.2, 0.07, 0.07), ocelMat, [-1.8, ly + 0.85, 5.25]);
+        });
+
+        // Zvislý rebrík pri strednom stĺpe
+        pridajTeleso(g, new THREE.CylinderGeometry(0.04, 0.04, 22.0, 6), lavkaMat, [-1.05, 11.2, 5.15]);
+        pridajTeleso(g, new THREE.CylinderGeometry(0.04, 0.04, 22.0, 6), lavkaMat, [-0.55, 11.2, 5.15]);
+        for (var ry = 1.5; ry <= 21.5; ry += 0.9) {
+          pridajTeleso(g, new THREE.BoxGeometry(0.52, 0.05, 0.05), lavkaMat, [-0.8, ry, 5.15]);
+        }
+
+        // Predný izolačný plášť kotla (prepínateľný tlačidlom "Rez")
+        var prednyPlastMat = matKov(0xb4c6d8, { roughness: 0.45, metalness: 0.2, transparent: true, opacity: 0.15 });
+        pridajTeleso(g, new THREE.BoxGeometry(7.5, 19.8, 0.15), prednyPlastMat, [2.3, 13.3, 4.1], null, true);
+        pridajTeleso(g, new THREE.BoxGeometry(7.8, 18.2, 0.14), prednyPlastMat, [-5.5, 13.8, 4.18], null, true);
+      })();
+
+      // --- 3: Prepájacie potrubie ---
+      (function () {
+        var g = skupinyZariadeni['3'];
+        var ruraMat = matKov(0x7dd3fc, { roughness: 0.35, metalness: 0.35 });
+        // Zberné komory nad stropom
+        pridajTeleso(g, new THREE.CylinderGeometry(0.28, 0.28, 6.2, 14), ruraMat, [-1.0, 23.5, 0], [Math.PI / 2, 0, 0]);
+        pridajTeleso(g, new THREE.CylinderGeometry(0.26, 0.26, 6.2, 14), ruraMat, [-3.4, 23.7, 0], [Math.PI / 2, 0, 0]);
+        // Prepájacie parné rúrky medzi sekciami prehrievačov
+        [-2.0, -0.5, 1.0, 2.2].forEach(function (pz) {
+          pridajPotrubie(g, [
+            [-0.2, 22.8, pz],
+            [-0.2, 23.7, pz],
+            [-3.5, 23.7, pz],
+            [-3.5, 22.8, pz]
+          ], 0.14, ruraMat);
+        });
+      })();
+
+      // --- 4: Stropný membránový prehrievač ---
+      (function () {
+        var g = skupinyZariadeni['4'];
+        var stropMat = matKov(0x5ea6d8, { roughness: 0.38, metalness: 0.32 });
+        var komoraMat = matKov(0x38bdf8, { roughness: 0.35, metalness: 0.4 });
+
+        // Hlavná stropná membránová doska nad pecou a prechodovým ťahom
+        pridajTeleso(g, new THREE.BoxGeometry(14.8, 0.32, 7.6), stropMat, [-2.0, 22.8, 0]);
+        // Rebrované rúrky stropného prehrievača
+        for (var sz = -3.2; sz <= 3.2; sz += 0.65) {
+          pridajTeleso(g, new THREE.CylinderGeometry(0.11, 0.11, 14.5, 10), komoraMat, [-2.0, 22.95, sz], [0, 0, Math.PI / 2]);
+        }
+        // Vstupná a výstupná komora stropného prehrievača
+        pridajTeleso(g, new THREE.CylinderGeometry(0.32, 0.32, 7.8, 16), komoraMat, [-9.1, 23.1, 0], [Math.PI / 2, 0, 0]);
+        pridajTeleso(g, new THREE.CylinderGeometry(0.32, 0.32, 7.8, 16), komoraMat, [5.1, 23.1, 0], [Math.PI / 2, 0, 0]);
+      })();
+
+      // Pomocná funkcia na zavesené platňové prehrievače (5a, 5b, 7a, 7b)
+      function postavPlatnovyPrehrievac(skupina, stredX, stredY, rozsahZ, farbaPlatni, farbaKomory) {
+        var platnaMat = matKov(farbaPlatni, { roughness: 0.38, metalness: 0.32 });
+        var komoraMat = matKov(farbaKomory, { roughness: 0.32, metalness: 0.4 });
+
+        for (var pz = rozsahZ[0]; pz <= rozsahZ[1]; pz += 0.7) {
+          // Zavesená rúrková platňa (meander)
+          pridajTeleso(skupina, new THREE.BoxGeometry(1.15, 3.6, 0.12), platnaMat, [stredX, stredY, pz]);
+          pridajTeleso(skupina, new THREE.CylinderGeometry(0.08, 0.08, 3.7, 8), komoraMat, [stredX - 0.52, stredY, pz]);
+          pridajTeleso(skupina, new THREE.CylinderGeometry(0.08, 0.08, 3.7, 8), komoraMat, [stredX + 0.52, stredY, pz]);
+        }
+        // Horná zberná komora
+        pridajTeleso(skupina, new THREE.CylinderGeometry(0.24, 0.24, (rozsahZ[1] - rozsahZ[0]) + 0.8, 14), komoraMat,
+          [stredX, stredY + 2.05, (rozsahZ[0] + rozsahZ[1]) * 0.5], [Math.PI / 2, 0, 0]);
+      }
+
+      // --- 5a: Vstupný prehrievač ---
+      postavPlatnovyPrehrievac(skupinyZariadeni['5a'], -0.2, 20.1, [-3.0, 0.6], 0x67b7dc, 0x38bdf8);
+
+      // --- 5b: Výstupná časť vstupného prehrievača ---
+      postavPlatnovyPrehrievac(skupinyZariadeni['5b'], -1.8, 20.1, [-0.6, 3.0], 0x569fd4, 0x22d3ee);
+
+      // --- 6: Kotlový (bočný) prehrievač ---
+      (function () {
+        var g = skupinyZariadeni['6'];
+        var panelMat = matKov(0xd98a6c, { roughness: 0.42, metalness: 0.3, emissive: 0xff5500, emissiveIntensity: 0.1 });
+        var ruraMat = matKov(0xe59f84, { roughness: 0.38, metalness: 0.35 });
+
+        // Sálavé panely na zadnej/bočnej stene v hornej časti pece
+        for (var bx = -8.2; bx <= -2.8; bx += 1.35) {
+          pridajTeleso(g, new THREE.BoxGeometry(0.95, 3.8, 0.18), panelMat, [bx, 17.8, -3.55]);
+          pridajTeleso(g, new THREE.CylinderGeometry(0.12, 0.12, 1.0, 10), ruraMat, [bx, 19.8, -3.55], [0, 0, Math.PI / 2]);
+        }
+      })();
+
+      // --- 7a: Vstupná časť výstupného prehrievača ---
+      postavPlatnovyPrehrievac(skupinyZariadeni['7a'], -3.6, 20.3, [-3.0, 1.4], 0xe08258, 0xf97316);
+
+      // --- 7b: Výstupný prehrievač ---
+      postavPlatnovyPrehrievac(skupinyZariadeni['7b'], -5.8, 20.3, [-1.4, 3.0], 0xf06449, 0xfb923c);
+
+      // --- 8: Parovod ---
+      (function () {
+        var g = skupinyZariadeni['8'];
+        var paraMat = matKov(0x3b82f6, { roughness: 0.3, metalness: 0.35 });
+        var prirubaMat = matKov(0x60a5fa, { roughness: 0.35, metalness: 0.4 });
+
+        // Hlavný zberný parovod na strope kotla
+        pridajTeleso(g, new THREE.CylinderGeometry(0.48, 0.48, 8.6, 20), paraMat, [-4.2, 25.0, 0.5], [0, 0, Math.PI / 2]);
+        // Príruby a pripojenia z výstupného prehrievača
+        [-7.2, -5.8, -4.2, -2.6, -1.0].forEach(function (px) {
+          pridajTeleso(g, new THREE.CylinderGeometry(0.6, 0.6, 0.22, 18), prirubaMat, [px, 25.0, 0.5], [0, 0, Math.PI / 2]);
+        });
+        pridajPotrubie(g, [
+          [-5.8, 22.4, 0.5],
+          [-5.8, 25.0, 0.5]
+        ], 0.26, paraMat);
+        pridajPotrubie(g, [
+          [-3.6, 22.4, 0.5],
+          [-3.6, 25.0, 0.5]
+        ], 0.24, paraMat);
+      })();
+
+      // --- 9: Impulzné poistné ventily ---
+      (function () {
+        var g = skupinyZariadeni['9'];
+        var ventilMat = matKov(0x93c5fd, { roughness: 0.32, metalness: 0.45 });
+        var klobukMat = matKov(0xef4444, { roughness: 0.38, metalness: 0.3 });
+
+        [-6.2, -4.8, -3.4].forEach(function (vx) {
+          // Teleso ventilu
+          pridajTeleso(g, new THREE.CylinderGeometry(0.26, 0.3, 0.9, 14), ventilMat, [vx, 25.8, 0.5]);
+          // Červená hlavica pružiny/impulzného pohonu
+          pridajTeleso(g, new THREE.CylinderGeometry(0.22, 0.26, 0.55, 14), klobukMat, [vx, 26.5, 0.5]);
+          // Výfukové potrubie (tlmič) nad strechu
+          pridajTeleso(g, new THREE.CylinderGeometry(0.18, 0.14, 1.7, 12), ventilMat, [vx + 0.35, 26.8, 0.2]);
+        });
+      })();
+
+      // --- 10: Výstup prehriatej pary ---
+      (function () {
+        var g = skupinyZariadeni['10'];
+        var vystupParaMat = matKov(0x2563eb, { roughness: 0.32, metalness: 0.35 });
+
+        pridajPotrubie(g, [
+          [-8.4, 25.0, 0.5],
+          [-9.6, 25.0, 0.5],
+          [-9.6, 25.0, 2.6],
+          [-9.6, 17.5, 2.6],
+          [-11.8, 17.5, 2.6]
+        ], 0.42, vystupParaMat);
+
+        // Hlavný parný šoupátkový uzáver
+        pridajTeleso(g, new THREE.CylinderGeometry(0.62, 0.62, 0.9, 16), matKov(0x1d4ed8), [-9.6, 21.5, 2.6]);
+      })();
+
+      // --- 11: Potrubie studeného vzduchu ---
+      (function () {
+        var g = skupinyZariadeni['11'];
+        var studenyVzduchMat = matKov(0x2dd4bf, { roughness: 0.42, metalness: 0.22 });
+
+        // Vzduchovod od ventilátora k POV a rúrkovému ohrievaču
+        pridajTeleso(g, new THREE.BoxGeometry(3.4, 1.6, 1.8), studenyVzduchMat, [10.2, 5.2, -2.5]);
+        pridajTeleso(g, new THREE.CylinderGeometry(1.1, 1.3, 1.6, 20), studenyVzduchMat, [12.0, 5.2, -2.5], [0, 0, Math.PI / 2]);
+        // Prepoj z POV do rúrkového ohrievača vzduchu
+        pridajTeleso(g, new THREE.BoxGeometry(2.2, 1.5, 1.7), studenyVzduchMat, [6.4, 5.3, -1.2]);
+      })();
+
+      // --- 12: Rúrkový ohrievač vzduchu ---
+      (function () {
+        var g = skupinyZariadeni['12'];
+        var skrinaMat = matKov(0x34d399, { roughness: 0.48, metalness: 0.25 });
+        var rurkyMat = matKov(0x10b981, { roughness: 0.38, metalness: 0.35 });
+
+        // Dva bloky rúrkového ohrievača v spodnej časti konvekčného ťahu
+        pridajTeleso(g, new THREE.BoxGeometry(5.6, 1.5, 6.6), skrinaMat, [2.8, 6.4, 0]);
+        pridajTeleso(g, new THREE.BoxGeometry(5.6, 1.5, 6.6), skrinaMat, [2.8, 4.5, 0]);
+
+        // Viditeľné zvislé rúrky na prednej strane rezu
+        for (var ax = 0.4; ax <= 5.2; ax += 0.6) {
+          pridajTeleso(g, new THREE.CylinderGeometry(0.11, 0.11, 3.3, 8), rurkyMat, [ax, 5.45, 3.32]);
+        }
+      })();
+
+      // --- 13: Potrubie horúceho vzduchu ---
+      (function () {
+        var g = skupinyZariadeni['13'];
+        var horuciVzduchMat = matKov(0xf97316, { roughness: 0.42, metalness: 0.25 });
+
+        // Hlavný kanál horúceho vzduchu z ohrievača (12) dozadu a doľava k horákom
+        pridajTeleso(g, new THREE.BoxGeometry(12.2, 1.45, 1.45), horuciVzduchMat, [-3.0, 5.6, -4.6]);
+        // Zvislý rozdeľovací kanál (windbox) na ľavej stene pece pri horákoch
+        pridajTeleso(g, new THREE.BoxGeometry(1.35, 9.6, 1.55), horuciVzduchMat, [-9.6, 10.4, -4.2]);
+        // Prepojovacie kanály k jednotlivým etážam horákov
+        [8.2, 10.5, 12.8, 14.8].forEach(function (hy) {
+          pridajTeleso(g, new THREE.BoxGeometry(0.85, 0.75, 4.8), horuciVzduchMat, [-9.75, hy, -1.6]);
+        });
+      })();
+
+      // --- 14: Ekonomizér ---
+      (function () {
+        var g = skupinyZariadeni['14'];
+        var ekoMat = matKov(0x4ade80, { roughness: 0.4, metalness: 0.3 });
+        var komoraMat = matKov(0x22c55e, { roughness: 0.35, metalness: 0.38 });
+
+        // Tri nad sebou uložené bloky hadovitých rúrok v konvekčnom ťahu
+        [15.8, 17.2, 18.6].forEach(function (ey) {
+          pridajTeleso(g, new THREE.BoxGeometry(5.4, 0.95, 6.4), ekoMat, [2.8, ey, 0]);
+          // Predné vodorovné rúrky viditeľné v reze
+          for (var ry = ey - 0.3; ry <= ey + 0.31; ry += 0.3) {
+            pridajTeleso(g, new THREE.CylinderGeometry(0.09, 0.09, 5.3, 10), komoraMat, [2.8, ry, 3.25], [0, 0, Math.PI / 2]);
+          }
+        });
+        // Bočné zberné komory ekonomizéra
+        pridajTeleso(g, new THREE.CylinderGeometry(0.24, 0.24, 6.6, 14), komoraMat, [5.65, 17.2, 0], [Math.PI / 2, 0, 0]);
+      })();
+
+      // --- 15: Reaktor SCR ---
+      (function () {
+        var g = skupinyZariadeni['15'];
+        var scrPlastMat = matKov(0xa78bfa, { roughness: 0.46, metalness: 0.26 });
+        var katMat = matKov(0xfacc15, { roughness: 0.55, metalness: 0.18 });
+
+        // Komora SCR reaktora (otvorená spredu pre pohľad na katalyzátorové vrstvy)
+        pridajTeleso(g, new THREE.BoxGeometry(6.0, 5.2, 0.3), scrPlastMat, [2.8, 11.2, -3.3]);
+        pridajTeleso(g, new THREE.BoxGeometry(0.3, 5.2, 6.8), scrPlastMat, [-0.1, 11.2, 0]);
+        pridajTeleso(g, new THREE.BoxGeometry(0.3, 5.2, 6.8), scrPlastMat, [5.7, 11.2, 0]);
+
+        // 3 vrstvy voštinového katalyzátora vnútri SCR
+        [9.7, 11.2, 12.7].forEach(function (ky) {
+          pridajTeleso(g, new THREE.BoxGeometry(5.3, 0.72, 6.3), katMat, [2.8, ky, 0]);
+        });
+      })();
+
+      // --- 16: Výstup spalín na elektroodlučovač ---
+      (function () {
+        var g = skupinyZariadeni['16'];
+        var dymovodMat = matKov(0x94a3b8, { roughness: 0.52, metalness: 0.25 });
+
+        // Dvojica spalinových kanálov zo spodku konvekčného ťahu do elektroodlučovača
+        pridajTeleso(g, new THREE.BoxGeometry(3.6, 2.0, 5.4), dymovodMat, [4.2, 2.3, 0]);
+        pridajTeleso(g, new THREE.BoxGeometry(4.4, 2.1, 4.8), dymovodMat, [7.8, 2.9, 0], [0, 0, 0.22]);
+      })();
+
+      // --- 17: Plynový horák Todd ---
+      (function () {
+        var g = skupinyZariadeni['17'];
+        var horakMat = matKov(0xfb7185, { roughness: 0.35, metalness: 0.35 });
+        var plynMat = matKov(0xfbbf24, { roughness: 0.35, metalness: 0.4 });
+
+        [-1.6, 0.4].forEach(function (bz) {
+          pridajTeleso(g, new THREE.CylinderGeometry(0.55, 0.65, 1.5, 18), horakMat, [-10.1, 12.8, bz], [0, 0, Math.PI / 2]);
+          pridajTeleso(g, new THREE.CylinderGeometry(0.74, 0.74, 0.22, 18), plynMat, [-9.45, 12.8, bz], [0, 0, Math.PI / 2]);
+        });
+        // Prívodné plynové potrubie
+        pridajPotrubie(g, [
+          [-10.7, 12.8, -2.2],
+          [-10.7, 12.8, 0.8]
+        ], 0.16, plynMat);
+      })();
+
+      // --- 18: Britvová hubica (názov na overenie) ---
+      (function () {
+        var g = skupinyZariadeni['18'];
+        var britvaMat = matKov(0xf472b6, { roughness: 0.38, metalness: 0.32 });
+
+        [-0.8, 1.2].forEach(function (bz) {
+          // Ploché štrbinové teleso hubice
+          pridajTeleso(g, new THREE.BoxGeometry(1.35, 0.38, 1.15), britvaMat, [-10.05, 14.8, bz]);
+          pridajTeleso(g, new THREE.BoxGeometry(0.3, 0.56, 1.35), matKov(0xfbcfe8), [-9.42, 14.8, bz]);
+        });
+      })();
+
+      // --- 19: Prášková hubica (názov na overenie) ---
+      (function () {
+        var g = skupinyZariadeni['19'];
+        var prasokMat = matKov(0xd97706, { roughness: 0.45, metalness: 0.3 });
+        var prirubaMat = matKov(0xf59e0b, { roughness: 0.38, metalness: 0.35 });
+
+        [-1.2, 0.8].forEach(function (pz) {
+          pridajTeleso(g, new THREE.CylinderGeometry(0.46, 0.52, 1.45, 16), prasokMat, [-10.1, 10.5, pz], [0, 0, Math.PI / 2]);
+          pridajTeleso(g, new THREE.BoxGeometry(0.35, 0.85, 0.85), prirubaMat, [-9.45, 10.5, pz]);
+          // Prívod práškovodu zhora/zboku
+          pridajPotrubie(g, [
+            [-11.3, 9.2, pz],
+            [-10.6, 10.5, pz]
+          ], 0.22, prasokMat);
+        });
+      })();
+
+      // --- 20: Plynový horák Weishaupt & Steinmüller ---
+      (function () {
+        var g = skupinyZariadeni['20'];
+        var wsMat = matKov(0xef4444, { roughness: 0.35, metalness: 0.35 });
+        var kovMat = matKov(0xfca5a5, { roughness: 0.35, metalness: 0.4 });
+
+        [-0.8, 1.4].forEach(function (wz) {
+          pridajTeleso(g, new THREE.CylinderGeometry(0.58, 0.68, 1.6, 18), wsMat, [-10.15, 8.2, wz], [0, 0, Math.PI / 2]);
+          pridajTeleso(g, new THREE.BoxGeometry(0.75, 0.85, 0.85), kovMat, [-10.9, 8.2, wz]);
+        });
+        pridajPotrubie(g, [
+          [-10.8, 6.8, 1.4],
+          [-10.8, 8.2, 1.4],
+          [-10.8, 8.2, -0.8]
+        ], 0.17, matKov(0xfbbf24));
+      })();
+
+      // --- 21: Os výťahového otvoru (názov na overenie) ---
+      (function () {
+        var g = skupinyZariadeni['21'];
+        var otvorMat = matKov(0x38bdf8, { roughness: 0.35, metalness: 0.4 });
+        var osMat = matKov(0xfacc15, { roughness: 0.3, metalness: 0.3 });
+
+        // Rám montážneho/výťahového otvoru na prednej strane pece a vodiaca kladka hore
+        pridajTeleso(g, new THREE.BoxGeometry(1.5, 2.1, 0.35), otvorMat, [-5.5, 9.2, 4.05]);
+        pridajTeleso(g, new THREE.CylinderGeometry(0.06, 0.06, 13.5, 10), osMat, [-5.5, 14.5, 4.05]);
+        pridajTeleso(g, new THREE.CylinderGeometry(0.45, 0.45, 0.25, 16), osMat, [-5.5, 21.4, 4.05], [Math.PI / 2, 0, 0]);
+      })();
+
+      // --- 22: Granulačná nádrž ---
+      (function () {
+        var g = skupinyZariadeni['22'];
+        var vanaMat = matKov(0x475569, { roughness: 0.55, metalness: 0.3 });
+        var vodaMat = matKov(0x0ea5e9, { roughness: 0.2, metalness: 0.1, transparent: true, opacity: 0.78 });
+
+        // Oceľová vaňa pod výsypkou pece
+        pridajTeleso(g, new THREE.BoxGeometry(4.8, 1.35, 7.4), vanaMat, [-5.5, 0.75, 0]);
+        // Vodná hladina v nádrži
+        pridajTeleso(g, new THREE.BoxGeometry(4.4, 0.25, 7.0), vodaMat, [-5.5, 1.35, 0]);
+        // Šikmý vynášací žľab trosky
+        pridajTeleso(g, new THREE.BoxGeometry(2.6, 0.75, 1.8), vanaMat, [-8.4, 1.3, 0], [0, 0, -0.35]);
+      })();
+
+      // --- 23: Skriňa dezintegrátora (drviace valce) ---
+      (function () {
+        var g = skupinyZariadeni['23'];
+        var skrinaMat = matKov(0x78716c, { roughness: 0.5, metalness: 0.35 });
+        var valecMat = matKov(0xd6d3d1, { roughness: 0.35, metalness: 0.5 });
+
+        // Skriňa v hrdle výsypky pece
+        pridajTeleso(g, new THREE.BoxGeometry(2.5, 1.15, 7.0), skrinaMat, [-5.5, 2.3, 0]);
+        // Dvojica drviacich valcov + pohonné prevodovky vpredu
+        pridajTeleso(g, new THREE.CylinderGeometry(0.34, 0.34, 7.4, 14), valecMat, [-5.95, 2.3, 0], [Math.PI / 2, 0, 0]);
+        pridajTeleso(g, new THREE.CylinderGeometry(0.34, 0.34, 7.4, 14), valecMat, [-5.05, 2.3, 0], [Math.PI / 2, 0, 0]);
+      })();
+
+      // --- 24: Výstupná časť elektroodlučovača (názov na overenie) ---
+      (function () {
+        var g = skupinyZariadeni['24'];
+        var eoMat = matKov(0x8b9bb4, { roughness: 0.5, metalness: 0.25 });
+        var vysypkaMat = matKov(0x64748b, { roughness: 0.55, metalness: 0.3 });
+
+        // Hlavná skriňa elektroodlučovača vpravo mimo kotla
+        pridajTeleso(g, new THREE.BoxGeometry(5.2, 6.2, 6.8), eoMat, [12.5, 5.6, 0]);
+        // Spodné výsypky popolčeka (2 pyramídové násypky)
+        pridajTeleso(g, new THREE.CylinderGeometry(1.6, 0.4, 1.9, 4), vysypkaMat, [11.3, 1.6, 0], [0, Math.PI / 4, 0]);
+        pridajTeleso(g, new THREE.CylinderGeometry(1.6, 0.4, 1.9, 4), vysypkaMat, [13.7, 1.6, 0], [0, Math.PI / 4, 0]);
+        // Výstupné spalinové hrdlo doprava
+        pridajTeleso(g, new THREE.CylinderGeometry(1.35, 1.65, 2.2, 16), eoMat, [16.0, 5.2, 0], [0, 0, Math.PI / 2]);
+      })();
+
+      // --- 25: Recirkulácia spalín ---
+      (function () {
+        var g = skupinyZariadeni['25'];
+        var recMat = matKov(0xa8a29e, { roughness: 0.48, metalness: 0.28 });
+
+        // Potrubie recirkulácie zo spalinového výstupu po zadnej strane späť do pece
+        pridajPotrubie(g, [
+          [5.8, 2.6, -2.6],
+          [5.8, 3.2, -3.9],
+          [-6.5, 3.2, -3.9],
+          [-6.5, 6.5, -3.9]
+        ], 0.46, recMat);
+
+        // Skriňa recirkulačného ventilátora
+        pridajTeleso(g, new THREE.CylinderGeometry(0.95, 0.95, 0.85, 18), matKov(0x78716c), [2.2, 3.2, -3.9], [Math.PI / 2, 0, 0]);
+      })();
+
+      // --- 26: Parný ohrievač vzduchu (POV) ---
+      (function () {
+        var g = skupinyZariadeni['26'];
+        var povMat = matKov(0x38bdf8, { roughness: 0.35, metalness: 0.35 });
+        var lemMat = matKov(0x0284c7, { roughness: 0.4, metalness: 0.4 });
+
+        // Výmenníková komora POV na vzduchovode studeného vzduchu
+        pridajTeleso(g, new THREE.BoxGeometry(1.65, 2.2, 2.3), povMat, [7.9, 5.25, -1.9]);
+        pridajTeleso(g, new THREE.BoxGeometry(1.85, 2.4, 0.22), lemMat, [8.6, 5.25, -1.9]);
+        pridajTeleso(g, new THREE.BoxGeometry(1.85, 2.4, 0.22), lemMat, [7.2, 5.25, -1.9]);
+        // Prívod pomocnej pary zhora
+        pridajPotrubie(g, [
+          [7.9, 7.6, -1.9],
+          [7.9, 6.3, -1.9]
+        ], 0.14, lemMat);
+      })();
+
+      // --- 27: Potrubie OPA (názov na overenie) ---
+      (function () {
+        var g = skupinyZariadeni['27'];
+        var opaMat = matKov(0xfb923c, { roughness: 0.4, metalness: 0.28 });
+
+        // Odbočné potrubie horúceho vzduchu k horným tryskám OPA nad horákmi
+        pridajPotrubie(g, [
+          [-9.6, 14.8, -3.8],
+          [-9.9, 16.8, -3.8],
+          [-9.9, 16.8, 1.8]
+        ], 0.32, opaMat);
+
+        // Vstupné hubice OPA do steny pece
+        [-1.8, 0.0, 1.6].forEach(function (oz) {
+          pridajTeleso(g, new THREE.CylinderGeometry(0.24, 0.28, 0.85, 12), opaMat, [-9.55, 16.8, oz], [0, 0, Math.PI / 2]);
+        });
+      })();
+
+      // --- 28: Systém prípravy reagentu ---
+      (function () {
+        var g = skupinyZariadeni['28'];
+        var nadrzMat = matKov(0x60a5fa, { roughness: 0.32, metalness: 0.3 });
+        var zakladMat = matKov(0x475569, { roughness: 0.55, metalness: 0.3 });
+        var ruraMat = matKov(0x93c5fd, { roughness: 0.35, metalness: 0.4 });
+
+        // Oceľový rám (skid) na podlahe
+        pridajTeleso(g, new THREE.BoxGeometry(3.2, 0.28, 2.4), zakladMat, [9.2, 0.3, 3.2]);
+        // Zásobník reagentu (valec)
+        pridajTeleso(g, new THREE.CylinderGeometry(0.95, 0.95, 2.8, 22), nadrzMat, [8.6, 1.8, 3.2]);
+        pridajTeleso(g, new THREE.SphereGeometry(0.95, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), nadrzMat, [8.6, 3.2, 3.2]);
+        // Dávkovacie čerpadlá a rozvádzač
+        pridajTeleso(g, new THREE.BoxGeometry(0.9, 1.5, 0.75), matKov(0xe2e8f0), [10.1, 1.2, 3.4]);
+        // Výtlačné potrubie reagentu hore ku hubici v SCR
+        pridajPotrubie(g, [
+          [9.9, 1.6, 2.9],
+          [6.3, 1.6, 2.9],
+          [6.3, 14.3, 2.9],
+          [4.8, 14.3, 0.5]
+        ], 0.1, ruraMat);
+      })();
+
+      // --- 29: Rozprašovacia hubica reagentu ---
+      (function () {
+        var g = skupinyZariadeni['29'];
+        var hubicaMat = matKov(0x38bdf8, { roughness: 0.3, metalness: 0.45 });
+        var tryskaMat = matKov(0xe0f2fe, { roughness: 0.25, metalness: 0.5 });
+
+        // Hlavný rozdeľovač a vstrekovacia mreža nad katalyzátorom SCR
+        pridajTeleso(g, new THREE.CylinderGeometry(0.18, 0.18, 5.2, 14), hubicaMat, [2.8, 14.3, 0.5], [0, 0, Math.PI / 2]);
+        for (var hx = 0.8; hx <= 4.8; hx += 1.0) {
+          pridajTeleso(g, new THREE.CylinderGeometry(0.08, 0.08, 5.6, 10), hubicaMat, [hx, 14.3, 0], [Math.PI / 2, 0, 0]);
+          // Rozprašovacie kužele dýz
+          pridajTeleso(g, new THREE.ConeGeometry(0.28, 0.55, 12), tryskaMat, [hx, 13.95, 0.5]);
+        }
+      })();
+
+      // --- 30: Zvukové generátory SCR ---
+      (function () {
+        var g = skupinyZariadeni['30'];
+        var zvukoMat = matKov(0xf59e0b, { roughness: 0.34, metalness: 0.42 });
+
+        // Trojica akustických húkačiek na pravej stene SCR reaktora
+        [10.2, 11.4, 12.6].forEach(function (zy, idx) {
+          var posZ = (idx - 1) * 1.6;
+          pridajTeleso(g, new THREE.ConeGeometry(0.36, 1.1, 16), zvukoMat, [6.2, zy, posZ], [0, 0, Math.PI / 2]);
+          pridajTeleso(g, new THREE.CylinderGeometry(0.22, 0.22, 0.45, 14), matKov(0xd97706), [6.75, zy, posZ], [0, 0, Math.PI / 2]);
+        });
+      })();
+
+      // =========================================================================
+      // ČÍSELNÉ ŠTÍTKY (SPRITES) V 3D SCÉNE
+      // =========================================================================
+      function vytvorTexturuStitku(cislo, overit, aktivny) {
+        var c = document.createElement('canvas');
+        c.width = 128;
+        c.height = 128;
+        var ctx = c.getContext('2d');
+
+        ctx.clearRect(0, 0, 128, 128);
+
+        // Vonkajší tieň
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+        ctx.shadowBlur = 10;
+        ctx.shadowOffsetY = 3;
+
+        // Výplň krúžku
+        ctx.beginPath();
+        ctx.arc(64, 64, 46, 0, Math.PI * 2);
+        ctx.fillStyle = aktivny ? '#38bdf8' : '#1e293b';
+        ctx.fill();
+        ctx.restore();
+
+        // Okraj krúžku
+        ctx.beginPath();
+        ctx.arc(64, 64, 46, 0, Math.PI * 2);
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = aktivny ? '#ffffff' : (overit ? '#fbbf24' : '#38bdf8');
+        ctx.stroke();
+
+        // Text čísla
+        ctx.fillStyle = aktivny ? '#0b1320' : '#f8fafc';
+        ctx.font = '800 ' + (cislo.length > 2 ? '36px' : '42px') + ' system-ui, -apple-system, "Segoe UI", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(cislo, 64, 66);
+
+        var tex = new THREE.CanvasTexture(c);
+        tex.needsUpdate = true;
+        return tex;
+      }
+
+      ZARIADENIA.forEach(function (z) {
+        var texNormal = vytvorTexturuStitku(z.cislo, z.overit, false);
+        var texAktiv = vytvorTexturuStitku(z.cislo, z.overit, true);
+        var mat = new THREE.SpriteMaterial({
+          map: texNormal,
+          transparent: true,
+          depthTest: false,
+          depthWrite: false
+        });
+        var sprite = new THREE.Sprite(mat);
+        sprite.position.set(z.pos[0], z.pos[1] + 0.55, z.pos[2] + 0.55);
+        sprite.scale.set(1.35, 1.35, 1.35);
+        sprite.renderOrder = 999;
+        sprite.userData.cislo = z.cislo;
+        sprite.userData.jeStitok = true;
+        sprite.userData.texNormal = texNormal;
+        sprite.userData.texAktiv = texAktiv;
+        sprite.userData.aktualnemierka = 1.35;
+
+        z.group.add(sprite);
+        z.sprite = sprite;
+        stitkySprites.push(sprite);
+        klikatelneTelesa.push(sprite);
+      });
+
+      // Nastavenie úvodného stavu "Rez"
+      function aktualizujRez() {
+        rezTelesa.forEach(function (m) {
+          m.material.transparent = stav.rezAktivny;
+          m.material.opacity = stav.rezAktivny ? 0.15 : 1.0;
+          m.material.depthWrite = !stav.rezAktivny;
+          m.material.needsUpdate = true;
+        });
+        var btnRez = document.getElementById('btn-rez');
+        if (btnRez) btnRez.classList.toggle('aktivne', stav.rezAktivny);
+      }
+      aktualizujRez();
+
+      // =========================================================================
+      // KAMERA A VLASTNÉ ORBIT OVLÁDANIE (s plynulým preletom ~0,8 s)
+      // =========================================================================
+      var UVODNY_CIEL = new THREE.Vector3(0.2, 12.2, 0.0);
+      var UVODNA_POZ = new THREE.Vector3(-18.5, 22.0, 33.5);
+
+      var orbit = {
+        ciel: UVODNY_CIEL.clone(),
+        theta: -0.52, // horizontálny uhol (zľava spredu)
+        phi: 1.14,   // vertikálny uhol od zenitu (~65°, t.j. 25° nad podlahou)
+        radius: 38.5,
+        minRadius: 8.0,
+        maxRadius: 80.0,
+        minPhi: THREE.MathUtils.degToRad(5),  // max 85° nad podlahou
+        maxPhi: THREE.MathUtils.degToRad(85), // min 5° nad podlahou (nikdy pod podlahu)
+        prelet: null
+      };
+
+      // Nastav počiatočné sférické súradnice presne podľa UVODNA_POZ a UVODNY_CIEL
+      (function () {
+        var offset = new THREE.Vector3().subVectors(UVODNA_POZ, UVODNY_CIEL);
+        orbit.radius = offset.length();
+        orbit.phi = Math.acos(THREE.MathUtils.clamp(offset.y / orbit.radius, -1, 1));
+        orbit.theta = Math.atan2(offset.x, offset.z);
+      })();
+
+      function aktualizujKameruZOrbitu() {
+        orbit.phi = THREE.MathUtils.clamp(orbit.phi, orbit.minPhi, orbit.maxPhi);
+        orbit.radius = THREE.MathUtils.clamp(orbit.radius, orbit.minRadius, orbit.maxRadius);
+        if (orbit.ciel.y < 0.8) orbit.ciel.y = 0.8;
+
+        var sinPhi = Math.sin(orbit.phi);
+        kamera.position.x = orbit.ciel.x + orbit.radius * sinPhi * Math.sin(orbit.theta);
+        kamera.position.y = orbit.ciel.y + orbit.radius * Math.cos(orbit.phi);
+        kamera.position.z = orbit.ciel.z + orbit.radius * sinPhi * Math.cos(orbit.theta);
+        kamera.lookAt(orbit.ciel);
+      }
+      aktualizujKameruZOrbitu();
+
+      function spustiPreletKamery(novyCielVec, novaPozVec, trvanieSek) {
+        orbit.prelet = {
+          startPoz: kamera.position.clone(),
+          startCiel: orbit.ciel.clone(),
+          koniecPoz: novaPozVec.clone(),
+          koniecCiel: novyCielVec.clone(),
+          uplynulo: 0,
+          trvanie: trvanieSek || 0.8
+        };
+      }
+
+      function obnovPohlad() {
+        spustiPreletKamery(UVODNY_CIEL, UVODNA_POZ, 0.8);
+      }
+
+      function doletK2Zariadeniu(z) {
+        var ciel = new THREE.Vector3(z.pos[0], z.pos[1], z.pos[2]);
+        // Vypočítaj vhodný uhol pohľadu pre dané zariadenie, aby ho nič nezakrývalo
+        var vx = z.pos[0] < -7 ? -10.5 : (z.pos[0] > 7 ? 7.5 : -6.2);
+        var vy = 4.2;
+        var vz = z.pos[2] < -2.2 ? -13.5 : 14.5;
+        if (z.cislo === '1' || z.cislo === '2') {
+          vx = -14.0;
+          vy = 7.5;
+          vz = 24.0;
+        }
+        var poz = new THREE.Vector3(ciel.x + vx, Math.max(2.5, ciel.y + vy), ciel.z + vz);
+        spustiPreletKamery(ciel, poz, 0.8);
+      }
+
+      // =========================================================================
+      // ZVÝRAZNENIE A VÝBER ZARIADENIA + UI KARTA A ZOZNAM
+      // =========================================================================
+      function aplikujZvyraznenie() {
+        ZARIADENIA.forEach(function (z) {
+          var jeVybrane = stav.vybraneCislo === z.cislo;
+          var jeHover = stav.hoverCislo === z.cislo;
+
+          z.group.children.forEach(function (obj) {
+            if (obj.isMesh && obj.material) {
+              if (jeVybrane) {
+                obj.material.emissive.setHex(0x38bdf8);
+                obj.material.emissiveIntensity = 0.42;
+              } else if (jeHover) {
+                obj.material.emissive.setHex(0x7dd3fc);
+                obj.material.emissiveIntensity = 0.28;
+              } else {
+                obj.material.emissive.copy(obj.userData.zakladEmissive);
+                obj.material.emissiveIntensity = obj.userData.zakladEmissiveInt;
+              }
+            }
+          });
+
+          if (z.sprite) {
+            z.sprite.material.map = (jeVybrane || jeHover) ? z.sprite.userData.texAktiv : z.sprite.userData.texNormal;
+            z.sprite.material.needsUpdate = true;
+          }
+
+          if (z.el) {
+            z.el.classList.toggle('aktivna', jeVybrane);
+          }
+        });
+      }
+
+      var kartaEl = document.getElementById('karta-zariadenia');
+      var kartaCisloEl = document.getElementById('karta-cislo');
+      var kartaNazovEl = document.getElementById('karta-nazov');
+      var kartaOveritEl = document.getElementById('karta-overit');
+      var kartaCoEl = document.getElementById('karta-co');
+      var kartaKdeEl = document.getElementById('karta-kde');
+      var kartaFunkciaEl = document.getElementById('karta-funkcia');
+      var kartaSuvisiEl = document.getElementById('karta-suvisi-cipy');
+      var panelZariadeniaEl = document.getElementById('panel-zariadenia');
+
+      function vyber(cisloAleboObjekt) {
+        if (!cisloAleboObjekt) {
+          stav.vybraneCislo = null;
+          kartaEl.classList.remove('viditelna');
+          aplikujZvyraznenie();
+          return null;
+        }
+
+        var k = typeof cisloAleboObjekt === 'object' && cisloAleboObjekt.cislo
+          ? String(cisloAleboObjekt.cislo)
+          : String(cisloAleboObjekt);
+
+        var z = mapaPodlaCisla[k];
+        if (!z) return null;
+
+        stav.vybraneCislo = z.cislo;
+        aplikujZvyraznenie();
+
+        // Naplnenie karty
+        kartaCisloEl.textContent = z.cislo;
+        kartaNazovEl.textContent = z.nazov;
+        kartaOveritEl.style.display = z.overit ? 'block' : 'none';
+        kartaCoEl.textContent = z.co;
+        kartaKdeEl.textContent = z.kde;
+        kartaFunkciaEl.textContent = z.funkcia;
+
+        // Čipy "Súvisí s:"
+        kartaSuvisiEl.innerHTML = '';
+        (z.suvisi || []).forEach(function (suvCislo) {
+          var suv = mapaPodlaCisla[suvCislo];
+          if (!suv) return;
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'suvisi-cip';
+          var spanC = document.createElement('span');
+          spanC.className = 'cip-cislo';
+          spanC.textContent = suv.cislo;
+          var spanN = document.createElement('span');
+          spanN.textContent = suv.nazov;
+          btn.appendChild(spanC);
+          btn.appendChild(spanN);
+          btn.addEventListener('click', function () {
+            vyber(suv.cislo);
+          });
+          kartaSuvisiEl.appendChild(btn);
+        });
+
+        kartaEl.classList.add('viditelna');
+
+        // Posuň položku v zozname do viditeľnej oblasti
+        if (z.el && z.el.scrollIntoView) {
+          z.el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+
+        // Na mobile po výbere zbalíme zoznam, aby bolo vidieť scénu a kartu
+        panelZariadeniaEl.classList.remove('otvoreny-mobil');
+
+        // Plynulý prelet kamery k zariadeniu
+        doletK2Zariadeniu(z);
+        return z;
+      }
+
+      // =========================================================================
+      // VYTVORENIE A FILTROVANIE ZOZNAMU ZARIADENÍ VĽAVO
+      // =========================================================================
+      var zoznamPoloziekEl = document.getElementById('zoznam-poloziek');
+      var hladanieVstupEl = document.getElementById('hladanie-vstup');
+      var hladanieVymazatEl = document.getElementById('hladanie-vymazat');
+      var pocetZariadeniEl = document.getElementById('pocet-zariadeni');
+
+      function odDiakritiky(str) {
+        return String(str || '')
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
+      }
+
+      function vykresliZoznam(filterText) {
+        var dotaz = odDiakritiky(filterText).trim();
+        zoznamPoloziekEl.innerHTML = '';
+        var vyhovujuce = [];
+
+        ZARIADENIA.forEach(function (z) {
+          var textHladania = odDiakritiky(z.cislo + ' ' + z.nazov + ' ' + (z.overit ? 'na overenie' : ''));
+          if (dotaz && textHladania.indexOf(dotaz) === -1) {
+            z.el = null;
+            return;
+          }
+          vyhovujuce.push(z);
+
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'polozka-zariadenia' + (stav.vybraneCislo === z.cislo ? ' aktivna' : '');
+          btn.setAttribute('role', 'listitem');
+          btn.dataset.cislo = z.cislo;
+
+          var spanCislo = document.createElement('span');
+          spanCislo.className = 'polozka-cislo';
+          spanCislo.textContent = z.cislo;
+          btn.appendChild(spanCislo);
+
+          var spanNazov = document.createElement('span');
+          spanNazov.className = 'polozka-nazov';
+          spanNazov.textContent = z.nazov;
+          btn.appendChild(spanNazov);
+
+          if (z.overit) {
+            var spanOtaznik = document.createElement('span');
+            spanOtaznik.className = 'polozka-otaznik';
+            spanOtaznik.textContent = '?';
+            spanOtaznik.title = 'Názov na overenie';
+            btn.appendChild(spanOtaznik);
+          }
+
+          btn.addEventListener('click', function () {
+            vyber(z.cislo);
+          });
+
+          btn.addEventListener('mouseenter', function () {
+            stav.hoverCislo = z.cislo;
+            aplikujZvyraznenie();
+          });
+
+          btn.addEventListener('mouseleave', function () {
+            if (stav.hoverCislo === z.cislo) {
+              stav.hoverCislo = null;
+              aplikujZvyraznenie();
+            }
+          });
+
+          z.el = btn;
+          zoznamPoloziekEl.appendChild(btn);
+        });
+
+        if (vyhovujuce.length === 0) {
+          var prazdne = document.createElement('div');
+          prazdne.className = 'prazdny-zoznam';
+          prazdne.textContent = 'Žiadne zariadenie nezodpovedá hľadaniu.';
+          zoznamPoloziekEl.appendChild(prazdne);
+        }
+
+        pocetZariadeniEl.textContent = dotaz ? (vyhovujuce.length + ' / ' + ZARIADENIA.length) : '1–30';
+        hladanieVymazatEl.style.display = dotaz ? 'block' : 'none';
+        return vyhovujuce;
+      }
+
+      vykresliZoznam('');
+
+      hladanieVstupEl.addEventListener('input', function () {
+        vykresliZoznam(hladanieVstupEl.value);
+      });
+
+      hladanieVymazatEl.addEventListener('click', function () {
+        hladanieVstupEl.value = '';
+        vykresliZoznam('');
+        hladanieVstupEl.focus();
+      });
+
+      // =========================================================================
+      // TLAČIDLÁ HORNEJ LIŠTY A KARTY
+      // =========================================================================
+      document.getElementById('karta-zavriet').addEventListener('click', function () {
+        vyber(null);
+      });
+
+      window.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+          vyber(null);
+          panelZariadeniaEl.classList.remove('otvoreny-mobil');
+        }
+      });
+
+      document.getElementById('btn-rez').addEventListener('click', function () {
+        stav.rezAktivny = !stav.rezAktivny;
+        aktualizujRez();
+      });
+
+      document.getElementById('btn-popisy').addEventListener('click', function () {
+        stav.popisyAktivne = !stav.popisyAktivne;
+        stitkySprites.forEach(function (s) {
+          s.visible = stav.popisyAktivne;
+        });
+        document.getElementById('btn-popisy').classList.toggle('aktivne', stav.popisyAktivne);
+      });
+
+      document.getElementById('btn-obnovit').addEventListener('click', function () {
+        obnovPohlad();
+      });
+
+      document.getElementById('btn-svetlo').addEventListener('click', function () {
+        stav.nocnyRezim = !stav.nocnyRezim;
+        var btnSvetlo = document.getElementById('btn-svetlo');
+        btnSvetlo.classList.toggle('aktivne', stav.nocnyRezim);
+        obalEl.classList.toggle('noc', stav.nocnyRezim);
+
+        if (stav.nocnyRezim) {
+          scena.background.setHex(0x0c1322);
+          scena.fog.color.setHex(0x0c1322);
+          hemiLight.intensity = 0.28;
+          slnkoLight.intensity = 0.34;
+          slnkoLight.color.setHex(0x93c5fd);
+          doplnkoveLight.intensity = 0.18;
+          pecLight.intensity = 4.2;
+          pecLight.distance = 32;
+          pecLightHorn.intensity = 2.6;
+          podlahaMat.color.setHex(0x1b2434);
+          betonMat.color.setHex(0x232e42);
+        } else {
+          scena.background.setHex(0xcfe8fa);
+          scena.fog.color.setHex(0xcfe8fa);
+          hemiLight.intensity = 0.85;
+          slnkoLight.intensity = 0.92;
+          slnkoLight.color.setHex(0xfff8e7);
+          doplnkoveLight.intensity = 0.35;
+          pecLight.intensity = 2.3;
+          pecLight.distance = 24;
+          pecLightHorn.intensity = 1.4;
+          podlahaMat.color.setHex(0xd9d3c7);
+          betonMat.color.setHex(0xc5c0b6);
+        }
+      });
+
+      document.getElementById('btn-mobil-zoznam').addEventListener('click', function () {
+        panelZariadeniaEl.classList.toggle('otvoreny-mobil');
+      });
+
+      // =========================================================================
+      // RAYCASTING, MYŠ A DOTYKOVÉ OVLÁDANIE SCÉNY
+      // =========================================================================
+      var raycaster = new THREE.Raycaster();
+      var mysNDC = new THREE.Vector2();
+      var hoverBublinaEl = document.getElementById('hover-bublina');
+
+      function ziskajZasahZariadenia(clientX, clientY) {
+        var rect = renderer.domElement.getBoundingClientRect();
+        mysNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+        mysNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(mysNDC, kamera);
+        var zasahy = raycaster.intersectObjects(klikatelneTelesa, false);
+
+        for (var i = 0; i < zasahy.length; i++) {
+          var obj = zasahy[i].object;
+          if (!obj.visible) continue;
+          // Ak je zapnutý rez (priesvitná predná stena), dovoľ kliknúť cez ňu na vnútorné zariadenia
+          if (stav.rezAktivny && obj.userData.jeRez) continue;
+          if (obj.userData && obj.userData.cislo) {
+            return obj.userData.cislo;
+          }
+        }
+        return null;
+      }
+
+      var interakcia = {
+        rezim: null, // 'rotacia' | 'posun'
+        startX: 0,
+        startY: 0,
+        posledneX: 0,
+        posledneY: 0,
+        celkovyPohyb: 0,
+        dotykVzdialenost: 0
+      };
+
+      function posunCielKamery(dx, dy) {
+        var faktor = orbit.radius * 0.0014;
+        var dopredu = new THREE.Vector3();
+        kamera.getWorldDirection(dopredu);
+        var doprava = new THREE.Vector3().crossVectors(dopredu, kamera.up).normalize();
+        var hore = new THREE.Vector3().crossVectors(doprava, dopredu).normalize();
+
+        orbit.ciel.addScaledVector(doprava, -dx * faktor);
+        orbit.ciel.addScaledVector(hore, dy * faktor);
+        orbit.ciel.x = THREE.MathUtils.clamp(orbit.ciel.x, -18, 22);
+        orbit.ciel.y = THREE.MathUtils.clamp(orbit.ciel.y, 1.0, 28);
+        orbit.ciel.z = THREE.MathUtils.clamp(orbit.ciel.z, -16, 16);
+      }
+
+      var platno = renderer.domElement;
+
+      platno.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+      });
+
+      platno.addEventListener('mousedown', function (e) {
+        orbit.prelet = null;
+        interakcia.startX = e.clientX;
+        interakcia.startY = e.clientY;
+        interakcia.posledneX = e.clientX;
+        interakcia.posledneY = e.clientY;
+        interakcia.celkovyPohyb = 0;
+
+        if (e.button === 2 || e.button === 1 || (e.button === 0 && e.shiftKey)) {
+          interakcia.rezim = 'posun';
+        } else if (e.button === 0) {
+          interakcia.rezim = 'rotacia';
+        }
+      });
+
+      window.addEventListener('mousemove', function (e) {
+        if (interakcia.rezim) {
+          var dx = e.clientX - interakcia.posledneX;
+          var dy = e.clientY - interakcia.posledneY;
+          interakcia.posledneX = e.clientX;
+          interakcia.posledneY = e.clientY;
+          interakcia.celkovyPohyb += Math.hypot(dx, dy);
+
+          if (interakcia.rezim === 'rotacia') {
+            orbit.theta -= dx * 0.0065;
+            orbit.phi -= dy * 0.0065;
+          } else if (interakcia.rezim === 'posun') {
+            posunCielKamery(dx, dy);
+          }
+          aktualizujKameruZOrbitu();
+          hoverBublinaEl.style.display = 'none';
+          return;
+        }
+
+        // Hover raycasting iba keď je myš nad plátnom
+        if (e.target !== platno) {
+          if (stav.hoverCislo !== null) {
+            stav.hoverCislo = null;
+            aplikujZvyraznenie();
+          }
+          hoverBublinaEl.style.display = 'none';
+          platno.style.cursor = 'grab';
+          return;
+        }
+
+        var zasahCislo = ziskajZasahZariadenia(e.clientX, e.clientY);
+        if (zasahCislo !== stav.hoverCislo) {
+          stav.hoverCislo = zasahCislo;
+          aplikujZvyraznenie();
+        }
+
+        if (zasahCislo) {
+          var z = mapaPodlaCisla[zasahCislo];
+          platno.style.cursor = 'pointer';
+          hoverBublinaEl.innerHTML = '<span class="bublina-cislo">' + z.cislo + '</span>' + z.nazov;
+          hoverBublinaEl.style.left = e.clientX + 'px';
+          hoverBublinaEl.style.top = e.clientY + 'px';
+          hoverBublinaEl.style.display = 'block';
+        } else {
+          platno.style.cursor = 'grab';
+          hoverBublinaEl.style.display = 'none';
+        }
+      });
+
+      window.addEventListener('mouseup', function (e) {
+        if (!interakcia.rezim) return;
+        var bolKlik = interakcia.celkovyPohyb < 5 && e.target === platno && e.button === 0 && !e.shiftKey;
+        interakcia.rezim = null;
+
+        if (bolKlik) {
+          var zasahCislo = ziskajZasahZariadenia(e.clientX, e.clientY);
+          if (zasahCislo) {
+            vyber(zasahCislo);
+          } else {
+            vyber(null);
+          }
+        }
+      });
+
+      // Dvojklik na prázdno = obnoviť pohľad
+      platno.addEventListener('dblclick', function (e) {
+        var zasahCislo = ziskajZasahZariadenia(e.clientX, e.clientY);
+        if (!zasahCislo) {
+          obnovPohlad();
+        }
+      });
+
+      // Koliesko myši = zoom (8–80 m)
+      platno.addEventListener('wheel', function (e) {
+        e.preventDefault();
+        orbit.prelet = null;
+        var krok = e.deltaY * 0.025;
+        orbit.radius = THREE.MathUtils.clamp(orbit.radius + krok, orbit.minRadius, orbit.maxRadius);
+        aktualizujKameruZOrbitu();
+      }, { passive: false });
+
+      // Dotykové ovládanie (1 prst rotácia + ťuknutie, 2 prsty zoom + posun)
+      platno.addEventListener('touchstart', function (e) {
+        orbit.prelet = null;
+        if (e.touches.length === 1) {
+          interakcia.rezim = 'rotacia';
+          interakcia.startX = e.touches[0].clientX;
+          interakcia.startY = e.touches[0].clientY;
+          interakcia.posledneX = e.touches[0].clientX;
+          interakcia.posledneY = e.touches[0].clientY;
+          interakcia.celkovyPohyb = 0;
+        } else if (e.touches.length === 2) {
+          interakcia.rezim = 'pinch';
+          var dx = e.touches[0].clientX - e.touches[1].clientX;
+          var dy = e.touches[0].clientY - e.touches[1].clientY;
+          interakcia.dotykVzdialenost = Math.hypot(dx, dy);
+          interakcia.posledneX = (e.touches[0].clientX + e.touches[1].clientX) * 0.5;
+          interakcia.posledneY = (e.touches[0].clientY + e.touches[1].clientY) * 0.5;
+        }
+      }, { passive: true });
+
+      platno.addEventListener('touchmove', function (e) {
+        e.preventDefault();
+        if (e.touches.length === 1 && interakcia.rezim === 'rotacia') {
+          var dx = e.touches[0].clientX - interakcia.posledneX;
+          var dy = e.touches[0].clientY - interakcia.posledneY;
+          interakcia.posledneX = e.touches[0].clientX;
+          interakcia.posledneY = e.touches[0].clientY;
+          interakcia.celkovyPohyb += Math.hypot(dx, dy);
+
+          orbit.theta -= dx * 0.0065;
+          orbit.phi -= dy * 0.0065;
+          aktualizujKameruZOrbitu();
+        } else if (e.touches.length === 2) {
+          var t0 = e.touches[0];
+          var t1 = e.touches[1];
+          var vzd = Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
+          if (interakcia.dotykVzdialenost > 0) {
+            var rozdiel = interakcia.dotykVzdialenost - vzd;
+            orbit.radius = THREE.MathUtils.clamp(orbit.radius + rozdiel * 0.08, orbit.minRadius, orbit.maxRadius);
+          }
+          interakcia.dotykVzdialenost = vzd;
+
+          var stredX = (t0.clientX + t1.clientX) * 0.5;
+          var stredY = (t0.clientY + t1.clientY) * 0.5;
+          posunCielKamery(stredX - interakcia.posledneX, stredY - interakcia.posledneY);
+          interakcia.posledneX = stredX;
+          interakcia.posledneY = stredY;
+          aktualizujKameruZOrbitu();
+        }
+      }, { passive: false });
+
+      platno.addEventListener('touchend', function (e) {
+        if (interakcia.rezim === 'rotacia' && interakcia.celkovyPohyb < 10 && e.changedTouches.length === 1) {
+          var t = e.changedTouches[0];
+          var zasahCislo = ziskajZasahZariadenia(t.clientX, t.clientY);
+          if (zasahCislo) {
+            vyber(zasahCislo);
+          } else {
+            vyber(null);
+          }
+        }
+        if (e.touches.length === 0) {
+          interakcia.rezim = null;
+        }
+      });
+
+      // Prispôsobenie veľkosti okna
+      window.addEventListener('resize', function () {
+        kamera.aspect = window.innerWidth / window.innerHeight;
+        kamera.updateProjectionMatrix();
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      // =========================================================================
+      // HLAVNÁ ANIMAČNÁ SLUČKA (requestAnimationFrame s delta časom)
+      // =========================================================================
+      var hodiny = new THREE.Clock();
+      var celkovyCas = 0;
+
+      function animuj() {
+        requestAnimationFrame(animuj);
+
+        var delta = Math.min(hodiny.getDelta(), 0.1);
+        celkovyCas += delta;
+
+        // Sledovanie FPS pre zachovanie plynulosti (> 50 fps s mäkkými tieňmi)
+        if (stav.tieneAktivne && delta > 0) {
+          stav.fpsVzorky.push(1 / delta);
+          stav.fpsCas += delta;
+          if (stav.fpsCas > 1.8) {
+            var sucet = 0;
+            for (var fi = 0; fi < stav.fpsVzorky.length; fi++) sucet += stav.fpsVzorky[fi];
+            var priemerFps = sucet / stav.fpsVzorky.length;
+            if (priemerFps < 48 && stav.fpsVzorky.length > 30) {
+              stav.tieneAktivne = false;
+              renderer.shadowMap.enabled = false;
+              slnkoLight.castShadow = false;
+            }
+            stav.fpsVzorky.length = 0;
+            stav.fpsCas = 0;
+          }
+        }
+
+        // Plynulý prelet kamery (lerp pozície aj cieľa ~0,8 s)
+        if (orbit.prelet) {
+          orbit.prelet.uplynulo += delta;
+          var t = Math.min(orbit.prelet.uplynulo / orbit.prelet.trvanie, 1.0);
+          // Smoothstep cubic ease-in-out
+          var p = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+          orbit.ciel.lerpVectors(orbit.prelet.startCiel, orbit.prelet.koniecCiel, p);
+          kamera.position.lerpVectors(orbit.prelet.startPoz, orbit.prelet.koniecPoz, p);
+          kamera.lookAt(orbit.ciel);
+
+          // Synchronizuj sférické uhly s aktuálnou pozíciou kamery
+          var offset = new THREE.Vector3().subVectors(kamera.position, orbit.ciel);
+          orbit.radius = THREE.MathUtils.clamp(offset.length(), orbit.minRadius, orbit.maxRadius);
+          orbit.phi = THREE.MathUtils.clamp(Math.acos(THREE.MathUtils.clamp(offset.y / orbit.radius, -1, 1)), orbit.minPhi, orbit.maxPhi);
+          orbit.theta = Math.atan2(offset.x, offset.z);
+
+          if (t >= 1.0) {
+            orbit.prelet = null;
+          }
+        }
+
+        // Jemné pulzovanie žiary plameňa v peci
+        var pulz = Math.sin(celkovyCas * 3.4) * 0.14 + Math.cos(celkovyCas * 5.7) * 0.08;
+        pecLight.intensity = (stav.nocnyRezim ? 4.2 : 2.3) + pulz * 0.6;
+        plamenJadroMat.opacity = (stav.nocnyRezim ? 0.48 : 0.34) + pulz * 0.07;
+        plamenStred.scale.set(1 + pulz * 0.12, 1 + pulz * 0.18, 1 + pulz * 0.12);
+
+        // Veľkosť číselných štítkov: pri oddialení sa zmenšujú, ale nikdy nezmiznú; pri hoveri sa zväčšia
+        for (var si = 0; si < stitkySprites.length; si++) {
+          var sp = stitkySprites[si];
+          var cislo = sp.userData.cislo;
+          var jeAktiv = (stav.hoverCislo === cislo || stav.vybraneCislo === cislo);
+          var cieMierka = jeAktiv ? 1.82 : 1.32;
+          sp.userData.aktualneMierka = THREE.MathUtils.lerp(sp.userData.aktualneMierka || 1.32, cieMierka, Math.min(1, delta * 14));
+          var m = sp.userData.aktualneMierka;
+          sp.scale.set(m, m, m);
+        }
+
+        renderer.render(scena, kamera);
+      }
+
+      animuj();
+
+      // =========================================================================
+      // EXPORT PRE TESTOVANIE Z KONZOLY (window.MAPA)
+      // =========================================================================
+      var zariadenia = ZARIADENIA.slice();
+      zariadenia.podlaCisla = {};
+      ZARIADENIA.forEach(function (z) {
+        zariadenia.podlaCisla[z.cislo] = z;
+      });
+
+      var zoznam = ZARIADENIA.map(function (z) {
+        return { cislo: z.cislo, nazov: z.nazov, overit: z.overit, pos: z.pos };
+      });
+      zoznam.filtruj = vykresliZoznam;
+      zoznam.element = zoznamPoloziekEl;
+
+      window.MAPA = { vyber: vyber, zoznam: zoznam, scena: scena, kamera: kamera, zariadenia: zariadenia };
+    })();
+  </script>
+</body>
+</html>
