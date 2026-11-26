@@ -1,0 +1,20 @@
+{
+  "name": "Hľadač pokladu",
+  "short_name": "Poklad",
+  "description": "Detská hra: hľadaj skrytý poklad podľa sily Bluetooth signálu.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "lang": "sk",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
