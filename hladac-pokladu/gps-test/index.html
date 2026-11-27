@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f172a">
+<title>GPS test v byte</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; padding: 16px;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #0f172a; color: #e2e8f0;
+    min-height: 100vh;
+  }
+  h1 { font-size: 1.3rem; margin: 0 0 4px; }
+  .sub { color: #94a3b8; font-size: .9rem; margin-bottom: 16px; line-height: 1.4; }
+  .card {
+    background: #1e293b; border: 1px solid #334155; border-radius: 16px;
+    padding: 16px; margin-bottom: 14px;
+  }
+  .big { font-size: 2.6rem; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1.05; }
+  .label { color: #94a3b8; font-size: .85rem; text-transform: uppercase; letter-spacing: .06em; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > div { flex: 1 1 140px; }
+  button {
+    width: 100%; min-height: 64px; font-size: 1.15rem; font-weight: 800;
+    border-radius: 14px; border: none; color: #fff; cursor: pointer;
+    background: #2563eb; margin-top: 10px;
+  }
+  button:disabled { background: #475569; }
+  button.mark { background: #059669; }
+  button.reset { background: #475569; min-height: 48px; font-size: .95rem; }
+  .status { font-size: .95rem; color: #cbd5e1; margin-top: 10px; line-height: 1.4; }
+  .err { color: #fca5a5; }
+  .ok { color: #86efac; }
+  ol { margin: 0; padding-left: 20px; }
+  li { margin-bottom: 10px; line-height: 1.45; font-size: .95rem; }
+  .mono { font-family: ui-monospace, Consolas, monospace; font-size: .85rem; color: #cbd5e1; }
+  .verdict { font-weight: 800; margin-top: 8px; }
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .8rem; font-weight: 700; }
+  .pill.good { background: #065f46; color: #d1fae5; }
+  .pill.bad { background: #7f1d1d; color: #fee2e2; }
+  .pill.mid { background: #78350f; color: #fef3c7; }
+</style>
+</head>
+<body>
+
+<h1>GPS test v byte</h1>
+<div class="sub">
+  Cieľ: zistiť, či GPS v tvojom byte rozlíši jednotlivé miestnosti.
+  Prejdi na tri rôzne miesta v byte (napr. kuchyňa, obývačka, predsieň), na každom postoj 15 sekúnd
+  a klikni „Označiť toto miesto“. Potom mi pošli čísla.
+</div>
+
+<div class="card">
+  <div class="row">
+    <div>
+      <div class="label">Presnosť</div>
+      <div id="acc" class="big">–</div>
+    </div>
+    <div>
+      <div class="label">Poloha</div>
+      <div id="pos" class="mono">–</div>
+    </div>
+  </div>
+  <div id="status" class="status">Meranie je vypnuté.</div>
+  <button id="btn-start">ZAPNÚŤ MERANIE</button>
+  <button id="btn-mark" class="mark" disabled>OZNAČIŤ TOTO MIESTO</button>
+  <button id="btn-reset" class="reset">Vymazať označené miesta</button>
+</div>
+
+<div class="card">
+  <div class="label">Označené miesta</div>
+  <ol id="list"><li>Zatiaľ nič.</li></ol>
+  <div id="verdict" class="verdict"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var el = {
+    acc: document.getElementById("acc"),
+    pos: document.getElementById("pos"),
+    status: document.getElementById("status"),
+    btnStart: document.getElementById("btn-start"),
+    btnMark: document.getElementById("btn-mark"),
+    btnReset: document.getElementById("btn-reset"),
+    list: document.getElementById("list"),
+    verdict: document.getElementById("verdict")
+  };
+
+  var watchId = null;
+  var latest = null;
+  var points = [];
+  var STORAGE = "gps_test_body_v1";
+
+  try {
+    var saved = JSON.parse(localStorage.getItem(STORAGE) || "[]");
+    if (Array.isArray(saved)) points = saved;
+  } catch (err) { points = []; }
+
+  function distanceMeters(a, b) {
+    var R = 6371000;
+    var dLat = (b.lat - a.lat) * Math.PI / 180;
+    var dLon = (b.lon - a.lon) * Math.PI / 180;
+    var lat1 = a.lat * Math.PI / 180;
+    var lat2 = b.lat * Math.PI / 180;
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+
+  function fmt(n) {
+    return n.toLocaleString("sk-SK", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  }
+
+  function renderPoints() {
+    if (!points.length) {
+      el.list.innerHTML = "<li>Zatiaľ nič.</li>";
+      el.verdict.textContent = "";
+      return;
+    }
+    var html = "";
+    for (var i = 0; i < points.length; i++) {
+      var p = points[i];
+      html += "<li><strong>" + p.name + "</strong><br>" +
+              "presnosť ±" + fmt(p.acc) + " m<br>" +
+              "<span class='mono'>" + p.lat.toFixed(6) + ", " + p.lon.toFixed(6) + "</span>";
+      if (i > 0) {
+        var d = distanceMeters(points[i - 1], p);
+        html += "<br>od predchádzajúceho: <strong>" + fmt(d) + " m</strong>";
+      }
+      html += "</li>";
+    }
+    el.list.innerHTML = html;
+
+    // Rozptyl: najväčšia vzájomná vzdialenosť medzi označenými miestami
+    var maxD = 0;
+    var maxAcc = 0;
+    for (var a = 0; a < points.length; a++) {
+      maxAcc = Math.max(maxAcc, points[a].acc);
+      for (var b = a + 1; b < points.length; b++) {
+        maxD = Math.max(maxD, distanceMeters(points[a], points[b]));
+      }
+    }
+    var spread = points.length > 1 ? "Najväčšia vzdialenosť medzi miestami: " + fmt(maxD) + " m. " : "";
+    var text = spread + "Najhoršia presnosť: ±" + fmt(maxAcc) + " m.";
+    el.verdict.innerHTML = text;
+    if (points.length > 1) {
+      var pill;
+      if (maxD >= 3 && maxAcc <= 8) {
+        pill = "<span class='pill good'>GPS rozlišuje miesta</span>";
+        el.verdict.innerHTML += "<br>" + pill + " — má zmysel to skúsiť.";
+      } else if (maxD >= 2) {
+        pill = "<span class='pill mid'>Na hrane</span>";
+        el.verdict.innerHTML += "<br>" + pill + " — rozlíši možno dve strany bytu, nič jemnejšie.";
+      } else {
+        pill = "<span class='pill bad'>GPS nerozlišuje miesta</span>";
+        el.verdict.innerHTML += "<br>" + pill + " — všetky miesta vychádzajú takmer na tom istom bode.";
+      }
+    }
+  }
+
+  function onPosition(pos) {
+    latest = {
+      lat: pos.coords.latitude,
+      lon: pos.coords.longitude,
+      acc: pos.coords.accuracy || 999
+    };
+    el.acc.textContent = "±" + fmt(latest.acc) + " m";
+    el.pos.textContent = latest.lat.toFixed(6) + "\n" + latest.lon.toFixed(6);
+    el.btnMark.disabled = false;
+
+    if (latest.acc <= 10) {
+      el.acc.style.color = "#86efac";
+    } else if (latest.acc <= 30) {
+      el.acc.style.color = "#fef3c7";
+    } else {
+      el.acc.style.color = "#fca5a5";
+    }
+  }
+
+  function onError(err) {
+    var msg = "Chyba: " + err.message;
+    if (err.code === 1) msg = "Polohu si zamietol. Povoľ prístup k polohe v prehliadači.";
+    if (err.code === 2) msg = "Poloha nie je dostupná — vo vnútri budovy to je bežné.";
+    if (err.code === 3) msg = "Meranie trvá príliš dlho, skús ísť k oknu.";
+    el.status.textContent = msg;
+    el.status.className = "status err";
+  }
+
+  el.btnStart.addEventListener("click", function () {
+    if (!navigator.geolocation) {
+      el.status.textContent = "Tento prehliadač nepodporuje GPS.";
+      el.status.className = "status err";
+      return;
+    }
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+    }
+    el.status.textContent = "Meriam… (prvý zásah môže trvať aj 30 sekúnd)";
+    el.status.className = "status";
+    watchId = navigator.geolocation.watchPosition(onPosition, onError, {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 30000
+    });
+  });
+
+  el.btnMark.addEventListener("click", function () {
+    if (!latest) return;
+    points.push({
+      name: "Miesto " + (points.length + 1),
+      lat: latest.lat,
+      lon: latest.lon,
+      acc: latest.acc
+    });
+    try {
+      localStorage.setItem(STORAGE, JSON.stringify(points));
+    } catch (err) {}
+    renderPoints();
+    el.status.textContent = "Označené. Prejdi na ďalšie miesto a počkaj, kým sa presnosť ustáli.";
+    el.status.className = "status ok";
+  });
+
+  el.btnReset.addEventListener("click", function () {
+    points = [];
+    try {
+      localStorage.removeItem(STORAGE);
+    } catch (err) {}
+    renderPoints();
+    el.status.textContent = "Zoznam vymazaný.";
+    el.status.className = "status";
+  });
+
+  renderPoints();
+})();
+</script>
+</body>
+</html>
