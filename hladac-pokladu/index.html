@@ -525,14 +525,76 @@
       min-height: 1.4em;
     }
 
+    /* Prepínacie tlačidlá herného režimu v režime RODIČ */
+    .mode-switch-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 560px) {
+      .mode-switch-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .mode-option-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
+      text-align: left;
+      gap: 8px;
+      padding: 18px 20px;
+      min-height: 108px;
+      border-radius: var(--radius-md);
+      background-color: #0b1120;
+      border: 3px solid #334155;
+      color: var(--text-main);
+      box-shadow: none;
+      transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.12s ease;
+    }
+
+    .mode-option-btn.active {
+      border-color: var(--accent-gold);
+      background-color: rgba(251, 191, 36, 0.14);
+      box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.25);
+    }
+
+    .mode-option-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--text-main);
+    }
+
+    .mode-option-btn.active .mode-option-header {
+      color: var(--accent-gold);
+    }
+
+    .mode-option-desc {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    .mode-option-btn.active .mode-option-desc {
+      color: #e2e8f0;
+    }
+
     /* ==========================================================================
        5. OBRAZOVKA 3: HĽADANIE (HRÁ DIEŤA)
        ========================================================================== */
     #screen-search {
       height: 100vh;
+      height: 100dvh;
       padding: 12px 16px;
       justify-content: space-between;
       overflow: hidden;
+      position: relative;
     }
 
     .search-topbar {
@@ -546,9 +608,9 @@
     }
 
     .btn-icon-small {
-      min-height: 56px;
-      min-width: 56px;
-      padding: 10px 16px;
+      min-height: 64px;
+      min-width: 64px;
+      padding: 12px 16px;
       border-radius: 16px;
       font-size: 1rem;
       background-color: var(--bg-card);
@@ -726,43 +788,426 @@
       display: inline-flex;
     }
 
-    /* Prispôsobenie pre režim NA ŠÍRKU (landscape) na malom telefóne aj tablete */
+    /* Prispôsobenie pre režim NA ŠÍRKU (landscape) v Bluetooth režime */
     @media (orientation: landscape) and (max-height: 600px) {
-      #screen-search {
+      #screen-search:not(.mode-single) {
         padding: 8px 16px;
       }
-      .search-main {
+      #screen-search:not(.mode-single) .search-main {
         flex-direction: row;
         justify-content: space-around;
         align-items: center;
       }
-      .thermometer-stage {
+      #screen-search:not(.mode-single) .thermometer-stage {
         height: 100%;
         max-height: 260px;
         width: auto;
       }
-      .thermometer-outer {
+      #screen-search:not(.mode-single) .thermometer-outer {
         width: 76px;
         min-height: 150px;
       }
-      .proximity-icon-box {
+      #screen-search:not(.mode-single) .proximity-icon-box {
         width: 72px;
         height: 72px;
       }
-      .proximity-percent {
+      #screen-search:not(.mode-single) .proximity-percent {
         font-size: 2.2rem;
       }
-      .search-actions {
+      #screen-search:not(.mode-single) .search-actions {
         max-width: 320px;
       }
-      .btn-giant {
+      #screen-search:not(.mode-single) .btn-giant {
         min-height: 76px;
         font-size: 1.4rem;
         padding: 14px 20px;
       }
-      #btn-hint {
-        min-height: 58px;
+      #screen-search:not(.mode-single) #btn-hint {
+        min-height: 64px;
         font-size: 1.15rem;
+      }
+    }
+
+    /* ==========================================================================
+       5B. REŽIM "JEDEN TELEFÓN" NA OBRAZOVKE HĽADANIA
+       ========================================================================== */
+    .single-plan-stage,
+    .single-tap-prompt,
+    #btn-tap-where {
+      display: none;
+    }
+
+    #screen-search.mode-single {
+      padding: 8px 10px;
+      gap: 6px;
+    }
+
+    /* V režime Jeden telefón skryjeme posuvník simulácie aj prepínač zvuku (max 2 tlačidlá + domov) */
+    #screen-search.mode-single #search-sim-bar,
+    #screen-search.mode-single #btn-toggle-mute {
+      display: none !important;
+    }
+
+    #screen-search.mode-single .search-topbar {
+      position: absolute;
+      top: 8px;
+      left: 10px;
+      width: auto;
+      z-index: 15;
+    }
+
+    #screen-search.mode-single .search-main {
+      width: 100%;
+      max-width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 0;
+      min-height: 0;
+    }
+
+    /* Kompaktná horná lišta teplomera vedľa tlačidla Domov */
+    #screen-search.mode-single .thermometer-stage {
+      flex: 0 0 68px;
+      height: 68px;
+      min-height: 68px;
+      max-height: 68px;
+      width: 100%;
+      padding-left: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    #screen-search.mode-single .thermometer-outer {
+      width: 34px;
+      height: 64px;
+      min-height: 64px;
+      border-width: 3px;
+      padding: 4px;
+    }
+
+    #screen-search.mode-single .thermometer-ticks {
+      inset: 6px 0;
+      padding: 0 4px;
+    }
+
+    #screen-search.mode-single .tick-line {
+      width: 10px;
+      height: 2px;
+    }
+
+    #screen-search.mode-single .thermometer-readout {
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    #screen-search.mode-single .proximity-icon-box {
+      width: 58px;
+      height: 58px;
+      border-width: 3px;
+      flex-shrink: 0;
+    }
+
+    #screen-search.mode-single .proximity-icon-box .icon-svg-lg {
+      width: 36px;
+      height: 36px;
+    }
+
+    .readout-text-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #screen-search.mode-single .readout-text-col {
+      align-items: flex-start;
+    }
+
+    #screen-search.mode-single .proximity-percent {
+      font-size: 1.75rem;
+      line-height: 1.05;
+    }
+
+    #screen-search.mode-single .signal-state-label {
+      font-size: 0.9rem;
+      font-weight: 900;
+      text-align: left;
+      line-height: 1.15;
+    }
+
+    /* Veľká oblasť plánu bytu cez celú plochu medzi hlavičkou a tlačidlami */
+    #screen-search.mode-single .single-plan-stage {
+      display: flex;
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .single-plan-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 100%;
+      max-height: 100%;
+      background-color: #0b1120;
+      border: 4px solid #475569;
+      border-radius: 16px;
+      overflow: hidden;
+      cursor: pointer;
+      box-shadow: var(--shadow-lg);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      touch-action: manipulation;
+    }
+
+    @keyframes planPulseGlow {
+      0%, 100% {
+        border-color: var(--accent-gold);
+        box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7), 0 0 25px rgba(251, 191, 36, 0.5);
+      }
+      50% {
+        border-color: #38bdf8;
+        box-shadow: 0 0 0 8px rgba(56, 189, 248, 0.35), 0 0 35px rgba(56, 189, 248, 0.75);
+      }
+    }
+
+    .single-plan-wrapper.pulse-attention {
+      animation: planPulseGlow 1s ease-in-out infinite;
+    }
+
+    .single-plan-wrapper img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    /* Značka ťuku dieťaťa (stopa / topánka) na 2 sekundy */
+    @keyframes tapFootPop {
+      0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+      50% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+
+    .single-tap-marker {
+      display: none;
+      position: absolute;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background-color: rgba(251, 191, 36, 0.95);
+      border: 4px solid #ffffff;
+      box-shadow: 0 0 0 6px rgba(251, 191, 36, 0.4), 0 6px 16px rgba(0, 0, 0, 0.85);
+      transform: translate(-50%, -50%);
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 8;
+    }
+
+    .single-tap-marker.visible {
+      display: flex;
+      animation: tapFootPop 0.22s ease-out forwards;
+    }
+
+    .single-tap-marker svg {
+      width: 30px;
+      height: 30px;
+      color: #0f172a;
+    }
+
+    /* Veľký nápis PLAMEŇ! na 3 sekundy pri teple >= 86 % */
+    @keyframes flameBannerPop {
+      0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+      25% { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }
+      50% { transform: translate(-50%, -50%) scale(0.97); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+
+    .flame-banner {
+      display: none;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      border: 5px solid #fde68a;
+      border-radius: 28px;
+      padding: 18px 32px;
+      color: #ffffff;
+      font-size: 2.5rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 0 45px rgba(239, 68, 68, 0.95), 0 12px 30px rgba(0, 0, 0, 0.85);
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      pointer-events: none;
+      z-index: 20;
+      white-space: nowrap;
+    }
+
+    .flame-banner.visible {
+      display: inline-flex;
+      animation: flameBannerPop 0.35s ease-out forwards;
+    }
+
+    /* Spodná oblasť tlačidiel v režime Jeden telefón */
+    #screen-search.mode-single .search-actions {
+      width: 100%;
+      max-width: 100%;
+      gap: 6px;
+    }
+
+    #screen-search.mode-single .single-tap-prompt {
+      display: block;
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--accent-gold);
+      text-align: center;
+      min-height: 1.35em;
+      line-height: 1.35;
+    }
+
+    #screen-search.mode-single #btn-tap-where {
+      display: inline-flex;
+      width: 100%;
+      max-width: 100%;
+      min-height: 68px;
+      font-size: 1.35rem;
+      padding: 12px 20px;
+      border-radius: 22px;
+    }
+
+    #screen-search.mode-single #btn-found {
+      width: 100%;
+      max-width: 100%;
+      min-height: 64px;
+      font-size: 1.3rem;
+      padding: 12px 20px;
+      border-radius: 22px;
+    }
+
+    #screen-search.mode-single #btn-hint {
+      max-width: 100%;
+      min-height: 64px;
+      font-size: 1.2rem;
+      padding: 10px 18px;
+      border-radius: 20px;
+    }
+
+    /* Režim Jeden telefón NA ŠÍRKU (landscape) — plán vľavo cez celú výšku, ovládanie vpravo */
+    @media (orientation: landscape) {
+      #screen-search.mode-single {
+        padding: 8px 12px;
+      }
+      #screen-search.mode-single .search-topbar {
+        left: auto;
+        right: 12px;
+        top: 8px;
+      }
+      #screen-search.mode-single .search-main {
+        display: grid;
+        grid-template-columns: 1fr 240px;
+        grid-template-rows: auto 1fr;
+        gap: 8px 12px;
+        align-items: stretch;
+        height: 100%;
+      }
+      #screen-search.mode-single .single-plan-stage {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+        height: 100%;
+      }
+      #screen-search.mode-single .thermometer-stage {
+        grid-column: 2;
+        grid-row: 1;
+        padding-left: 0;
+        padding-right: 70px;
+        justify-content: flex-start;
+        height: 68px;
+        min-height: 68px;
+        max-height: 68px;
+        gap: 8px;
+      }
+      #screen-search.mode-single .thermometer-outer {
+        width: 28px;
+        height: 64px;
+        min-height: 64px;
+      }
+      #screen-search.mode-single .proximity-icon-box {
+        width: 48px;
+        height: 48px;
+      }
+      #screen-search.mode-single .proximity-icon-box .icon-svg-lg {
+        width: 28px;
+        height: 28px;
+      }
+      #screen-search.mode-single .proximity-percent {
+        font-size: 1.35rem;
+      }
+      #screen-search.mode-single .signal-state-label {
+        font-size: 0.78rem;
+      }
+      #screen-search.mode-single .search-actions {
+        grid-column: 2;
+        grid-row: 2;
+        justify-content: flex-end;
+        gap: 6px;
+      }
+      #screen-search.mode-single .single-tap-prompt {
+        font-size: 0.88rem;
+      }
+      #screen-search.mode-single #btn-tap-where,
+      #screen-search.mode-single #btn-found,
+      #screen-search.mode-single #btn-hint {
+        min-height: 64px;
+        font-size: 1.05rem;
+        padding: 8px 12px;
+        gap: 8px;
+      }
+      #screen-search.mode-single #btn-tap-where .icon-svg-lg,
+      #screen-search.mode-single #btn-found .icon-svg-lg {
+        width: 30px;
+        height: 30px;
+      }
+      .flame-banner {
+        font-size: 2rem;
+        padding: 14px 24px;
+      }
+    }
+
+    /* Väčšie obrazovky a tablety v režime Jeden telefón */
+    @media (min-width: 700px) and (orientation: portrait) {
+      #screen-search.mode-single #btn-tap-where,
+      #screen-search.mode-single #btn-found {
+        min-height: 80px;
+        font-size: 1.55rem;
+      }
+    }
+    @media (min-width: 900px) and (orientation: landscape) {
+      #screen-search.mode-single .search-main {
+        grid-template-columns: 1fr 310px;
+      }
+      #screen-search.mode-single #btn-tap-where,
+      #screen-search.mode-single #btn-found {
+        min-height: 76px;
+        font-size: 1.3rem;
       }
     }
 
@@ -1052,13 +1497,59 @@
         <div id="plan-status-text" class="status-msg"></div>
       </div>
 
-      <!-- KARTA 2: BLUETOOTH VYSIELAČ, KALIBRÁCIA A SIMULÁCIA -->
+      <!-- KARTA 2: VÝBER HERNÉHO REŽIMU -->
       <div class="card">
+        <h2>
+          <svg class="icon-svg" style="width:28px;height:28px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+            <line x1="12" y1="18" x2="12.01" y2="18"/>
+          </svg>
+          <span>2. Herný režim</span>
+        </h2>
+        <p class="card-desc">
+          Vyberte, či bude dieťa hľadať poklad iba s týmto jedným telefónom, alebo pomocou druhého Bluetooth vysielača.
+        </p>
+
+        <div class="mode-switch-grid">
+          <button id="btn-mode-single" class="mode-option-btn active" type="button">
+            <div class="mode-option-header">
+              <svg class="icon-svg" style="width:28px;height:28px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="6" y="2" width="12" height="20" rx="2"/>
+                <circle cx="12" cy="18" r="1"/>
+              </svg>
+              <span>Jeden telefón</span>
+            </div>
+            <span class="mode-option-desc">
+              Dieťa sa prechádza po byte a ťuká do plánu tam, kde práve stojí, takže nepotrebujete žiadne druhé zariadenie.
+            </span>
+          </button>
+
+          <button id="btn-mode-bt" class="mode-option-btn" type="button">
+            <div class="mode-option-header">
+              <svg class="icon-svg" style="width:28px;height:28px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/>
+              </svg>
+              <span>S vysielačom (Bluetooth)</span>
+            </div>
+            <span class="mode-option-desc">
+              Telefón meria silu Bluetooth signálu z druhého zariadenia, ktoré schováte priamo pri poklade.
+            </span>
+          </button>
+        </div>
+
+        <label class="checkbox-row">
+          <input id="chk-voice-mode" type="checkbox" checked>
+          <span>Hovoriť nahlas slovenské slovo po ťuku („zima“, „teplo“, „horúco“, „plameň“)</span>
+        </label>
+      </div>
+
+      <!-- KARTA 3: BLUETOOTH VYSIELAČ, KALIBRÁCIA A SIMULÁCIA -->
+      <div id="card-bt-settings" class="card">
         <h2>
           <svg class="icon-svg" style="width:28px;height:28px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/>
           </svg>
-          <span>2. Vysielač a kalibrácia</span>
+          <span>3. Vysielač a kalibrácia</span>
         </h2>
 
         <!-- Hláška, ak Web Bluetooth v prehliadači chýba -->
@@ -1175,7 +1666,7 @@
 
         <div class="thermometer-readout">
           <div id="proximity-icon-box" class="proximity-icon-box">
-            <!-- Ikona sa mení podľa blízkosti: vločka (zima) -> stopy (teplo) -> plameň/poklad (horúco) -->
+            <!-- Ikona sa mení podľa blízkosti: snehová vločka (zima) -> slnko (teplo/horúco) -> plameň (plameň) -->
             <svg id="icon-cold" class="icon-svg-lg" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
               <line x1="12" y1="2" x2="12" y2="22"/>
               <line x1="2" y1="12" x2="22" y2="12"/>
@@ -1183,22 +1674,57 @@
               <line x1="19.07" y1="4.93" x2="4.93" y2="19.07"/>
             </svg>
             <svg id="icon-warm" class="icon-svg-lg" style="display:none;" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="9"/>
-              <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
-              <line x1="9" y1="9" x2="9.01" y2="9"/>
-              <line x1="15" y1="9" x2="15.01" y2="9"/>
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/>
+              <line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/>
+              <line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
             </svg>
             <svg id="icon-hot" class="icon-svg-lg" style="display:none;" viewBox="0 0 24 24" fill="#ef4444" stroke="#fde68a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 2c1.5 4 6 6.5 6 12a6 6 0 0 1-12 0c0-3 2-5.5 3-7.5 0 2 1.5 3 2.5 3-.5-2.5-.5-5.5.5-7.5z"/>
             </svg>
           </div>
-          <div id="proximity-percent" class="proximity-percent">0 %</div>
-          <div id="signal-state-label" class="signal-state-label">Hľadaj signál...</div>
+          <div class="readout-text-col">
+            <div id="proximity-percent" class="proximity-percent">0 %</div>
+            <div id="signal-state-label" class="signal-state-label">Hľadaj signál...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Veľký plán bytu pre režim "Jeden telefón" (poklad na ňom NIE JE viditeľný) -->
+      <div id="single-plan-stage" class="single-plan-stage">
+        <div id="single-plan-wrapper" class="single-plan-wrapper">
+          <img id="single-plan-image" alt="Plán bytu">
+          <!-- Značka ťuku dieťaťa (stopa topánky) na 2 sekundy -->
+          <div id="single-tap-marker" class="single-tap-marker" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <ellipse cx="10" cy="7" rx="3.2" ry="4.5" transform="rotate(-8 10 7)"/>
+              <ellipse cx="10.5" cy="14.5" rx="2.4" ry="2.8" transform="rotate(-5 10.5 14.5)"/>
+              <circle cx="6.5" cy="2.8" r="1.1"/>
+              <circle cx="9.2" cy="2.1" r="1.2"/>
+              <circle cx="12" cy="2.3" r="1.1"/>
+              <circle cx="14.3" cy="3.3" r="1"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Veľký nápis PLAMEŇ! na 3 sekundy pri teple 86 % a viac -->
+        <div id="flame-banner" class="flame-banner" aria-live="assertive">
+          <svg class="icon-svg-lg" viewBox="0 0 24 24" fill="#fde68a" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2c1.5 4 6 6.5 6 12a6 6 0 0 1-12 0c0-3 2-5.5 3-7.5 0 2 1.5 3 2.5 3-.5-2.5-.5-5.5.5-7.5z"/>
+          </svg>
+          <span>PLAMEŇ!</span>
         </div>
       </div>
 
       <!-- Akčné tlačidlá dieťaťa -->
       <div class="search-actions">
+        <div id="single-tap-prompt" class="single-tap-prompt"></div>
+
         <!-- Tlačidlo NÁPOVEDA sa objaví po 90 sekundách hľadania -->
         <button id="btn-hint" type="button">
           <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
@@ -1207,6 +1733,15 @@
             <path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>
           </svg>
           <span>NÁPOVEDA</span>
+        </button>
+
+        <!-- Obrovské tlačidlo ŤUKNI, KDE STOJÍŠ (v režime Jeden telefón) -->
+        <button id="btn-tap-where" class="btn-giant btn-info" type="button">
+          <svg class="icon-svg-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z"/>
+            <circle cx="12" cy="9" r="2.5"/>
+          </svg>
+          <span>ŤUKNI, KDE STOJÍŠ</span>
         </button>
 
         <!-- Veľké tlačidlo NAŠIEL SOM -->
@@ -1303,6 +1838,9 @@
       var SIGNAL_TIMEOUT_MS = 5000;   // Po 5 sekundách bez platných dát klesá teplomer k 0
       var HINT_DELAY_MS = 90000;      // Nápoveda sa zobrazí po 90 sekundách hľadania
       var PARENT_HOLD_MS = 2000;      // Podržanie tlačidla RODIČ na 2 sekundy
+      var SINGLE_BEEP_MS = 6000;      // Pípanie po ťuku v režime Jeden telefón trvá 6 sekúnd
+      var TAP_MARKER_MS = 2000;       // Značka ťuku (stopa) sa zobrazí na 2 sekundy
+      var FLAME_BANNER_MS = 3000;     // Veľký nápis PLAMEŇ! sa zobrazí na 3 sekundy
 
       // Uložené dáta hry (localStorage: poklad_v1)
       var gameData = {
@@ -1310,7 +1848,9 @@
         treasure: null,               // { x: číslo 0-100, y: číslo 0-100 } alebo null
         rssiRef: DEFAULT_RSSI_REF,    // Referenčné RSSI pri 1 m
         stars: 0,                     // Počet nazbieraných hviezdičiek
-        found: 0                      // Počet nájdení pokladu
+        found: 0,                     // Počet nájdení pokladu
+        mode: "single",               // Herný režim: "single" (Jeden telefón) alebo "bluetooth" (S vysielačom)
+        voiceEnabled: true            // Hlasové hovorenie ("zima", "teplo", "horúco", "plameň")
       };
 
       // Behový stav relácie
@@ -1328,6 +1868,13 @@
         searchStartTime: 0,
         searchLoopTimer: null,
         beepTimer: null,
+        singleBeepActive: false,
+        singleBeepStopTimer: null,
+        tapMarkerTimer: null,
+        flameBannerTimer: null,
+        attentionTimer: null,
+        doubleVibrateUntil: 0,
+        skVoice: null,
         isMuted: false,
         audioCtx: null,
         confettiAnimId: null
@@ -1371,6 +1918,18 @@
 
           var found = parseInt(parsed.found, 10);
           gameData.found = (Number.isFinite(found) && found >= 0) ? found : 0;
+
+          if (parsed.mode === "bluetooth" || parsed.mode === "single") {
+            gameData.mode = parsed.mode;
+          } else {
+            gameData.mode = "single";
+          }
+
+          if (typeof parsed.voiceEnabled === "boolean") {
+            gameData.voiceEnabled = parsed.voiceEnabled;
+          } else {
+            gameData.voiceEnabled = true;
+          }
         } catch (err) {
           // V prípade poškodených dát v localStorage použijeme bezpečné predvolené hodnoty
           console.warn("Nepodarilo sa načítať dáta z localStorage, použité predvolené hodnoty:", err);
@@ -1384,7 +1943,9 @@
             treasure: gameData.treasure,
             rssiRef: gameData.rssiRef,
             stars: gameData.stars,
-            found: gameData.found
+            found: gameData.found,
+            mode: gameData.mode,
+            voiceEnabled: gameData.voiceEnabled
           };
           localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
           return true;
@@ -1401,6 +1962,9 @@
 
       // Kontrola, či je hra pripravená na spustenie
       function isGameConfigured() {
+        if (gameData.mode === "single") {
+          return Boolean(gameData.plan && gameData.treasure);
+        }
         return Boolean(
           (gameData.plan && gameData.treasure) ||
           runtime.isConfiguredInSession ||
@@ -1437,6 +2001,11 @@
         treasureDot: document.getElementById("treasure-dot"),
         planStatusText: document.getElementById("plan-status-text"),
 
+        btnModeSingle: document.getElementById("btn-mode-single"),
+        btnModeBt: document.getElementById("btn-mode-bt"),
+        chkVoiceMode: document.getElementById("chk-voice-mode"),
+        cardBtSettings: document.getElementById("card-bt-settings"),
+
         btMissingAlert: document.getElementById("bt-missing-alert"),
         parentRssiValue: document.getElementById("parent-rssi-value"),
         btStatusBadge: document.getElementById("bt-status-badge"),
@@ -1467,6 +2036,15 @@
         iconHot: document.getElementById("icon-hot"),
         proximityPercent: document.getElementById("proximity-percent"),
         signalStateLabel: document.getElementById("signal-state-label"),
+
+        singlePlanStage: document.getElementById("single-plan-stage"),
+        singlePlanWrapper: document.getElementById("single-plan-wrapper"),
+        singlePlanImage: document.getElementById("single-plan-image"),
+        singleTapMarker: document.getElementById("single-tap-marker"),
+        flameBanner: document.getElementById("flame-banner"),
+        singleTapPrompt: document.getElementById("single-tap-prompt"),
+        btnTapWhere: document.getElementById("btn-tap-where"),
+
         btnHint: document.getElementById("btn-hint"),
         btnFound: document.getElementById("btn-found"),
 
@@ -1529,6 +2107,7 @@
         }
 
         // Zobrazenie bodky pokladu
+        el.planStatusText.style.color = "#34d399";
         if (gameData.plan && gameData.treasure) {
           el.treasureDot.style.left = gameData.treasure.x + "%";
           el.treasureDot.style.top = gameData.treasure.y + "%";
@@ -1544,6 +2123,16 @@
           el.treasureDot.classList.remove("visible");
           el.planStatusText.textContent = "";
         }
+
+        // Prepínač herného režimu a hlasu
+        if (gameData.mode === "single") {
+          el.btnModeSingle.classList.add("active");
+          el.btnModeBt.classList.remove("active");
+        } else {
+          el.btnModeSingle.classList.remove("active");
+          el.btnModeBt.classList.add("active");
+        }
+        el.chkVoiceMode.checked = Boolean(gameData.voiceEnabled);
 
         // Kalibrácia a stav Bluetooth
         el.calibRefInfo.innerHTML =
@@ -2064,6 +2653,14 @@
 
         var now = Date.now();
 
+        // V režime "Jeden telefón" teplomer nedržíme podľa signálu — mení sa len po ťuku
+        if (gameData.mode === "single") {
+          if (now - runtime.searchStartTime >= HINT_DELAY_MS) {
+            el.btnHint.classList.add("visible");
+          }
+          return;
+        }
+
         // V simulačnom režime priebežne udržiavame čerstvý signál podľa posuvníka
         if (runtime.simMode) {
           recordRssiMeasurement(runtime.simRssi);
@@ -2106,6 +2703,32 @@
         el.btnHint.classList.remove("visible");
         el.modalHint.classList.remove("active");
 
+        var isSingle = gameData.mode === "single";
+        if (screens.search) {
+          if (isSingle) {
+            screens.search.classList.add("mode-single");
+          } else {
+            screens.search.classList.remove("mode-single");
+          }
+        }
+
+        if (isSingle) {
+          // Režim "Jeden telefón": veľký plán, žiadny Bluetooth, žiadna simulácia
+          el.searchSimBar.classList.remove("visible");
+          if (gameData.plan) {
+            el.singlePlanImage.src = gameData.plan;
+          }
+          el.singleTapMarker.classList.remove("visible");
+          el.flameBanner.classList.remove("visible");
+          el.thermometerFill.style.height = "0%";
+          el.proximityPercent.textContent = "0 %";
+          el.signalStateLabel.textContent = "Ťukni na plán";
+          el.singleTapPrompt.textContent = "Ťukni na plán tam, kde stojíš";
+          showScreen("search");
+          runtime.searchLoopTimer = setInterval(searchTick, 500);
+          return;
+        }
+
         // Zobrazenie posuvníka simulácie, ak je zapnutý Simulačný režim
         if (runtime.simMode) {
           el.searchSimBar.classList.add("visible");
@@ -2122,6 +2745,15 @@
 
       function stopSearchMode() {
         runtime.isSearching = false;
+        runtime.singleBeepActive = false;
+        if (runtime.singleBeepTimer) {
+          clearTimeout(runtime.singleBeepTimer);
+          runtime.singleBeepTimer = null;
+        }
+        if (runtime.singleBeepStopTimer) {
+          clearTimeout(runtime.singleBeepStopTimer);
+          runtime.singleBeepStopTimer = null;
+        }
         if (runtime.searchLoopTimer) {
           clearInterval(runtime.searchLoopTimer);
           runtime.searchLoopTimer = null;
@@ -2139,6 +2771,220 @@
 
       el.btnSearchHome.addEventListener("click", function () {
         showScreen("home");
+      });
+
+      /* ======================================================================
+         9b. REŽIM "JEDEN TELEFÓN" (BEZ BLUETOOTH)
+         Dieťa ťukne do plánu tam, kde stojí. Hra zmeria vzdialenosť ťuku
+         od pokladu a prevedie ju na teplo 0-100 %. Žiadny snímač netreba.
+         ====================================================================== */
+
+      // Zobrazenie/skrytie rozloženia podľa zvoleného režimu
+      function applyModeUI() {
+        var isSingle = gameData.mode === "single";
+        if (screens.search) {
+          if (isSingle) {
+            screens.search.classList.add("mode-single");
+          } else {
+            screens.search.classList.remove("mode-single");
+          }
+        }
+        if (el.cardBtSettings) {
+          el.cardBtSettings.style.display = isSingle ? "none" : "";
+        }
+        if (el.btnModeSingle && el.btnModeBt) {
+          if (isSingle) {
+            el.btnModeSingle.classList.add("active");
+            el.btnModeBt.classList.remove("active");
+          } else {
+            el.btnModeSingle.classList.remove("active");
+            el.btnModeBt.classList.add("active");
+          }
+        }
+        if (el.chkVoiceMode) {
+          el.chkVoiceMode.checked = Boolean(gameData.voiceEnabled);
+        }
+        updateHomeUI();
+      }
+
+      el.btnModeSingle.addEventListener("click", function () {
+        gameData.mode = "single";
+        saveGameData();
+        applyModeUI();
+      });
+
+      el.btnModeBt.addEventListener("click", function () {
+        gameData.mode = "bluetooth";
+        saveGameData();
+        applyModeUI();
+      });
+
+      el.chkVoiceMode.addEventListener("change", function () {
+        gameData.voiceEnabled = el.chkVoiceMode.checked;
+        saveGameData();
+      });
+
+      // Vzdialenosť ťuku od pokladu -> teplo 0-100 % (s korekciou na pomer strán)
+      function computeSingleHeat(xPct, yPct) {
+        if (!gameData.treasure) return 0;
+        var aspect = 1.333;
+        var img = el.singlePlanImage;
+        if (img && img.naturalWidth && img.naturalHeight) {
+          aspect = img.naturalWidth / img.naturalHeight;
+        }
+        var dx = ((xPct - gameData.treasure.x) / 100) * aspect;
+        var dy = (yPct - gameData.treasure.y) / 100;
+        var diag = Math.sqrt(aspect * aspect + 1);
+        var normalized = Math.sqrt(dx * dx + dy * dy) / diag; // 0 = pri poklade
+        // Pri vzdialenosti 55 % uhlopriečky plánu je už úplná zima
+        return clamp((1 - normalized / 0.55) * 100, 0, 100);
+      }
+
+      function singleStateLabel(percent) {
+        if (percent >= 86) return "PLAMEŇ! Poklad je tu!";
+        if (percent >= 61) return "Horúco! Už veľmi blízko!";
+        if (percent >= 26) return "Teplo — ideš správne";
+        return "Zima — skús inú stranu";
+      }
+
+      function singleSpeakWord(percent) {
+        if (!gameData.voiceEnabled) return;
+        if (!("speechSynthesis" in window) || typeof window.SpeechSynthesisUtterance !== "function") return;
+        var word = "zima";
+        if (percent >= 86) word = "plameň";
+        else if (percent >= 61) word = "horúco";
+        else if (percent >= 26) word = "teplo";
+        try {
+          var voices = window.speechSynthesis.getVoices() || [];
+          var skVoice = null;
+          for (var i = 0; i < voices.length; i++) {
+            if (voices[i] && voices[i].lang && voices[i].lang.toLowerCase().indexOf("sk") === 0) {
+              skVoice = voices[i];
+              break;
+            }
+          }
+          // Bez slovenského hlasu radšej mlčíme, aby dieťa nepočúvalo cudzí jazyk
+          if (!skVoice) return;
+          var utter = new window.SpeechSynthesisUtterance(word);
+          utter.lang = "sk-SK";
+          utter.voice = skVoice;
+          utter.rate = 1.05;
+          utter.pitch = 1.1;
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(utter);
+        } catch (err) {
+          // Hlas nie je dostupný — hra pokračuje bez neho
+        }
+      }
+
+      function showTapMarker(xPct, yPct) {
+        el.singleTapMarker.style.left = xPct + "%";
+        el.singleTapMarker.style.top = yPct + "%";
+        el.singleTapMarker.classList.add("visible");
+        if (runtime.tapMarkerTimer) clearTimeout(runtime.tapMarkerTimer);
+        runtime.tapMarkerTimer = setTimeout(function () {
+          el.singleTapMarker.classList.remove("visible");
+        }, 2000);
+      }
+
+      function stopSingleBeep() {
+        runtime.singleBeepActive = false;
+        if (runtime.singleBeepTimer) {
+          clearTimeout(runtime.singleBeepTimer);
+          runtime.singleBeepTimer = null;
+        }
+        if (el.singleTapPrompt) {
+          el.singleTapPrompt.textContent = "Ťukni znova, kde stojíš";
+        }
+        if (el.singlePlanWrapper) {
+          el.singlePlanWrapper.classList.add("pulse-attention");
+          setTimeout(function () {
+            el.singlePlanWrapper.classList.remove("pulse-attention");
+          }, 1200);
+        }
+      }
+
+      // Pípanie 6 sekúnd po ťuku — interval aj výška tónu podľa tepla
+      function startSingleBeepLoop(percent) {
+        runtime.singleBeepActive = false;
+        if (runtime.singleBeepTimer) {
+          clearTimeout(runtime.singleBeepTimer);
+          runtime.singleBeepTimer = null;
+        }
+        runtime.singleBeepActive = true;
+        if (el.singleTapPrompt) {
+          el.singleTapPrompt.textContent = "";
+        }
+
+        var interval = clamp(Math.round(1300 - (percent / 100) * 1135), 165, 1300);
+
+        function beepTick() {
+          if (!runtime.singleBeepActive || !runtime.isSearching) return;
+          playProximityBeep(percent);
+          triggerProximityVibration(percent);
+          runtime.singleBeepTimer = setTimeout(beepTick, interval);
+        }
+        beepTick();
+
+        if (runtime.singleBeepStopTimer) clearTimeout(runtime.singleBeepStopTimer);
+        runtime.singleBeepStopTimer = setTimeout(function () {
+          stopSingleBeep();
+        }, SINGLE_BEEP_MS);
+      }
+
+      function flashFlameBanner() {
+        if (!el.flameBanner) return;
+        el.flameBanner.classList.add("visible");
+        if (runtime.flameBannerTimer) clearTimeout(runtime.flameBannerTimer);
+        runtime.flameBannerTimer = setTimeout(function () {
+          el.flameBanner.classList.remove("visible");
+        }, 3000);
+      }
+
+      function handleSingleTap(clientX, clientY) {
+        if (!runtime.isSearching) return;
+        if (gameData.mode !== "single") return;
+        if (!gameData.plan || !gameData.treasure) return;
+
+        var rect = el.singlePlanImage.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+
+        var xPct = clamp(((clientX - rect.left) / rect.width) * 100, 0, 100);
+        var yPct = clamp(((clientY - rect.top) / rect.height) * 100, 0, 100);
+
+        ensureAudioContext();
+        showTapMarker(xPct, yPct);
+
+        var heat = computeSingleHeat(xPct, yPct);
+        runtime.smoothedPercent = heat;
+        updateThermometerUI(heat, true);
+        el.signalStateLabel.textContent = singleStateLabel(heat);
+
+        startSingleBeepLoop(heat);
+        singleSpeakWord(heat);
+
+        if (heat >= 86) {
+          flashFlameBanner();
+          if ("vibrate" in navigator && typeof navigator.vibrate === "function") {
+            try {
+              navigator.vibrate([80, 70, 80]);
+            } catch (err) {}
+          }
+        }
+      }
+
+      el.singlePlanWrapper.addEventListener("click", function (event) {
+        handleSingleTap(event.clientX, event.clientY);
+      });
+
+      // Veľké tlačidlo pripomenie, kde treba ťuknúť
+      el.btnTapWhere.addEventListener("click", function () {
+        ensureAudioContext();
+        if (!el.singlePlanWrapper) return;
+        el.singlePlanWrapper.classList.add("pulse-attention");
+        setTimeout(function () {
+          el.singlePlanWrapper.classList.remove("pulse-attention");
+        }, 1400);
       });
 
       /* ======================================================================
@@ -2261,6 +3107,7 @@
       loadGameData();
       checkBluetoothAvailability();
       updateHomeUI();
+      applyModeUI();
     })();
   </script>
 </body>
