@@ -453,6 +453,33 @@
       gap: 12px;
     }
 
+    .bt-guide {
+      background-color: rgba(37, 99, 235, 0.12);
+      border: 2px solid #3b82f6;
+      color: #dbeafe;
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .bt-guide ol {
+      margin: 8px 0 0;
+      padding-left: 20px;
+    }
+
+    .bt-guide li {
+      margin-bottom: 6px;
+    }
+
+    .bt-diag {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 8px;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.5;
+    }
+
     .sim-toggle-link {
       color: #93c5fd;
       text-decoration: underline;
@@ -1557,6 +1584,18 @@
           Bluetooth nie je v tomto prehliadači dostupné (chýba podpora Web Bluetooth). Na hranie alebo otestovanie použite <strong>SIMULAČNÝ REŽIM</strong> nižšie.
         </div>
 
+        <div class="bt-guide">
+          <strong>Ako to rozbehnúť:</strong>
+          <ol>
+            <li>Položte vysielač tam, kde bude poklad — najlepšie starý telefón s aplikáciou <strong>nRF Connect</strong> (záložka Advertiser, tlačidlo štart).</li>
+            <li>Stlačte <strong>Pripojiť vysielač</strong> a vyberte ho v zozname. Ak sa v zozname neobjaví, vysielač práve nevysiela.</li>
+            <li>Prejdite od vysielača na 1 meter a stlačte <strong>Kalibrovať pri 1 m</strong>. Potom už len hľadajte.</li>
+          </ol>
+          <div style="margin-top:8px;color:#bfdbfe;">
+            Reproduktory a slúchadlá po pripojení často prestanú vysielať — vtedy sa signál nezobrazí. Starý telefón s nRF Connect je najspoľahlivejší.
+          </div>
+        </div>
+
         <div class="rssi-panel">
           <div>
             <div class="card-desc">Aktuálna sila signálu (RSSI):</div>
@@ -1570,12 +1609,20 @@
           </div>
         </div>
 
+        <div id="bt-distance-est" class="card-desc" style="margin:10px 0 0;">
+          Odhad vzdialenosti: <strong id="bt-distance-value">—</strong>
+        </div>
+        <div id="bt-diag" class="bt-diag"></div>
+
         <div class="bt-buttons-row">
           <button id="btn-connect-bt" class="btn-info" type="button">
             <span>Pripojiť vysielač</span>
           </button>
           <button id="btn-calibrate" class="btn-secondary" type="button">
             <span>Kalibrovať pri 1 m</span>
+          </button>
+          <button id="btn-reconnect-bt" class="btn-secondary" type="button" style="display:none;">
+            <span>Pripojiť znova</span>
           </button>
         </div>
 
@@ -1836,6 +1883,7 @@
       var DEFAULT_RSSI_REF = -55;
       var EMA_ALPHA = 0.25;           // Faktor exponenciálneho kĺzavého priemeru
       var SIGNAL_TIMEOUT_MS = 5000;   // Po 5 sekundách bez platných dát klesá teplomer k 0
+      var SIGNAL_HOLD_MS = 9000;      // 5-9 sekúnd bez signálu držíme poslednú hodnotu (dieťa za stenou)
       var HINT_DELAY_MS = 90000;      // Nápoveda sa zobrazí po 90 sekundách hľadania
       var PARENT_HOLD_MS = 2000;      // Podržanie tlačidla RODIČ na 2 sekundy
       var SINGLE_BEEP_MS = 6000;      // Pípanie po ťuku v režime Jeden telefón trvá 6 sekúnd
@@ -1863,6 +1911,9 @@
         latestRssi: null,
         lastSignalTimestamp: 0,
         rssiHistory: [],              // Posledných 10 meraní pre kalibráciu
+        rssiRaw: [],                  // Posledných 7 meraní pre medián
+        advertCount: 0,
+        wakeLock: null,
         smoothedPercent: 0,
         isSearching: false,
         searchStartTime: 0,
@@ -2013,6 +2064,9 @@
         btnConnectBt: document.getElementById("btn-connect-bt"),
         btnCalibrate: document.getElementById("btn-calibrate"),
         btFeedbackMsg: document.getElementById("bt-feedback-msg"),
+        btnReconnectBt: document.getElementById("btn-reconnect-bt"),
+        btDiag: document.getElementById("bt-diag"),
+        btDistanceValue: document.getElementById("bt-distance-value"),
         linkToggleSim: document.getElementById("link-toggle-sim"),
         simPanel: document.getElementById("sim-panel"),
         chkSimMode: document.getElementById("chk-sim-mode"),
@@ -2160,6 +2214,7 @@
             ? (Math.round(runtime.latestRssi) + " dBm")
             : "— dBm";
         }
+        updateDiagUI();
       }
 
       /* ======================================================================
@@ -2345,13 +2400,31 @@
       }
 
       // Spracovanie prijatého RSSI (z Bluetooth alebo zo simulácie)
+      // Používame medián posledných meraní, aby teplomer nekmital pri každom zášklbe signálu
       function recordRssiMeasurement(rssiValue) {
         var val = Number(rssiValue);
         // Ignorujeme nezmyselné hodnoty (napr. NaN, 127 alebo hodnoty mimo rozsahu -120 až -10 dBm)
         if (!Number.isFinite(val) || val > -10 || val < -120) {
           return;
         }
-        runtime.latestRssi = val;
+        runtime.advertCount = (runtime.advertCount || 0) + 1;
+
+        runtime.rssiRaw.push(val);
+        if (runtime.rssiRaw.length > 7) {
+          runtime.rssiRaw.shift();
+        }
+
+        // Medián z posledných meraní — jeden výkyv (napr. -40 dBm cez stenu) ho nerozhodí
+        var sorted = runtime.rssiRaw.slice().sort(function (a, b) { return a - b; });
+        var median = sorted[Math.floor(sorted.length / 2)];
+
+        // Extrémny skok oproti mediánu ignorujeme (rušenie, odraz)
+        if (runtime.latestRssi !== null && Math.abs(val - median) > 18 && runtime.rssiRaw.length >= 3) {
+          updateDiagUI();
+          return;
+        }
+
+        runtime.latestRssi = median;
         runtime.lastSignalTimestamp = Date.now();
         runtime.rssiHistory.push(val);
         if (runtime.rssiHistory.length > 10) {
@@ -2360,7 +2433,73 @@
         updateRssiAndStatusUI();
       }
 
+      // Odhad vzdialenosti z RSSI (model šírenia v byte, n = 2,2)
+      function estimateDistanceMeters(rssi) {
+        if (!Number.isFinite(rssi)) return null;
+        var ref = Number.isFinite(gameData.rssiRef) ? gameData.rssiRef : DEFAULT_RSSI_REF;
+        var exponent = (ref - rssi) / (10 * 2.2);
+        var meters = Math.pow(10, exponent);
+        return clamp(meters, 0.2, 30);
+      }
+
+      function updateDiagUI() {
+        if (!el.btDiag) return;
+        var parts = [];
+        var last = runtime.lastSignalTimestamp ? Math.round((Date.now() - runtime.lastSignalTimestamp) / 1000) : null;
+        if (runtime.advertCount) {
+          parts.push("Prijaté hlásenia: " + runtime.advertCount);
+        }
+        if (last !== null) {
+          parts.push(last <= 1 ? "posledné pred chvíľou" : "posledné pred " + last + " s");
+        }
+        if (runtime.btDevice && runtime.btDevice.name) {
+          parts.push("zariadenie: " + runtime.btDevice.name);
+        }
+        el.btDiag.textContent = parts.join("  ·  ");
+
+        var dist = estimateDistanceMeters(runtime.latestRssi);
+        if (el.btDistanceValue) {
+          el.btDistanceValue.textContent = dist === null
+            ? "—"
+            : "≈ " + dist.toLocaleString("sk-SK", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " m";
+        }
+      }
+
       // Pripojenie Bluetooth vysielača
+      function attachToDevice(device) {
+        runtime.btDevice = device;
+        runtime.simMode = false;
+        el.chkSimMode.checked = false;
+
+        device.addEventListener("advertisementreceived", function (event) {
+          if (typeof event.rssi === "number") {
+            runtime.btConnected = true;
+            recordRssiMeasurement(event.rssi);
+          }
+        });
+
+        device.addEventListener("gattserverdisconnected", function () {
+          runtime.btConnected = false;
+          el.btFeedbackMsg.textContent =
+            "Spojenie sa prerušilo. Stlačte „Pripojiť znova“ alebo sa priblížte k vysielaču.";
+          el.btnReconnectBt.style.display = "inline-flex";
+          updateRssiAndStatusUI();
+        });
+
+        if (typeof device.watchAdvertisements !== "function") {
+          throw new Error("Funkcia watchAdvertisements nie je v prehliadači povolená.");
+        }
+
+        return device.watchAdvertisements().then(function () {
+          runtime.btConnected = true;
+          runtime.advertCount = 0;
+          el.btFeedbackMsg.textContent =
+            "Vysielač prijatý. Ak sa sila signálu nemení, vysielač práve nevysiela — skúste ho reštartovať.";
+          el.btnReconnectBt.style.display = "inline-flex";
+          updateRssiAndStatusUI();
+        });
+      }
+
       el.btnConnectBt.addEventListener("click", function () {
         if (!checkBluetoothAvailability()) {
           el.btFeedbackMsg.textContent = "Web Bluetooth nie je v tomto prehliadači dostupné. Zapnite Simulačný režim.";
@@ -2370,26 +2509,7 @@
         el.btFeedbackMsg.textContent = "Vyhľadávam Bluetooth zariadenia...";
         navigator.bluetooth.requestDevice({ acceptAllDevices: true })
           .then(function (device) {
-            runtime.btDevice = device;
-            runtime.simMode = false;
-            el.chkSimMode.checked = false;
-
-            device.addEventListener("advertisementreceived", function (event) {
-              if (typeof event.rssi === "number") {
-                runtime.btConnected = true;
-                recordRssiMeasurement(event.rssi);
-              }
-            });
-
-            if (typeof device.watchAdvertisements === "function") {
-              return device.watchAdvertisements().then(function () {
-                runtime.btConnected = true;
-                el.btFeedbackMsg.textContent = "Vysielač pripojený! Prijímam Bluetooth signál.";
-                updateRssiAndStatusUI();
-              });
-            } else {
-              throw new Error("Funkcia watchAdvertisements nie je v prehliadači povolená.");
-            }
+            return attachToDevice(device);
           })
           .catch(function (err) {
             console.warn("Bluetooth pripojenie zlyhalo:", err);
@@ -2399,6 +2519,29 @@
               "). Môžete zapnúť Simulačný režim nižšie.";
             el.simPanel.classList.add("visible");
           });
+      });
+
+      // Opätovné pripojenie bez vyberania zariadenia (Chrome si pamätá povolenie)
+      el.btnReconnectBt.addEventListener("click", function () {
+        if (!navigator.bluetooth || typeof navigator.bluetooth.getDevices !== "function") {
+          el.btFeedbackMsg.textContent = "Tento prehliadač nevie pripojiť znova — použite „Pripojiť vysielač“.";
+          return;
+        }
+        navigator.bluetooth.getDevices().then(function (devices) {
+          var known = (devices || []).filter(function (d) {
+            return d && (!runtime.btDevice || d.id === runtime.btDevice.id);
+          });
+          if (!known.length && devices && devices.length) known = devices;
+          if (!known.length) {
+            el.btFeedbackMsg.textContent = "Zapamätané zariadenie nenájdené — použite „Pripojiť vysielač“.";
+            return;
+          }
+          return attachToDevice(known[0]).then(function () {
+            el.btFeedbackMsg.textContent = "Pripojené znova.";
+          });
+        }).catch(function (err) {
+          el.btFeedbackMsg.textContent = "Pripojenie znova zlyhalo: " + (err && err.message ? err.message : "chyba");
+        });
       });
 
       // Kalibrácia pri 1 m (priemer posledných 10 meraní RSSI)
@@ -2515,9 +2658,9 @@
           osc.type = "sine";
           osc.frequency.setValueAtTime(freq, now);
 
-          var duration = 0.08;
+          var duration = 0.11;
           gain.gain.setValueAtTime(0.001, now);
-          gain.gain.exponentialRampToValueAtTime(0.28, now + 0.012);
+          gain.gain.exponentialRampToValueAtTime(0.42, now + 0.012);
           gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
           osc.connect(gain);
@@ -2672,8 +2815,12 @@
         var targetPercent = 0;
         if (hasFreshSignal) {
           targetPercent = computeTargetPercent(runtime.latestRssi);
+          runtime.lastTargetPercent = targetPercent;
+        } else if (runtime.latestRssi !== null && signalAge <= SIGNAL_HOLD_MS) {
+          // Krátke výpadky (dieťa za stenou) nezhodia teplomer na nulu
+          targetPercent = typeof runtime.lastTargetPercent === "number" ? runtime.lastTargetPercent : 0;
         } else {
-          // Ak sú dáta staršie ako 5 sekúnd alebo chýbajú, cieľ je 0 % (teplomer sa pomaly vracia k 0)
+          // Ak sú dáta staršie ako 9 sekúnd alebo chýbajú, cieľ je 0 %
           targetPercent = 0;
         }
 
@@ -2687,11 +2834,43 @@
 
         updateThermometerUI(runtime.smoothedPercent, hasFreshSignal);
 
+        if (!hasFreshSignal && runtime.latestRssi !== null && signalAge <= SIGNAL_HOLD_MS) {
+          el.signalStateLabel.textContent = "Hľadám signál…";
+        }
+
         // Po 90 sekundách hľadania sa objaví tlačidlo NÁPOVEDA
         if (now - runtime.searchStartTime >= HINT_DELAY_MS) {
           el.btnHint.classList.add("visible");
         }
       }
+
+      // Drží obrazovku zapnutú počas hľadania (aby telefón neuspal)
+      function requestWakeLock() {
+        if (!navigator.wakeLock || runtime.wakeLock) return;
+        navigator.wakeLock.request("screen").then(function (lock) {
+          runtime.wakeLock = lock;
+          lock.addEventListener("release", function () {
+            runtime.wakeLock = null;
+          });
+        }).catch(function () {
+          // Prehliadač to nepovolil — hra funguje ďalej
+        });
+      }
+
+      function releaseWakeLock() {
+        if (runtime.wakeLock) {
+          try {
+            runtime.wakeLock.release();
+          } catch (err) {}
+          runtime.wakeLock = null;
+        }
+      }
+
+      document.addEventListener("visibilitychange", function () {
+        if (document.visibilityState === "visible" && runtime.isSearching) {
+          requestWakeLock();
+        }
+      });
 
       function startSearchMode() {
         ensureAudioContext();
@@ -2700,6 +2879,8 @@
         runtime.isSearching = true;
         runtime.searchStartTime = Date.now();
         runtime.smoothedPercent = 0;
+        runtime.lastTargetPercent = 0;
+        requestWakeLock();
         el.btnHint.classList.remove("visible");
         el.modalHint.classList.remove("active");
 
@@ -2745,6 +2926,7 @@
 
       function stopSearchMode() {
         runtime.isSearching = false;
+        releaseWakeLock();
         runtime.singleBeepActive = false;
         if (runtime.singleBeepTimer) {
           clearTimeout(runtime.singleBeepTimer);
@@ -2766,6 +2948,19 @@
 
       el.btnStartSearch.addEventListener("click", function () {
         if (!isGameConfigured()) return;
+
+        // V Bluetooth režime nedáva zmysel začať bez vysielača (alebo bez simulácie)
+        if (gameData.mode !== "single" && !runtime.simMode && !runtime.btConnected) {
+          el.btFeedbackMsg.textContent =
+            "Najprv pripojte vysielač (alebo zapnite Simulačný režim) — inak telefón nemá odkiaľ merať signál.";
+          el.cardBtSettings.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.cardBtSettings.classList.add("pulse-attention");
+          setTimeout(function () {
+            el.cardBtSettings.classList.remove("pulse-attention");
+          }, 1400);
+          return;
+        }
+
         startSearchMode();
       });
 
@@ -3104,6 +3299,14 @@
       /* ======================================================================
          12. ŠTART APLIKÁCIE
          ====================================================================== */
+      // Každú sekundu obnovíme diagnostiku v rodičovskom paneli (čas od posledného hlásenia)
+      setInterval(function () {
+        if (!el.btDiag) return;
+        if (screens.parent && screens.parent.style.display !== "none") {
+          updateDiagUI();
+        }
+      }, 1000);
+
       loadGameData();
       checkBluetoothAvailability();
       updateHomeUI();
