@@ -79,6 +79,16 @@
     a hľadá, kde to miesto je, s nápoveďami a časom.
   </div>
 
+  <div id="card-open" class="card">
+    <h2>Dostali ste výzvu?</h2>
+    <label class="file" for="input-open" style="background:#0f766e;">
+      <span class="ico">🎯</span><span>OTVORIŤ PRIJATÚ VÝZVU</span>
+    </label>
+    <input id="input-open" type="file" accept=".html,text/html">
+    <div class="help">Vyberte súbor, ktorý vám prišiel (napr. <strong>vyzva-fotopatracka.html</strong> zo správ alebo zo stiahnutých). Hra sa potom spustí.</div>
+    <div id="open-status" class="status"></div>
+  </div>
+
   <div id="card-upload" class="card">
     <label class="file" for="input-photo">
       <span class="ico">📷</span><span>ODFOTIŤ ALEBO VYBRAŤ FOTKU</span>
@@ -141,6 +151,8 @@
 
   var el = {
     inputPhoto: document.getElementById("input-photo"),
+    inputOpen: document.getElementById("input-open"),
+    openStatus: document.getElementById("open-status"),
     cardUpload: document.getElementById("card-upload"),
     cardEditor: document.getElementById("card-editor"),
     preview: document.getElementById("preview"),
@@ -252,6 +264,37 @@
 
   el.inputPhoto.addEventListener("change", function (event) {
     loadPhoto(event.target.files && event.target.files[0]);
+  });
+
+  // Otvorenie prijatej výzvy: súbor sa načíta a hra sa spustí v tomto okne
+  el.inputOpen.addEventListener("change", function (event) {
+    var file = event.target.files && event.target.files[0];
+    if (!file) return;
+    el.openStatus.textContent = "Otváram výzvu…";
+    el.openStatus.className = "status";
+
+    var reader = new FileReader();
+    reader.onload = function () {
+      var text = String(reader.result || "");
+      if (text.indexOf('id="payload"') === -1) {
+        el.openStatus.textContent = "Toto nie je výzva Fotopátračky. Vyberte súbor vyzva-fotopatracka.html.";
+        el.openStatus.className = "status err";
+        return;
+      }
+      try {
+        var blob = new Blob([text], { type: "text/html;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        window.location.href = url;
+      } catch (err) {
+        el.openStatus.textContent = "Výzvu sa nepodarilo otvoriť.";
+        el.openStatus.className = "status err";
+      }
+    };
+    reader.onerror = function () {
+      el.openStatus.textContent = "Súbor sa nepodarilo prečítať.";
+      el.openStatus.className = "status err";
+    };
+    reader.readAsText(file);
   });
 
   el.preview.addEventListener("click", function (event) {
