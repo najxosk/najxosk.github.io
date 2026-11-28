@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>Nájdi to! — vytvor hru z fotky</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #0f172a; color: #e2e8f0;
+    min-height: 100vh; padding: 16px 14px 40px;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin: 4px 0 6px; }
+  .lead { color: #94a3b8; font-size: .95rem; line-height: 1.5; margin-bottom: 16px; }
+  .card {
+    background: #1e293b; border: 1px solid #334155; border-radius: 18px;
+    padding: 16px; margin-bottom: 14px;
+  }
+  .card h2 { font-size: 1.02rem; margin: 0 0 10px; color: #cbd5e1; }
+  label.file {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    min-height: 96px; border-radius: 16px; cursor: pointer;
+    background: #1d4ed8; color: #fff; font-size: 1.1rem; font-weight: 800;
+    text-align: center; padding: 14px;
+  }
+  label.file span.ico { font-size: 1.9rem; }
+  input[type=file] { display: none; }
+  .stage {
+    position: relative; width: 100%; border-radius: 16px; overflow: hidden;
+    background: #0b1220; border: 1px solid #334155;
+  }
+  .stage canvas { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+  .help { color: #94a3b8; font-size: .88rem; margin-top: 10px; line-height: 1.45; }
+  button.primary {
+    font-family: inherit; width: 100%; min-height: 62px; border: none;
+    border-radius: 14px; font-size: 1.05rem; font-weight: 800; color: #fff;
+    background: #059669; cursor: pointer; margin-top: 12px;
+  }
+  button.primary:disabled { background: #475569; color: #cbd5e1; }
+  button.second {
+    font-family: inherit; width: 100%; min-height: 56px; border: none;
+    border-radius: 14px; font-size: 1rem; font-weight: 800; color: #fff;
+    background: #2563eb; cursor: pointer; margin-top: 10px;
+  }
+  .status { font-size: .92rem; color: #cbd5e1; margin-top: 12px; line-height: 1.5; }
+  .status.err { color: #fca5a5; }
+  .status.ok { color: #86efac; }
+  .hidden { display: none !important; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+  .chip {
+    display: flex; align-items: center; gap: 6px; background: #334155;
+    border-radius: 999px; padding: 6px 10px 6px 12px; font-size: 1.4rem;
+    cursor: pointer; border: 2px solid transparent;
+  }
+  .chip small { font-size: .8rem; color: #cbd5e1; font-weight: 700; }
+  .chip:hover { border-color: #ef4444; }
+
+  .picker {
+    position: fixed; inset: 0; background: rgba(2, 6, 23, .82);
+    display: flex; align-items: flex-end; justify-content: center; z-index: 20;
+  }
+  .picker.hidden { display: none; }
+  .picker-inner {
+    width: 100%; max-width: 640px; background: #1e293b;
+    border-radius: 22px 22px 0 0; padding: 16px 14px 22px;
+    border-top: 2px solid #334155;
+  }
+  .picker-inner h3 { margin: 0 0 4px; font-size: 1.05rem; }
+  .picker-inner p { margin: 0 0 12px; color: #94a3b8; font-size: .88rem; }
+  .emoji-grid {
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;
+  }
+  .emoji-grid button {
+    font-size: 1.9rem; min-height: 62px; border-radius: 14px; border: none;
+    background: #0f172a; cursor: pointer; padding: 0;
+  }
+  .emoji-grid button:active { background: #1d4ed8; }
+  .picker-cancel {
+    margin-top: 14px; width: 100%; min-height: 52px; border-radius: 14px;
+    border: none; background: #475569; color: #fff; font-weight: 800;
+    font-size: .95rem; font-family: inherit; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Nájdi to!</h1>
+  <div class="lead">
+    Vyfoť izbu alebo stôl, označ na fotke 3–5 vecí a hra je hotová. Hráč dostane fotku a hľadá,
+    čo mu ukazujú obrázky — ťukne na to a hneď vidí, či trafil. Bez čítania, bez počítania, pre deti aj dospelých.
+  </div>
+
+  <div id="card-open" class="card">
+    <h2>Dostali ste hru?</h2>
+    <label class="file" for="input-open" style="background:#0f766e;">
+      <span class="ico">🎯</span><span>OTVORIŤ PRIJATÚ HRU</span>
+    </label>
+    <input id="input-open" type="file" accept=".html,text/html">
+    <div class="help">Vyber súbor, ktorý ti prišiel (napr. <strong>najdi-to.html</strong>) — hra sa hneď spustí.</div>
+    <div id="open-status" class="status"></div>
+  </div>
+
+  <div id="card-upload" class="card">
+    <h2>Vytvoriť novú hru</h2>
+    <label class="file" for="input-photo">
+      <span class="ico">📷</span><span>VYBRAŤ ALEBO ODFOTIŤ FOTKU</span>
+    </label>
+    <input id="input-photo" type="file" accept="image/*">
+    <div class="help">Fotka zostáva v tvojom telefóne aj v súbore, ktorý pošleš. Nikam sa neposiela.</div>
+  </div>
+
+  <div id="card-editor" class="card hidden">
+    <h2>Ťukni na vec, ktorú má hráč nájsť</h2>
+    <div class="stage">
+      <canvas id="preview"></canvas>
+    </div>
+    <div class="help">Po ťuknutí vyberieš obrázok, ktorý tú vec predstavuje. Môžeš označiť 3 až 5 vecí.</div>
+
+    <div id="chips" class="chips"></div>
+
+    <button id="btn-create" class="primary" disabled>VYTVORIŤ HRU</button>
+    <button id="btn-share" class="second hidden">POSLAŤ HRU</button>
+    <div id="status" class="status"></div>
+  </div>
+
+</div>
+
+<div id="picker" class="picker hidden">
+  <div class="picker-inner">
+    <h3>Čo je to za vec?</h3>
+    <p>Vyber obrázok, ktorý to najlepšie vystihuje.</p>
+    <div class="emoji-grid" id="emoji-grid"></div>
+    <button class="picker-cancel" id="picker-cancel">Zrušiť</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var el = {
+    inputPhoto: document.getElementById("input-photo"),
+    inputOpen: document.getElementById("input-open"),
+    openStatus: document.getElementById("open-status"),
+    cardUpload: document.getElementById("card-upload"),
+    cardEditor: document.getElementById("card-editor"),
+    preview: document.getElementById("preview"),
+    chips: document.getElementById("chips"),
+    btnCreate: document.getElementById("btn-create"),
+    btnShare: document.getElementById("btn-share"),
+    status: document.getElementById("status"),
+    picker: document.getElementById("picker"),
+    emojiGrid: document.getElementById("emoji-grid"),
+    pickerCancel: document.getElementById("picker-cancel")
+  };
+
+  var EMOJIS = ["🧸", "🍎", "🔑", "🐻", "👟", "🪑", "💡", "🚗", "⚽", "🎈", "🍌", "🐱",
+                "📚", "🕯️", "🧦", "🎩", "☂️", "🍪", "🧢", "🐶", "🍫", "🎁", "🔔", "🪥"];
+
+  var MAX_ITEMS = 5;
+  var state = { img: null, dataUrl: null, items: [], pending: null, file: null };
+
+  var MAX_SIDE = 1600;
+  var JPEG_QUALITY = 0.82;
+
+  function setStatus(node, text, kind) {
+    node.textContent = text;
+    node.className = "status" + (kind ? " " + kind : "");
+  }
+
+  function drawPreview() {
+    if (!state.img) return;
+    var cv = el.preview;
+    var wrap = cv.parentElement.clientWidth || 320;
+    var ratio = state.img.naturalHeight / state.img.naturalWidth;
+
+    var maxH = Math.max(280, Math.round(window.innerHeight * 0.70));
+    var w = Math.round(wrap);
+    var h = Math.round(wrap * ratio);
+    if (h > maxH) {
+      h = maxH;
+      w = Math.round(maxH / ratio);
+    }
+
+    cv.width = w;
+    cv.height = h;
+    cv.style.width = w + "px";
+    cv.style.height = h + "px";
+
+    var ctx = cv.getContext("2d");
+    ctx.clearRect(0, 0, w, h);
+    ctx.drawImage(state.img, 0, 0, w, h);
+
+    var markerSize = Math.max(18, Math.min(w, h) * 0.075);
+    for (var i = 0; i < state.items.length; i++) {
+      var it = state.items[i];
+      var mx = it.x * w;
+      var my = it.y * h;
+
+      ctx.beginPath();
+      ctx.arc(mx, my, markerSize, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(15, 23, 42, 0.72)";
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#38bdf8";
+      ctx.stroke();
+
+      ctx.font = Math.round(markerSize * 1.25) + "px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(it.e, mx, my + 1);
+    }
+  }
+
+  function renderChips() {
+    el.chips.innerHTML = "";
+    state.items.forEach(function (it, index) {
+      var chip = document.createElement("div");
+      chip.className = "chip";
+      chip.innerHTML = "<span>" + it.e + "</span><small>✕</small>";
+      chip.addEventListener("click", function () {
+        state.items.splice(index, 1);
+        renderChips();
+        drawPreview();
+      });
+      el.chips.appendChild(chip);
+    });
+
+    el.btnCreate.disabled = state.items.length < 1;
+    if (state.items.length === 0) {
+      setStatus(el.status, "Zatiaľ nič neoznačené. Ťukni na fotku.", "");
+    } else {
+      setStatus(el.status, "Označené: " + state.items.length + " z " + MAX_ITEMS + ". Môžeš pridať ďalšiu alebo vytvoriť hru.", "ok");
+    }
+  }
+
+  function loadPhoto(file) {
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var scale = Math.min(1, MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+        var canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.naturalWidth * scale);
+        canvas.height = Math.round(img.naturalHeight * scale);
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        state.dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+
+        var loaded = new Image();
+        loaded.onload = function () {
+          state.img = loaded;
+          state.items = [];
+          el.cardUpload.classList.add("hidden");
+          el.cardEditor.classList.remove("hidden");
+          drawPreview();
+          renderChips();
+        };
+        loaded.src = state.dataUrl;
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  el.inputPhoto.addEventListener("change", function (event) {
+    loadPhoto(event.target.files && event.target.files[0]);
+  });
+
+  el.inputOpen.addEventListener("change", function (event) {
+    var file = event.target.files && event.target.files[0];
+    if (!file) return;
+    setStatus(el.openStatus, "Otváram hru…", "");
+
+    var reader = new FileReader();
+    reader.onload = function () {
+      var text = String(reader.result || "");
+      if (text.indexOf('id="payload"') === -1) {
+        setStatus(el.openStatus, "Toto nie je hra Nájdi to!. Vyber súbor najdi-to.html.", "err");
+        return;
+      }
+      var url = URL.createObjectURL(new Blob([text], { type: "text/html;charset=utf-8" }));
+      window.location.href = url;
+    };
+    reader.onerror = function () {
+      setStatus(el.openStatus, "Súbor sa nepodarilo prečítať.", "err");
+    };
+    reader.readAsText(file);
+  });
+
+  el.preview.addEventListener("click", function (event) {
+    if (state.items.length >= MAX_ITEMS) {
+      setStatus(el.status, "Maximum je " + MAX_ITEMS + " vecí. Niektorú najprv vymaž (ťukni na štítok).", "err");
+      return;
+    }
+    var rect = el.preview.getBoundingClientRect();
+    if (!rect.width) return;
+    state.pending = {
+      x: Math.min(0.99, Math.max(0.01, (event.clientX - rect.left) / rect.width)),
+      y: Math.min(0.99, Math.max(0.01, (event.clientY - rect.top) / rect.height))
+    };
+    el.picker.classList.remove("hidden");
+  });
+
+  EMOJIS.forEach(function (sign) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.textContent = sign;
+    b.addEventListener("click", function () {
+      if (!state.pending) return;
+      state.items.push({ x: state.pending.x, y: state.pending.y, e: sign });
+      state.pending = null;
+      el.picker.classList.add("hidden");
+      renderChips();
+      drawPreview();
+    });
+    el.emojiGrid.appendChild(b);
+  });
+
+  el.pickerCancel.addEventListener("click", function () {
+    state.pending = null;
+    el.picker.classList.add("hidden");
+  });
+
+  window.addEventListener("resize", drawPreview);
+
+  /* ============================================================
+     HERNÝ SÚBOR — samostatná hra s fotkou a zoznamom hľadaných vecí
+     ============================================================ */
+
+  var GAME_TEMPLATE = `<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>Nájdi to!</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #0f172a; color: #e2e8f0; min-height: 100vh;
+    padding: 12px 12px 28px; display: flex; justify-content: center;
+  }
+  .app { width: 100%; max-width: 640px; position: relative; }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .title { font-weight: 900; font-size: 1.05rem; }
+  .timer { font-variant-numeric: tabular-nums; font-weight: 800; color: #94a3b8; }
+  .clues { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+  .clue {
+    display: flex; align-items: center; justify-content: center;
+    width: 54px; height: 54px; border-radius: 14px; font-size: 1.7rem;
+    background: #1e293b; border: 2px solid #334155; transition: .15s;
+  }
+  .clue.done { background: #064e3b; border-color: #10b981; opacity: .55; transform: scale(.94); }
+  .stage {
+    position: relative; width: 100%; border-radius: 16px; overflow: hidden;
+    background: #0b1220; border: 1px solid #334155;
+  }
+  .stage canvas { display: block; width: 100%; height: auto; }
+  .stage.shake { animation: shake .28s; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+  .win {
+    position: absolute; inset: 0; background: rgba(2, 6, 23, .92);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 20px; gap: 6px;
+  }
+  .win.hidden { display: none; }
+  .win h2 { margin: 0; font-size: 1.6rem; }
+  .win .stars { font-size: 2.2rem; letter-spacing: 4px; }
+  .win p { margin: 0; color: #cbd5e1; }
+  .win button {
+    margin-top: 12px; min-height: 56px; padding: 0 26px; border: none; border-radius: 14px;
+    background: #2563eb; color: #fff; font-weight: 800; font-size: 1rem; font-family: inherit;
+  }
+  .hint { color: #94a3b8; font-size: .9rem; text-align: center; margin-top: 10px; line-height: 1.4; }
+  .confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; }
+  .confetti i { position: absolute; top: -20px; width: 10px; height: 16px; animation: fall linear forwards; }
+  @keyframes fall {
+    0% { transform: translateY(-10vh) rotate(0deg); }
+    100% { transform: translateY(110vh) rotate(720deg); }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="title">Nájdi to!</div>
+    <div class="timer" id="timer">0:00</div>
+  </div>
+
+  <div class="clues" id="clues"></div>
+
+  <div class="stage" id="stage">
+    <canvas id="board"></canvas>
+    <div class="win hidden" id="win">
+      <h2 id="winTitle">Našiel si všetko!</h2>
+      <div class="stars" id="winStars"></div>
+      <p id="winTime"></p>
+      <button id="btnAgain">HRAŤ ZNOVA</button>
+    </div>
+  </div>
+
+  <div class="hint" id="hint">Ťukni na vec na fotke, ktorá patrí k obrázku hore.</div>
+</div>
+
+<script id="payload" type="application/json">__PAYLOAD__<\/script>
+<script>
+(function () {
+  "use strict";
+  var data = JSON.parse(document.getElementById("payload").textContent);
+  var img = new Image();
+  var items = [];
+  var start = 0;
+  var timerId = null;
+  var audio = null;
+  var finished = false;
+
+  var el = {
+    board: document.getElementById("board"),
+    stage: document.getElementById("stage"),
+    clues: document.getElementById("clues"),
+    timer: document.getElementById("timer"),
+    win: document.getElementById("win"),
+    winTitle: document.getElementById("winTitle"),
+    winStars: document.getElementById("winStars"),
+    winTime: document.getElementById("winTime"),
+    btnAgain: document.getElementById("btnAgain"),
+    hint: document.getElementById("hint")
+  };
+
+  function fmt(ms) {
+    var t = Math.floor(ms / 1000);
+    var m = Math.floor(t / 60);
+    var s = t % 60;
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  function beep(freq, dur, vol) {
+    try {
+      if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+      var osc = audio.createOscillator();
+      var gain = audio.createGain();
+      var now = audio.currentTime;
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, now);
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.exponentialRampToValueAtTime(vol || 0.3, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+      osc.connect(gain);
+      gain.connect(audio.destination);
+      osc.start(now);
+      osc.stop(now + dur + 0.02);
+    } catch (err) {}
+  }
+
+  function buzz() {
+    try {
+      if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+      var osc = audio.createOscillator();
+      var gain = audio.createGain();
+      var now = audio.currentTime;
+      osc.type = "square";
+      osc.frequency.setValueAtTime(120, now);
+      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      osc.connect(gain);
+      gain.connect(audio.destination);
+      osc.start(now);
+      osc.stop(now + 0.2);
+    } catch (err) {}
+  }
+
+  function draw() {
+    if (!img.complete || !img.naturalWidth) return;
+    var cv = el.board;
+    var ratio = img.naturalHeight / img.naturalWidth;
+    var w = Math.round(el.stage.clientWidth);
+    var maxH = Math.max(280, Math.round(window.innerHeight - 200));
+    var h = Math.round(w * ratio);
+    if (h > maxH) {
+      h = maxH;
+      w = Math.round(maxH / ratio);
+    }
+    cv.width = w;
+    cv.height = h;
+    cv.style.width = w + "px";
+    cv.style.height = h + "px";
+
+    var ctx = cv.getContext("2d");
+    ctx.clearRect(0, 0, w, h);
+    ctx.drawImage(img, 0, 0, w, h);
+
+    var r = Math.max(14, Math.min(w, h) * 0.06);
+    for (var i = 0; i < items.length; i++) {
+      if (!items[i].found) continue;
+      var mx = items[i].x * w;
+      var my = items[i].y * h;
+      ctx.beginPath();
+      ctx.arc(mx, my, r, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(16, 185, 129, 0.28)";
+      ctx.fill();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "#10b981";
+      ctx.stroke();
+    }
+  }
+
+  function renderClues() {
+    el.clues.innerHTML = "";
+    items.forEach(function (it) {
+      var d = document.createElement("div");
+      d.className = "clue" + (it.found ? " done" : "");
+      d.textContent = it.e;
+      el.clues.appendChild(d);
+    });
+  }
+
+  function remaining() {
+    return items.filter(function (it) { return !it.found; }).length;
+  }
+
+  function tick() {
+    if (finished) return;
+    el.timer.textContent = fmt(Date.now() - start);
+  }
+
+  function confetti() {
+    var box = document.createElement("div");
+    box.className = "confetti";
+    var colors = ["#facc15", "#22c55e", "#3b82f6", "#ef4444", "#a855f7", "#f97316"];
+    for (var i = 0; i < 70; i++) {
+      var bit = document.createElement("i");
+      bit.style.left = Math.random() * 100 + "vw";
+      bit.style.background = colors[Math.floor(Math.random() * colors.length)];
+      bit.style.animationDuration = (2.2 + Math.random() * 1.8) + "s";
+      bit.style.animationDelay = (Math.random() * 0.8) + "s";
+      box.appendChild(bit);
+    }
+    document.body.appendChild(box);
+    setTimeout(function () {
+      if (box.parentNode) box.parentNode.removeChild(box);
+    }, 5200);
+  }
+
+  function finishGame() {
+    finished = true;
+    clearInterval(timerId);
+    var ms = Date.now() - start;
+    var seconds = ms / 1000;
+    var stars = seconds < 20 ? "★★★" : (seconds < 45 ? "★★☆" : "★☆☆");
+    el.winStars.textContent = stars;
+    el.winTime.textContent = "Čas: " + fmt(ms);
+    el.win.classList.remove("hidden");
+    el.hint.textContent = "Hotovo! Všetko si našiel.";
+    confetti();
+    beep(660, 0.18, 0.35);
+    setTimeout(function () { beep(880, 0.22, 0.35); }, 190);
+    setTimeout(function () { beep(1180, 0.3, 0.35); }, 400);
+    if (navigator.vibrate) navigator.vibrate([80, 60, 80, 60, 160]);
+  }
+
+  function handleTap(event) {
+    if (finished) return;
+    var rect = el.board.getBoundingClientRect();
+    if (!rect.width) return;
+    var px = (event.clientX - rect.left) / rect.width;
+    var py = (event.clientY - rect.top) / rect.height;
+
+    var best = null;
+    var bestDist = Infinity;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].found) continue;
+      var dx = (items[i].x - px) * rect.width;
+      var dy = (items[i].y - py) * rect.height;
+      var d = Math.sqrt(dx * dx + dy * dy);
+      if (d < bestDist) {
+        bestDist = d;
+        best = items[i];
+      }
+    }
+
+    var tolerance = Math.min(rect.width, rect.height) * 0.11;
+
+    if (best && bestDist <= tolerance) {
+      best.found = true;
+      draw();
+      renderClues();
+      beep(520 + remaining() * 60, 0.16, 0.32);
+      if (navigator.vibrate) navigator.vibrate(50);
+      if (remaining() === 0) {
+        finishGame();
+      } else {
+        el.hint.textContent = "Dobre! Ešte " + remaining() + ".";
+      }
+    } else {
+      el.stage.classList.add("shake");
+      setTimeout(function () { el.stage.classList.remove("shake"); }, 300);
+      buzz();
+      if (navigator.vibrate) navigator.vibrate(90);
+      el.hint.textContent = "Tu to nie je. Skús inde.";
+    }
+  }
+
+  function reset() {
+    items = data.items.map(function (it) {
+      return { x: it.x, y: it.y, e: it.e, found: false };
+    });
+    finished = false;
+    start = Date.now();
+    el.win.classList.add("hidden");
+    el.hint.textContent = "Ťukni na vec na fotke, ktorá patrí k obrázku hore.";
+    draw();
+    renderClues();
+    clearInterval(timerId);
+    timerId = setInterval(tick, 500);
+    el.timer.textContent = "0:00";
+  }
+
+  el.board.addEventListener("click", handleTap);
+  el.btnAgain.addEventListener("click", reset);
+
+  window.addEventListener("resize", draw);
+
+  img.onload = function () { reset(); };
+  img.onerror = function () {
+    document.body.innerHTML = "<p style='padding:20px'>Fotku sa nepodarilo načítať.</p>";
+  };
+  img.src = data.img;
+})();
+<\/script>
+</body>
+</html>`;
+
+  function buildGameFile() {
+    var payload = {
+      v: 1,
+      img: state.dataUrl,
+      items: state.items.map(function (it) {
+        return {
+          x: Math.round(it.x * 10000) / 10000,
+          y: Math.round(it.y * 10000) / 10000,
+          e: it.e
+        };
+      })
+    };
+    var json = JSON.stringify(payload).replace(/</g, "\\u003c");
+    return GAME_TEMPLATE.replace("__PAYLOAD__", json);
+  }
+
+  el.btnCreate.addEventListener("click", function () {
+    if (!state.dataUrl) {
+      setStatus(el.status, "Najprv vyber fotku.", "err");
+      return;
+    }
+    if (!state.items.length) {
+      setStatus(el.status, "Označ aspoň jednu vec na fotke.", "err");
+      return;
+    }
+    try {
+      var html = buildGameFile();
+      var blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      var file = new File([blob], "najdi-to.html", { type: "text/html" });
+      state.file = file;
+
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "najdi-to.html";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+
+      setStatus(el.status, "Hra je hotová a stiahla sa (" + Math.round(blob.size / 1024) + " kB). Pošli ju ako súbor.", "ok");
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        el.btnShare.classList.remove("hidden");
+      }
+    } catch (err) {
+      setStatus(el.status, "Hru sa nepodarilo vyrobiť: " + (err && err.message ? err.message : err), "err");
+    }
+  });
+
+  el.btnShare.addEventListener("click", function () {
+    if (!state.file) return;
+    navigator.share({
+      files: [state.file],
+      title: "Nájdi to!",
+      text: "Nájdi na fotke všetky veci! Otvor priložený súbor."
+    }).catch(function () {});
+  });
+
+  drawPreview();
+  renderChips();
+})();
+</script>
+</body>
+</html>
