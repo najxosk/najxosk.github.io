@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>Fotopátračka — vytvor výzvu</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #0f172a; color: #e2e8f0;
+    min-height: 100vh; padding: 16px 14px 40px;
+  }
+  .wrap { max-width: 620px; margin: 0 auto; }
+  h1 { font-size: 1.45rem; margin: 4px 0 6px; }
+  .lead { color: #94a3b8; font-size: .95rem; line-height: 1.5; margin-bottom: 16px; }
+  .card {
+    background: #1e293b; border: 1px solid #334155; border-radius: 18px;
+    padding: 16px; margin-bottom: 14px;
+  }
+  .card h2 { font-size: 1.02rem; margin: 0 0 10px; color: #cbd5e1; letter-spacing: .02em; }
+  label.file {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    min-height: 96px; border-radius: 16px; cursor: pointer;
+    background: #1d4ed8; color: #fff; font-size: 1.1rem; font-weight: 800;
+    text-align: center; padding: 14px;
+  }
+  label.file span.ico { font-size: 1.9rem; }
+  input[type=file] { display: none; }
+
+  .stage {
+    position: relative; width: 100%; border-radius: 16px; overflow: hidden;
+    background: #0b1220; border: 1px solid #334155;
+  }
+  .stage canvas { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+  .help { color: #94a3b8; font-size: .88rem; margin-top: 10px; line-height: 1.45; }
+
+  .field { margin-top: 14px; }
+  .field label { display: block; font-size: .88rem; color: #94a3b8; margin-bottom: 6px; }
+  input[type=text], textarea, select {
+    width: 100%; min-height: 52px; padding: 12px 14px; font-size: 1rem;
+    border-radius: 12px; border: 1px solid #475569; background: #0f172a;
+    color: #e2e8f0; font-family: inherit;
+  }
+  textarea { min-height: 84px; resize: vertical; }
+  input[type=range] { width: 100%; height: 44px; accent-color: #38bdf8; }
+
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > div { flex: 1 1 150px; }
+
+  button {
+    font-family: inherit; width: 100%; min-height: 60px; border: none;
+    border-radius: 14px; font-size: 1.05rem; font-weight: 800; color: #fff;
+    background: #2563eb; cursor: pointer; margin-top: 12px;
+  }
+  button.ghost { background: #334155; }
+  button.go { background: #059669; }
+  button:disabled { background: #475569; color: #cbd5e1; }
+  .status { font-size: .92rem; color: #cbd5e1; margin-top: 12px; line-height: 1.5; }
+  .status.err { color: #fca5a5; }
+  .status.ok { color: #86efac; }
+  .hidden { display: none !important; }
+  .badge {
+    display: inline-block; font-size: .78rem; font-weight: 800; letter-spacing: .05em;
+    padding: 4px 10px; border-radius: 999px; background: #164e63; color: #a5f3fc;
+    margin-bottom: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Fotopátračka</h1>
+  <div class="lead">
+    Vyfoť miesto (kút, poličku, skriňu), ťukni na fotku tam, kde je poklad, a pridaj úlohu.
+    Hra vyrobí výzvu — jeden súbor, ktorý pošleš inému človeku. On si ju otvorí vo svojom telefóne
+    a hľadá, kde to miesto je, s nápoveďami a časom.
+  </div>
+
+  <div id="card-upload" class="card">
+    <label class="file" for="input-photo">
+      <span class="ico">📷</span><span>ODFOTIŤ ALEBO VYBRAŤ FOTKU</span>
+    </label>
+    <input id="input-photo" type="file" accept="image/*">
+    <div class="help">Fotka zostane len v tvojom telefóne aj vo výzve. Nikde sa neposiela na server.</div>
+  </div>
+
+  <div id="card-editor" class="card hidden">
+    <h2>1. Označ poklad na fotke</h2>
+    <div class="stage">
+      <canvas id="preview"></canvas>
+    </div>
+    <div class="help">Ťukni na to miesto na fotke, kde sa má poklad nachádzať. Môžeš to posúvať, koľkokrát chceš.</div>
+
+    <div class="field">
+      <label for="range-zoom">Ako ťažké to bude: <strong id="zoom-label">3×</strong> priblíženie</label>
+      <input id="range-zoom" type="range" min="2" max="6" step="1" value="3">
+      <div class="help">Čím väčšie priblíženie, tým menšiu časť fotky hľadajúci uvidí — teda ťažšie.</div>
+    </div>
+
+    <h2 style="margin-top:20px;">2. Úloha po nájdení</h2>
+    <div class="field">
+      <label for="input-task">Čo má urobiť, keď miesto nájde?</label>
+      <textarea id="input-task" placeholder="Napríklad: Zober modrú kocku a prines ju do obývačky."></textarea>
+    </div>
+
+    <h2 style="margin-top:20px;">3. Nápovedy</h2>
+    <div class="row">
+      <div class="field">
+        <label for="sel-hints">Počet nápovied</label>
+        <select id="sel-hints">
+          <option value="0">žiadne</option>
+          <option value="1">1</option>
+          <option value="2" selected>2</option>
+          <option value="3">3</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="sel-delay">Prvá nápoveda po</label>
+        <select id="sel-delay">
+          <option value="10">10 sekundách</option>
+          <option value="20">20 sekundách</option>
+          <option value="30" selected>30 sekundách</option>
+          <option value="60">60 sekundách</option>
+        </select>
+      </div>
+    </div>
+
+    <button id="btn-create" class="go">VYTVORIŤ VÝZVU</button>
+    <button id="btn-share" class="hidden">POSLAŤ VÝZVU</button>
+    <div id="status" class="status"></div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var el = {
+    inputPhoto: document.getElementById("input-photo"),
+    cardUpload: document.getElementById("card-upload"),
+    cardEditor: document.getElementById("card-editor"),
+    preview: document.getElementById("preview"),
+    rangeZoom: document.getElementById("range-zoom"),
+    zoomLabel: document.getElementById("zoom-label"),
+    inputTask: document.getElementById("input-task"),
+    selHints: document.getElementById("sel-hints"),
+    selDelay: document.getElementById("sel-delay"),
+    btnCreate: document.getElementById("btn-create"),
+    btnShare: document.getElementById("btn-share"),
+    status: document.getElementById("status")
+  };
+
+  var state = {
+    img: null,
+    dataUrl: null,
+    x: 0.5,
+    y: 0.5,
+    zoom: 3,
+    marked: false,
+    challengeFile: null
+  };
+
+  var MAX_SIDE = 1600;
+  var JPEG_QUALITY = 0.82;
+
+  function setStatus(text, kind) {
+    el.status.textContent = text;
+    el.status.className = "status" + (kind ? " " + kind : "");
+  }
+
+  function drawPreview() {
+    if (!state.img) return;
+    var cv = el.preview;
+    var wrapWidth = cv.parentElement.clientWidth || 320;
+    var ratio = state.img.naturalHeight / state.img.naturalWidth;
+
+    // Fotka sa musí zmestiť na obrazovku — na výšku max. cca polovica displeja
+    var maxH = Math.min(520, Math.round(window.innerHeight * 0.55));
+    var w = Math.round(wrapWidth);
+    var h = Math.round(wrapWidth * ratio);
+    if (h > maxH) {
+      h = maxH;
+      w = Math.round(maxH / ratio);
+    }
+
+    cv.width = w;
+    cv.height = h;
+    cv.style.width = w + "px";
+    cv.style.height = h + "px";
+    var ctx = cv.getContext("2d");
+    ctx.clearRect(0, 0, w, h);
+    ctx.drawImage(state.img, 0, 0, w, h);
+
+    if (state.marked) {
+      var mx = state.x * w;
+      var my = state.y * h;
+      var r = Math.max(14, Math.min(w, h) * 0.045);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(mx, my, r, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(250, 204, 21, 0.35)";
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#facc15";
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(mx - r * 1.6, my);
+      ctx.lineTo(mx + r * 1.6, my);
+      ctx.moveTo(mx, my - r * 1.6);
+      ctx.lineTo(mx, my + r * 1.6);
+      ctx.strokeStyle = "rgba(250, 204, 21, 0.9)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  function loadPhoto(file) {
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var scale = Math.min(1, MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+        var canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.naturalWidth * scale);
+        canvas.height = Math.round(img.naturalHeight * scale);
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        state.dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+
+        var loaded = new Image();
+        loaded.onload = function () {
+          state.img = loaded;
+          state.marked = false;
+          el.cardUpload.classList.add("hidden");
+          el.cardEditor.classList.remove("hidden");
+          drawPreview();
+          setStatus("Fotka pripravená. Ťukni na miesto pokladu.", "ok");
+        };
+        loaded.src = state.dataUrl;
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  el.inputPhoto.addEventListener("change", function (event) {
+    loadPhoto(event.target.files && event.target.files[0]);
+  });
+
+  el.preview.addEventListener("click", function (event) {
+    var rect = el.preview.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    var x = (event.clientX - rect.left) / rect.width;
+    var y = (event.clientY - rect.top) / rect.height;
+    state.x = Math.min(0.985, Math.max(0.015, x));
+    state.y = Math.min(0.985, Math.max(0.015, y));
+    state.marked = true;
+    drawPreview();
+    setStatus("Poklad označený (" + Math.round(state.x * 100) + " %, " + Math.round(state.y * 100) + " % fotky).", "ok");
+  });
+
+  el.rangeZoom.addEventListener("input", function () {
+    state.zoom = Number(el.rangeZoom.value);
+    el.zoomLabel.textContent = state.zoom + "×";
+  });
+
+  window.addEventListener("resize", function () {
+    drawPreview();
+  });
+
+  /* ==========================================================
+     VÝZVOVÝ SÚBOR — jedna samostatná HTML hra s vloženou fotkou
+     ========================================================== */
+
+  var CHALLENGE_TEMPLATE = `<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>Nájdi toto miesto</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #0f172a; color: #e2e8f0; min-height: 100vh;
+    padding: 14px 14px 32px; display: flex; justify-content: center;
+  }
+  .app { width: 100%; max-width: 560px; }
+  .bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .timer { font-size: 1.5rem; font-weight: 900; font-variant-numeric: tabular-nums; }
+  .badge {
+    font-size: .82rem; font-weight: 800; padding: 6px 12px; border-radius: 999px;
+    background: #164e63; color: #a5f3fc; white-space: nowrap;
+  }
+  h1 { font-size: 1.3rem; margin: 12px 0 10px; }
+  .stage {
+    width: 100%; border-radius: 18px; overflow: hidden; background: #0b1220;
+    border: 1px solid #334155;
+  }
+  .stage canvas { display: block; width: 100%; height: auto; }
+  button {
+    font-family: inherit; width: 100%; min-height: 68px; border: none; border-radius: 16px;
+    font-size: 1.1rem; font-weight: 900; color: #fff; cursor: pointer; margin-top: 12px;
+  }
+  button.ghost { background: #334155; }
+  button.go { background: #059669; }
+  button.mid { background: #2563eb; }
+  button:disabled { background: #475569; color: #cbd5e1; }
+  .row { display: flex; gap: 12px; }
+  .row > button { flex: 1; }
+  .link {
+    width: 100%; background: none; border: none; color: #93c5fd; font-weight: 700;
+    font-size: .95rem; padding: 14px 0 0; min-height: 44px; cursor: pointer;
+    text-decoration: underline; font-family: inherit;
+  }
+  .task {
+    background: #1e293b; border: 2px solid #059669; border-radius: 16px;
+    padding: 16px; margin-top: 14px; font-size: 1.05rem; line-height: 1.5;
+  }
+  .task strong { color: #86efac; display: block; font-size: .8rem; letter-spacing: .06em; margin-bottom: 6px; }
+  .muted { color: #94a3b8; font-size: .95rem; margin-top: 10px; text-align: center; }
+  .hidden { display: none !important; }
+  h2 { font-size: 1.5rem; margin: 14px 0 10px; }
+  .confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; }
+  .confetti i {
+    position: absolute; top: -20px; width: 10px; height: 16px; opacity: .95;
+    animation: fall linear forwards;
+  }
+  @keyframes fall {
+    0% { transform: translateY(-10vh) rotate(0deg); }
+    100% { transform: translateY(110vh) rotate(720deg); }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="hunt">
+  <div class="bar">
+    <div class="timer" id="timer">0:00</div>
+    <div class="badge" id="hintBadge">Nápovedy: 0</div>
+  </div>
+  <h1>Nájdi toto miesto</h1>
+  <div class="stage"><canvas id="view"></canvas></div>
+  <div class="row">
+    <button id="btnHint" class="ghost">NÁPOVEDA</button>
+    <button id="btnFound" class="go">NAŠIEL SOM!</button>
+  </div>
+  <button id="btnGiveUp" class="link">Vzdať sa a ukázať riešenie</button>
+</div>
+
+<div class="app hidden" id="done">
+  <h2 id="doneTitle">Našiel si to!</h2>
+  <div class="stage"><canvas id="full"></canvas></div>
+  <div class="task" id="taskBox"></div>
+  <div class="muted" id="doneTime"></div>
+  <button id="btnAgain" class="mid">HRAŤ ZNOVA</button>
+</div>
+
+<script id="payload" type="application/json">__PAYLOAD__<\/script>
+<script>
+(function () {
+  "use strict";
+  var data = JSON.parse(document.getElementById("payload").textContent);
+  var img = new Image();
+  var state = { level: 0, start: 0, timerId: null, done: false };
+
+  var el = {
+    hunt: document.getElementById("hunt"),
+    done: document.getElementById("done"),
+    view: document.getElementById("view"),
+    full: document.getElementById("full"),
+    timer: document.getElementById("timer"),
+    hintBadge: document.getElementById("hintBadge"),
+    btnHint: document.getElementById("btnHint"),
+    btnFound: document.getElementById("btnFound"),
+    btnGiveUp: document.getElementById("btnGiveUp"),
+    btnAgain: document.getElementById("btnAgain"),
+    taskBox: document.getElementById("taskBox"),
+    doneTime: document.getElementById("doneTime"),
+    doneTitle: document.getElementById("doneTitle")
+  };
+
+  function zoomForLevel(level) {
+    return Math.max(1.05, Number(data.z) / Math.pow(1.9, level));
+  }
+
+  function drawCrop(canvas, level, showMarker) {
+    if (!img.complete || !img.naturalWidth) return;
+    var iw = img.naturalWidth;
+    var ih = img.naturalHeight;
+
+    var side = Math.min(iw, ih) / zoomForLevel(level);
+    side = Math.min(side, Math.min(iw, ih));
+
+    var cx = data.x * iw;
+    var cy = data.y * ih;
+
+    var sx = cx - side / 2;
+    var sy = cy - side / 2;
+    sx = Math.max(0, Math.min(iw - side, sx));
+    sy = Math.max(0, Math.min(ih - side, sy));
+
+    var outSize = Math.min(900, Math.max(320, canvas.parentElement.clientWidth || 360));
+    canvas.width = outSize;
+    canvas.height = outSize;
+
+    var ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, outSize, outSize);
+    ctx.drawImage(img, sx, sy, side, side, 0, 0, outSize, outSize);
+
+    if (showMarker) {
+      var mx = (cx - sx) / side * outSize;
+      var my = (cy - sy) / side * outSize;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(mx, my, outSize * 0.055, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(250, 204, 21, 0.35)";
+      ctx.fill();
+      ctx.lineWidth = Math.max(3, outSize * 0.008);
+      ctx.strokeStyle = "#facc15";
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  function drawFull(canvas) {
+    if (!img.complete || !img.naturalWidth) return;
+    var iw = img.naturalWidth;
+    var ih = img.naturalHeight;
+    var outW = Math.min(900, Math.max(320, canvas.parentElement.clientWidth || 360));
+    var outH = Math.round(outW * ih / iw);
+
+    canvas.width = outW;
+    canvas.height = outH;
+    var ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, outW, outH);
+    ctx.drawImage(img, 0, 0, outW, outH);
+
+    var mx = data.x * outW;
+    var my = data.y * outH;
+    var r = Math.max(16, Math.min(outW, outH) * 0.06);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(mx, my, r, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(250, 204, 21, 0.35)";
+    ctx.fill();
+    ctx.lineWidth = Math.max(3, outW * 0.008);
+    ctx.strokeStyle = "#facc15";
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function fmtTime(ms) {
+    var total = Math.floor(ms / 1000);
+    var m = Math.floor(total / 60);
+    var s = total % 60;
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  function updateTimer() {
+    if (state.done) return;
+    el.timer.textContent = fmtTime(Date.now() - state.start);
+    updateHintButton();
+  }
+
+  function updateHintButton() {
+    var used = state.level;
+    var total = Number(data.hints) || 0;
+    el.hintBadge.textContent = total ? ("Nápovedy: " + used + "/" + total) : "Bez nápovied";
+
+    if (used >= total) {
+      el.btnHint.disabled = true;
+      el.btnHint.textContent = used ? "NÁPOVEDY VYUŽITÉ" : "BEZ NÁPOVIED";
+      return;
+    }
+    var elapsed = Date.now() - state.start;
+    var wait = Math.max(0, Number(data.delay || 0) * 1000 - elapsed);
+    if (wait > 0) {
+      el.btnHint.disabled = true;
+      el.btnHint.textContent = "NÁPOVEDA O " + Math.ceil(wait / 1000) + " s";
+      return;
+    }
+    el.btnHint.disabled = false;
+    el.btnHint.textContent = "NÁPOVEDA (" + (total - used) + ")";
+  }
+
+  function showDone(found) {
+    state.done = true;
+    clearInterval(state.timerId);
+    el.hunt.classList.add("hidden");
+    el.done.classList.remove("hidden");
+    el.doneTitle.textContent = found ? "Našiel si to! 🎉" : "Riešenie";
+    drawFull(el.full);
+
+    var ms = Date.now() - state.start;
+    el.doneTime.textContent = (found ? "Čas hľadania: " : "Vzdal si to po ") + fmtTime(ms);
+
+    var task = (data.task || "").trim();
+    el.taskBox.innerHTML = task
+      ? "<strong>ÚLOHA</strong>" + task.split("<").join("&lt;").split(String.fromCharCode(10)).join("<br>")
+      : "<strong>ÚLOHA</strong>Našiel si poklad — vezmi si ho!";
+
+    if (found) confetti();
+    window.scrollTo(0, 0);
+  }
+
+  function confetti() {
+    var box = document.createElement("div");
+    box.className = "confetti";
+    var colors = ["#facc15", "#22c55e", "#3b82f6", "#ef4444", "#a855f7", "#f97316"];
+    for (var i = 0; i < 70; i++) {
+      var bit = document.createElement("i");
+      bit.style.left = Math.random() * 100 + "vw";
+      bit.style.background = colors[Math.floor(Math.random() * colors.length)];
+      bit.style.animationDuration = (2.2 + Math.random() * 1.8) + "s";
+      bit.style.animationDelay = (Math.random() * 0.9) + "s";
+      bit.style.transform = "rotate(" + Math.random() * 360 + "deg)";
+      box.appendChild(bit);
+    }
+    document.body.appendChild(box);
+    setTimeout(function () {
+      if (box.parentNode) box.parentNode.removeChild(box);
+    }, 5200);
+  }
+
+  function start() {
+    state.level = 0;
+    state.done = false;
+    state.start = Date.now();
+    el.hunt.classList.remove("hidden");
+    el.done.classList.remove("hidden");
+    el.done.classList.add("hidden");
+    drawCrop(el.view, state.level, false);
+    updateHintButton();
+    clearInterval(state.timerId);
+    state.timerId = setInterval(updateTimer, 500);
+    window.scrollTo(0, 0);
+  }
+
+  el.btnHint.addEventListener("click", function () {
+    state.level += 1;
+    drawCrop(el.view, state.level, false);
+    updateHintButton();
+  });
+
+  el.btnFound.addEventListener("click", function () {
+    showDone(true);
+  });
+
+  el.btnGiveUp.addEventListener("click", function () {
+    showDone(false);
+  });
+
+  el.btnAgain.addEventListener("click", start);
+
+  window.addEventListener("resize", function () {
+    if (state.done) {
+      drawFull(el.full);
+    } else {
+      drawCrop(el.view, state.level, false);
+    }
+  });
+
+  img.onload = function () {
+    start();
+  };
+  img.onerror = function () {
+    document.body.innerHTML = "<p style='padding:20px'>Fotku sa nepodarilo načítať.</p>";
+  };
+  img.src = data.img;
+})();
+<\/script>
+</body>
+</html>`;
+
+  function buildChallengeFile() {
+    var payload = {
+      v: 1,
+      img: state.dataUrl,
+      x: Math.round(state.x * 10000) / 10000,
+      y: Math.round(state.y * 10000) / 10000,
+      z: state.zoom,
+      task: el.inputTask.value,
+      hints: Number(el.selHints.value),
+      delay: Number(el.selDelay.value)
+    };
+    var json = JSON.stringify(payload).replace(/</g, "\\u003c");
+    return CHALLENGE_TEMPLATE.replace("__PAYLOAD__", json);
+  }
+
+  el.btnCreate.addEventListener("click", function () {
+    if (!state.dataUrl) {
+      setStatus("Najprv vyber fotku.", "err");
+      return;
+    }
+    if (!state.marked) {
+      setStatus("Ťukni na fotku a označ, kde je poklad.", "err");
+      return;
+    }
+
+    try {
+      var html = buildChallengeFile();
+      var blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      var file = new File([blob], "vyzva-fotopatracka.html", { type: "text/html" });
+      state.challengeFile = file;
+
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "vyzva-fotopatracka.html";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+
+      var kb = Math.round(blob.size / 1024);
+      setStatus("Výzva je hotová a stiahla sa do telefónu (" + kb + " kB). Pošli ju ako súbor.", "ok");
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        el.btnShare.classList.remove("hidden");
+      }
+    } catch (err) {
+      setStatus("Výzvu sa nepodarilo vyrobiť: " + (err && err.message ? err.message : err), "err");
+    }
+  });
+
+  el.btnShare.addEventListener("click", function () {
+    if (!state.challengeFile) return;
+    navigator.share({
+      files: [state.challengeFile],
+      title: "Fotopátračka",
+      text: "Nájdi miesto na fotke! Otvor priložený súbor v Chrome."
+    }).catch(function () {
+      // Používateľ zdieľanie zrušil — súbor už má stiahnutý
+    });
+  });
+
+  drawPreview();
+})();
+</script>
+</body>
+</html>
