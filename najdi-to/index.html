@@ -3,144 +3,188 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0f172a">
-<title>Nájdi to! — vytvor hru z fotky</title>
+<meta name="theme-color" content="#fff8ef">
+<title>Nájdi to! — hra z fotky</title>
 <style>
+  :root {
+    --ink: #2b2118;
+    --muted: #8a7566;
+    --orange: #ff7a2f;
+    --orange-d: #c85510;
+    --green: #16a34a;
+    --green-d: #0d7a37;
+    --purple: #7c3aed;
+    --purple-d: #5b21b6;
+    --teal: #0ea5a5;
+    --teal-d: #0a7a7a;
+  }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; padding: 0; }
   body {
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    background: #0f172a; color: #e2e8f0;
-    min-height: 100vh; padding: 16px 14px 40px;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 10% 4%, #ffe9c9 0%, rgba(255,233,201,0) 52%),
+      radial-gradient(circle at 92% 2%, #d7f5ff 0%, rgba(215,245,255,0) 46%),
+      radial-gradient(circle at 78% 96%, #ffe0f0 0%, rgba(255,224,240,0) 50%),
+      #fff8ef;
+    background-attachment: fixed;
+    min-height: 100vh;
+    padding: 18px 14px 46px;
   }
-  .wrap { max-width: 640px; margin: 0 auto; }
-  h1 { font-size: 1.5rem; margin: 4px 0 6px; }
-  .lead { color: #94a3b8; font-size: .95rem; line-height: 1.5; margin-bottom: 16px; }
+  .wrap { max-width: 620px; margin: 0 auto; }
+
+  .hero { text-align: center; margin: 6px 0 18px; }
+  .hero-badge {
+    width: 74px; height: 74px; margin: 0 auto 10px; border-radius: 24px;
+    display: flex; align-items: center; justify-content: center; font-size: 2.1rem;
+    background: linear-gradient(180deg, #ffd166, #ffa726);
+    box-shadow: 0 7px 0 #d98a12, 0 16px 26px rgba(217, 138, 18, .22);
+    transform: rotate(-6deg);
+  }
+  .hero h1 { margin: 0; font-size: 1.9rem; letter-spacing: -.5px; font-weight: 900; }
+  .hero p { margin: 8px auto 0; max-width: 400px; color: var(--muted); font-size: .95rem; line-height: 1.5; }
+
   .card {
-    background: #1e293b; border: 1px solid #334155; border-radius: 18px;
-    padding: 16px; margin-bottom: 14px;
+    background: #fff; border-radius: 28px; padding: 18px; margin-bottom: 16px;
+    box-shadow: 0 12px 28px rgba(120, 88, 58, .10);
   }
-  .card h2 { font-size: 1.02rem; margin: 0 0 10px; color: #cbd5e1; }
-  label.file {
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-    min-height: 96px; border-radius: 16px; cursor: pointer;
-    background: #1d4ed8; color: #fff; font-size: 1.1rem; font-weight: 800;
-    text-align: center; padding: 14px;
+  .card h2 {
+    margin: 0 0 12px; font-size: .84rem; letter-spacing: .1em;
+    text-transform: uppercase; color: #b09b8a; font-weight: 800;
   }
-  label.file span.ico { font-size: 1.9rem; }
-  input[type=file] { display: none; }
-  .stage {
-    position: relative; width: 100%; border-radius: 16px; overflow: hidden;
-    background: #0b1220; border: 1px solid #334155;
+  .card.soft { background: #eefbfb; box-shadow: 0 10px 22px rgba(14, 165, 165, .12); }
+
+  .btn {
+    width: 100%; border: 0; border-radius: 22px; padding: 19px 18px;
+    font-family: inherit; font-size: 1.05rem; font-weight: 900; color: #fff;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: transform .07s ease, box-shadow .07s ease;
   }
-  .stage canvas { display: block; margin: 0 auto; max-width: 100%; height: auto; }
-  .help { color: #94a3b8; font-size: .88rem; margin-top: 10px; line-height: 1.45; }
-  button.primary {
-    font-family: inherit; width: 100%; min-height: 62px; border: none;
-    border-radius: 14px; font-size: 1.05rem; font-weight: 800; color: #fff;
-    background: #059669; cursor: pointer; margin-top: 12px;
+  .btn .b-ico { font-size: 1.55rem; line-height: 1; }
+  .btn.orange { background: linear-gradient(180deg, #ffa15a, #ff7a2f); box-shadow: 0 7px 0 var(--orange-d), 0 16px 26px rgba(200, 85, 16, .25); }
+  .btn.green { background: linear-gradient(180deg, #35d07a, #16a34a); box-shadow: 0 7px 0 var(--green-d), 0 16px 26px rgba(13, 122, 55, .25); }
+  .btn.purple { background: linear-gradient(180deg, #a273ff, #7c3aed); box-shadow: 0 7px 0 var(--purple-d), 0 16px 26px rgba(91, 33, 182, .25); }
+  .btn.teal { background: linear-gradient(180deg, #2fd6d6, #0ea5a5); box-shadow: 0 7px 0 var(--teal-d), 0 16px 26px rgba(10, 122, 122, .22); }
+  .btn.tall { min-height: 108px; flex-direction: column; gap: 4px; font-size: 1.1rem; }
+  .btn.tall .b-ico { font-size: 2.2rem; }
+  .btn:active { transform: translateY(5px); box-shadow: 0 2px 0 rgba(0, 0, 0, .25); }
+  .btn[disabled] { opacity: .5; filter: grayscale(.4); box-shadow: none; }
+  .btn + .btn { margin-top: 12px; }
+
+  .frame {
+    background: #fff; padding: 9px; border-radius: 24px;
+    border: 2px dashed #ffd9b8; box-shadow: 0 10px 20px rgba(120, 88, 58, .12);
   }
-  button.primary:disabled { background: #475569; color: #cbd5e1; }
-  button.second {
-    font-family: inherit; width: 100%; min-height: 56px; border: none;
-    border-radius: 14px; font-size: 1rem; font-weight: 800; color: #fff;
-    background: #2563eb; cursor: pointer; margin-top: 10px;
+  .frame canvas { display: block; margin: 0 auto; max-width: 100%; height: auto; border-radius: 16px; }
+  .hintline { color: var(--muted); font-size: .9rem; line-height: 1.5; margin-top: 12px; }
+  .hintline strong { color: var(--ink); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .chip {
+    display: flex; align-items: center; gap: 8px; background: #fff6ea;
+    border: 2px solid #ffd9b8; border-radius: 999px; padding: 5px 12px 5px 10px;
+    font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 0 #ffe0c6;
   }
-  .status { font-size: .92rem; color: #cbd5e1; margin-top: 12px; line-height: 1.5; }
-  .status.err { color: #fca5a5; }
-  .status.ok { color: #86efac; }
+  .chip small {
+    font-size: .7rem; font-weight: 900; color: #b45309; background: #ffe3c2;
+    border-radius: 999px; padding: 4px 7px; letter-spacing: .04em;
+  }
+
+  .status { font-size: .92rem; color: var(--muted); margin-top: 14px; line-height: 1.5; font-weight: 600; }
+  .status.ok { color: var(--green-d); }
+  .status.err { color: #d33; }
   .hidden { display: none !important; }
 
-  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-  .chip {
-    display: flex; align-items: center; gap: 6px; background: #334155;
-    border-radius: 999px; padding: 6px 10px 6px 12px; font-size: 1.4rem;
-    cursor: pointer; border: 2px solid transparent;
-  }
-  .chip small { font-size: .8rem; color: #cbd5e1; font-weight: 700; }
-  .chip:hover { border-color: #ef4444; }
-
   .picker {
-    position: fixed; inset: 0; background: rgba(2, 6, 23, .82);
-    display: flex; align-items: flex-end; justify-content: center; z-index: 20;
+    position: fixed; inset: 0; background: rgba(43, 33, 24, .55);
+    backdrop-filter: blur(3px); display: flex; align-items: flex-end;
+    justify-content: center; z-index: 40;
   }
   .picker.hidden { display: none; }
   .picker-inner {
-    width: 100%; max-width: 640px; background: #1e293b;
-    border-radius: 22px 22px 0 0; padding: 16px 14px 22px;
-    border-top: 2px solid #334155;
+    width: 100%; max-width: 620px; background: #fff;
+    border-radius: 30px 30px 0 0; padding: 20px 16px 24px;
+    box-shadow: 0 -10px 40px rgba(43, 33, 24, .2);
+    max-height: 88vh; overflow-y: auto;
   }
-  .picker-inner h3 { margin: 0 0 4px; font-size: 1.05rem; }
-  .picker-inner p { margin: 0 0 12px; color: #94a3b8; font-size: .88rem; }
-  .emoji-grid {
-    display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;
-  }
+  .picker-inner h3 { margin: 0 0 4px; font-size: 1.15rem; font-weight: 900; }
+  .picker-inner p { margin: 0 0 14px; color: var(--muted); font-size: .88rem; }
+  .emoji-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 9px; }
   .emoji-grid button {
-    font-size: 1.9rem; min-height: 62px; border-radius: 14px; border: none;
-    background: #0f172a; cursor: pointer; padding: 0;
+    font-size: 1.85rem; min-height: 62px; border: 2px solid #fff; border-radius: 16px;
+    background: #fff8ef; cursor: pointer; padding: 0; box-shadow: 0 4px 0 #f2e3d3;
   }
-  .emoji-grid button:active { background: #1d4ed8; }
+  .emoji-grid button:active { transform: translateY(3px); box-shadow: none; background: #ffe9cf; }
+  .pick-cancel {
+    margin-top: 16px; width: 100%; min-height: 54px; border-radius: 18px; border: 0;
+    background: #f2e7dc; color: var(--ink); font-weight: 900; font-size: .98rem;
+    font-family: inherit; cursor: pointer;
+  }
+
   .play-overlay {
-    position: fixed; inset: 0; z-index: 30; background: #0f172a;
+    position: fixed; inset: 0; z-index: 50; background: #fff8ef;
     display: flex; flex-direction: column;
+    background-image:
+      radial-gradient(circle at 10% 4%, #ffe9c9 0%, rgba(255,233,201,0) 52%),
+      radial-gradient(circle at 92% 2%, #d7f5ff 0%, rgba(215,245,255,0) 46%);
   }
   .play-overlay.hidden { display: none; }
-  .play-bar { padding: 10px 12px 8px; border-bottom: 1px solid #334155; }
+  .play-bar { padding: 12px 12px 6px; }
   .play-bar button {
-    background: #1e293b; border: 1px solid #334155; color: #cbd5e1;
-    border-radius: 10px; padding: 10px 14px; font-family: inherit;
-    font-size: .95rem; font-weight: 700; cursor: pointer;
+    background: #fff; border: 0; color: var(--ink); border-radius: 16px;
+    padding: 12px 16px; font-family: inherit; font-size: .95rem;
+    font-weight: 900; cursor: pointer; box-shadow: 0 4px 0 #ecdfd0;
   }
-  #game-frame { flex: 1; width: 100%; border: 0; background: #0f172a; }
-
-  .picker-cancel {
-    margin-top: 14px; width: 100%; min-height: 52px; border-radius: 14px;
-    border: none; background: #475569; color: #fff; font-weight: 800;
-    font-size: .95rem; font-family: inherit; cursor: pointer;
-  }
+  #game-frame { flex: 1; width: 100%; border: 0; background: transparent; }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <h1>Nájdi to!</h1>
-  <div class="lead">
-    Vyfoť izbu alebo stôl, označ na fotke 3–5 vecí a hra je hotová. Hráč dostane fotku a hľadá,
-    čo mu ukazujú obrázky — ťukne na to a hneď vidí, či trafil. Bez čítania, bez počítania, pre deti aj dospelých.
-  </div>
+  <header class="hero">
+    <div class="hero-badge">🔎</div>
+    <h1>Nájdi to!</h1>
+    <p>Vyfoť izbu, označ 3–5 vecí a hraj hneď na tomto telefóne — alebo hru pošli niekomu inému.</p>
+  </header>
 
-  <div id="card-open" class="card">
-    <h2>Dostali ste hru?</h2>
-    <label class="file" for="input-open" style="background:#0f766e;">
-      <span class="ico">🎯</span><span>OTVORIŤ PRIJATÚ HRU</span>
+  <div class="card">
+    <h2>Nová hra</h2>
+    <label for="input-photo" style="display:block">
+      <span class="btn orange tall" id="btn-pick-photo">
+        <span class="b-ico">📸</span>
+        <span>VYFOTIŤ ALEBO VYBRAŤ FOTKU</span>
+      </span>
     </label>
-    <input id="input-open" type="file" accept=".html,text/html">
-    <div class="help">Vyber súbor, ktorý ti prišiel (napr. <strong>najdi-to.html</strong>) — hra sa hneď spustí.</div>
-    <div id="open-status" class="status"></div>
-  </div>
-
-  <div id="card-upload" class="card">
-    <h2>Vytvoriť novú hru</h2>
-    <label class="file" for="input-photo">
-      <span class="ico">📷</span><span>VYBRAŤ ALEBO ODFOTIŤ FOTKU</span>
-    </label>
-    <input id="input-photo" type="file" accept="image/*">
-    <div class="help">Fotka zostáva v tvojom telefóne aj v súbore, ktorý pošleš. Nikam sa neposiela.</div>
+    <input id="input-photo" type="file" accept="image/*" style="display:none">
+    <div class="hintline">Fotka zostáva v telefóne. Nikam sa neposiela.</div>
   </div>
 
   <div id="card-editor" class="card hidden">
     <h2>Ťukni na vec, ktorú má hráč nájsť</h2>
-    <div class="stage">
+    <div class="frame">
       <canvas id="preview"></canvas>
     </div>
-    <div class="help">Po ťuknutí vyberieš obrázok, ktorý tú vec predstavuje. Môžeš označiť 3 až 5 vecí.</div>
+    <div class="hintline">Po ťuknutí vyberieš obrázok, ktorý tú vec predstavuje. Označ 3 až 5 vecí.</div>
 
     <div id="chips" class="chips"></div>
 
-    <button id="btn-create" class="primary" disabled>VYTVORIŤ HRU</button>
-    <button id="btn-play" class="second hidden" style="background:#f59e0b;">▶ HRAŤ TERAZ (na tomto telefóne)</button>
-    <button id="btn-share" class="second hidden">POSLAŤ HRU INÉMU</button>
+    <button id="btn-create" class="btn green" disabled><span class="b-ico">✅</span> VYTVORIŤ HRU</button>
+    <button id="btn-play" class="btn orange hidden"><span class="b-ico">▶</span> HRAŤ TERAZ</button>
+    <button id="btn-share" class="btn purple hidden"><span class="b-ico">📤</span> POSLAŤ INÉMU</button>
     <div id="status" class="status"></div>
+  </div>
+
+  <div class="card soft">
+    <h2>Dostal si hru od niekoho?</h2>
+    <label for="input-open" style="display:block">
+      <span class="btn teal" id="btn-pick-open">
+        <span class="b-ico">🎁</span> OTVORIŤ PRIJATÚ HRU
+      </span>
+    </label>
+    <input id="input-open" type="file" accept=".html,text/html" style="display:none">
+    <div class="hintline">Vyber súbor <strong>najdi-to.html</strong>, ktorý ti prišiel v správe.</div>
+    <div id="open-status" class="status"></div>
   </div>
 
 </div>
@@ -157,7 +201,7 @@
     <h3>Čo je to za vec?</h3>
     <p>Vyber obrázok, ktorý to najlepšie vystihuje.</p>
     <div class="emoji-grid" id="emoji-grid"></div>
-    <button class="picker-cancel" id="picker-cancel">Zrušiť</button>
+    <button class="pick-cancel" id="picker-cancel">Zrušiť</button>
   </div>
 </div>
 
@@ -169,7 +213,6 @@
     inputPhoto: document.getElementById("input-photo"),
     inputOpen: document.getElementById("input-open"),
     openStatus: document.getElementById("open-status"),
-    cardUpload: document.getElementById("card-upload"),
     cardEditor: document.getElementById("card-editor"),
     preview: document.getElementById("preview"),
     chips: document.getElementById("chips"),
@@ -177,22 +220,22 @@
     btnPlay: document.getElementById("btn-play"),
     btnShare: document.getElementById("btn-share"),
     status: document.getElementById("status"),
-    playOverlay: document.getElementById("play-overlay"),
-    gameFrame: document.getElementById("game-frame"),
-    btnClosePlay: document.getElementById("btn-close-play"),
     picker: document.getElementById("picker"),
     emojiGrid: document.getElementById("emoji-grid"),
-    pickerCancel: document.getElementById("picker-cancel")
+    pickerCancel: document.getElementById("picker-cancel"),
+    playOverlay: document.getElementById("play-overlay"),
+    gameFrame: document.getElementById("game-frame"),
+    btnClosePlay: document.getElementById("btn-close-play")
   };
 
   var EMOJIS = ["🧸", "🍎", "🔑", "🐻", "👟", "🪑", "💡", "🚗", "⚽", "🎈", "🍌", "🐱",
                 "📚", "🕯️", "🧦", "🎩", "☂️", "🍪", "🧢", "🐶", "🍫", "🎁", "🔔", "🪥"];
 
   var MAX_ITEMS = 5;
-  var state = { img: null, dataUrl: null, items: [], pending: null, file: null, playUrl: null };
-
   var MAX_SIDE = 1600;
   var JPEG_QUALITY = 0.82;
+
+  var state = { img: null, dataUrl: null, items: [], pending: null, file: null };
 
   function setStatus(node, text, kind) {
     node.textContent = text;
@@ -202,16 +245,13 @@
   function drawPreview() {
     if (!state.img) return;
     var cv = el.preview;
-    var wrap = cv.parentElement.clientWidth || 320;
+    var wrapW = cv.parentElement.clientWidth - 22 || 300;
     var ratio = state.img.naturalHeight / state.img.naturalWidth;
 
-    var maxH = Math.max(280, Math.round(window.innerHeight * 0.70));
-    var w = Math.round(wrap);
-    var h = Math.round(wrap * ratio);
-    if (h > maxH) {
-      h = maxH;
-      w = Math.round(maxH / ratio);
-    }
+    var maxH = Math.max(280, Math.round(window.innerHeight * 0.66));
+    var w = Math.round(wrapW);
+    var h = Math.round(wrapW * ratio);
+    if (h > maxH) { h = maxH; w = Math.round(maxH / ratio); }
 
     cv.width = w;
     cv.height = h;
@@ -222,25 +262,37 @@
     ctx.clearRect(0, 0, w, h);
     ctx.drawImage(state.img, 0, 0, w, h);
 
-    var markerSize = Math.max(18, Math.min(w, h) * 0.075);
-    for (var i = 0; i < state.items.length; i++) {
-      var it = state.items[i];
+    var r = Math.max(20, Math.min(w, h) * 0.072);
+    state.items.forEach(function (it, index) {
       var mx = it.x * w;
       var my = it.y * h;
 
       ctx.beginPath();
-      ctx.arc(mx, my, markerSize, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(15, 23, 42, 0.72)";
+      ctx.arc(mx, my, r + 4, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255, 255, 255, .92)";
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(mx, my, r, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffedd5";
       ctx.fill();
       ctx.lineWidth = 3;
-      ctx.strokeStyle = "#38bdf8";
+      ctx.strokeStyle = "#ff7a2f";
       ctx.stroke();
 
-      ctx.font = Math.round(markerSize * 1.25) + "px system-ui, sans-serif";
+      ctx.font = Math.round(r * 1.15) + "px system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(it.e, mx, my + 1);
-    }
+
+      ctx.beginPath();
+      ctx.arc(mx + r * 0.85, my - r * 0.85, r * 0.42, 0, Math.PI * 2);
+      ctx.fillStyle = "#7c3aed";
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.font = "900 " + Math.round(r * 0.55) + "px system-ui, sans-serif";
+      ctx.fillText(String(index + 1), mx + r * 0.85, my - r * 0.85 + 1);
+    });
   }
 
   function renderChips() {
@@ -248,7 +300,7 @@
     state.items.forEach(function (it, index) {
       var chip = document.createElement("div");
       chip.className = "chip";
-      chip.innerHTML = "<span>" + it.e + "</span><small>✕</small>";
+      chip.innerHTML = "<span>" + it.e + "</span><small>✕ " + (index + 1) + "</small>";
       chip.addEventListener("click", function () {
         state.items.splice(index, 1);
         renderChips();
@@ -260,8 +312,10 @@
     el.btnCreate.disabled = state.items.length < 1;
     if (state.items.length === 0) {
       setStatus(el.status, "Zatiaľ nič neoznačené. Ťukni na fotku.", "");
+    } else if (state.items.length < 3) {
+      setStatus(el.status, "Označené " + state.items.length + " — najlepšie sú aspoň 3.", "ok");
     } else {
-      setStatus(el.status, "Označené: " + state.items.length + " z " + MAX_ITEMS + ". Môžeš pridať ďalšiu alebo vytvoriť hru.", "ok");
+      setStatus(el.status, "Označené " + state.items.length + " z " + MAX_ITEMS + ". Môžeš vytvoriť hru.", "ok");
     }
   }
 
@@ -282,10 +336,12 @@
         loaded.onload = function () {
           state.img = loaded;
           state.items = [];
-          el.cardUpload.classList.add("hidden");
           el.cardEditor.classList.remove("hidden");
+          el.btnPlay.classList.add("hidden");
+          el.btnShare.classList.add("hidden");
           drawPreview();
           renderChips();
+          el.cardEditor.scrollIntoView({ behavior: "smooth", block: "start" });
         };
         loaded.src = state.dataUrl;
       };
@@ -310,8 +366,8 @@
         setStatus(el.openStatus, "Toto nie je hra Nájdi to!. Vyber súbor najdi-to.html.", "err");
         return;
       }
-      var url = URL.createObjectURL(new Blob([text], { type: "text/html;charset=utf-8" }));
-      window.location.href = url;
+      el.gameFrame.srcdoc = text;
+      el.playOverlay.classList.remove("hidden");
     };
     reader.onerror = function () {
       setStatus(el.openStatus, "Súbor sa nepodarilo prečítať.", "err");
@@ -321,7 +377,7 @@
 
   el.preview.addEventListener("click", function (event) {
     if (state.items.length >= MAX_ITEMS) {
-      setStatus(el.status, "Maximum je " + MAX_ITEMS + " vecí. Niektorú najprv vymaž (ťukni na štítok).", "err");
+      setStatus(el.status, "Maximum je " + MAX_ITEMS + " vecí. Najprv niektorú vymaž (ťukni na štítok).", "err");
       return;
     }
     var rect = el.preview.getBoundingClientRect();
@@ -356,7 +412,7 @@
   window.addEventListener("resize", drawPreview);
 
   /* ============================================================
-     HERNÝ SÚBOR — samostatná hra s fotkou a zoznamom hľadaných vecí
+     HERNÝ SÚBOR — samostatná hra
      ============================================================ */
 
   var GAME_TEMPLATE = `<!DOCTYPE html>
@@ -364,59 +420,85 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0f172a">
+<meta name="theme-color" content="#fff8ef">
 <title>Nájdi to!</title>
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; padding: 0; }
   body {
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    background: #0f172a; color: #e2e8f0; min-height: 100vh;
-    padding: 12px 12px 28px; display: flex; justify-content: center;
+    color: #2b2118; min-height: 100vh; padding: 12px 12px 26px;
+    background:
+      radial-gradient(circle at 10% 4%, #ffe9c9 0%, rgba(255,233,201,0) 52%),
+      radial-gradient(circle at 92% 2%, #d7f5ff 0%, rgba(215,245,255,0) 46%),
+      #fff8ef;
+    background-attachment: fixed;
+    display: flex; justify-content: center;
   }
   .app { width: 100%; max-width: 640px; position: relative; }
-  .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-  .title { font-weight: 900; font-size: 1.05rem; }
-  .back {
-    background: #1e293b; border: 1px solid #334155; color: #cbd5e1; border-radius: 10px;
-    padding: 8px 12px; font-family: inherit; font-size: .92rem; font-weight: 700; cursor: pointer;
+
+  .hud { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .title { font-weight: 900; font-size: 1.15rem; letter-spacing: -.3px; }
+  .timer {
+    background: #fff; border-radius: 999px; padding: 9px 15px; font-weight: 900;
+    font-variant-numeric: tabular-nums; color: #b45309; box-shadow: 0 4px 0 #ffd9b8;
   }
-  .back.hidden { display: none; }
-  .timer { font-variant-numeric: tabular-nums; font-weight: 800; color: #94a3b8; }
-  .clues { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+
+  .clues { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 10px; }
   .clue {
+    position: relative; width: 64px; height: 64px; display: flex;
+    align-items: center; justify-content: center; font-size: 2rem;
+    background: #fff; border-radius: 20px; box-shadow: 0 5px 0 #ecdfd0;
+    transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+  }
+  .clue.done { background: #dcfce7; box-shadow: 0 5px 0 #a7f3d0; transform: rotate(-5deg) scale(.94); }
+  .clue.done::after {
+    content: "✓"; position: absolute; right: -6px; top: -8px;
+    width: 26px; height: 26px; border-radius: 999px; background: #16a34a;
+    color: #fff; font-size: .95rem; font-weight: 900;
     display: flex; align-items: center; justify-content: center;
-    width: 54px; height: 54px; border-radius: 14px; font-size: 1.7rem;
-    background: #1e293b; border: 2px solid #334155; transition: .15s;
   }
-  .clue.done { background: #064e3b; border-color: #10b981; opacity: .55; transform: scale(.94); }
-  .stage {
-    position: relative; width: 100%; border-radius: 16px; overflow: hidden;
-    background: #0b1220; border: 1px solid #334155;
+
+  .frame {
+    position: relative; background: #fff; padding: 9px; border-radius: 26px;
+    border: 2px dashed #ffd9b8; box-shadow: 0 12px 24px rgba(120, 88, 58, .14);
   }
-  .stage canvas { display: block; width: 100%; height: auto; }
-  .stage.shake { animation: shake .28s; }
+  .frame canvas { display: block; margin: 0 auto; max-width: 100%; height: auto; border-radius: 18px; }
+  .frame.shake { animation: shake .3s; }
   @keyframes shake {
-    0%,100% { transform: translateX(0); }
-    25% { transform: translateX(-6px); }
-    75% { transform: translateX(6px); }
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-7px) rotate(-.6deg); }
+    60% { transform: translateX(7px) rotate(.6deg); }
   }
+
+  .say {
+    margin-top: 12px; background: #fff; border-radius: 20px; padding: 13px 16px;
+    text-align: center; font-size: .98rem; font-weight: 700; color: #6b5a4b;
+    box-shadow: 0 6px 0 #efe3d4;
+  }
+
   .win {
-    position: absolute; inset: 0; background: rgba(2, 6, 23, .92);
+    position: absolute; inset: 0; border-radius: 26px;
+    background: linear-gradient(165deg, #ffd166, #ff8c42);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    text-align: center; padding: 20px; gap: 6px;
+    text-align: center; gap: 8px; padding: 20px; color: #fff;
   }
   .win.hidden { display: none; }
-  .win h2 { margin: 0; font-size: 1.6rem; }
-  .win .stars { font-size: 2.2rem; letter-spacing: 4px; }
-  .win p { margin: 0; color: #cbd5e1; }
+  .win h2 { margin: 0; font-size: 1.75rem; font-weight: 900; text-shadow: 0 3px 0 rgba(160, 74, 0, .28); }
+  .win .stars { font-size: 2.6rem; letter-spacing: 8px; color: #fffbe8; text-shadow: 0 3px 0 rgba(160, 74, 0, .28); }
+  .win .time { font-weight: 800; opacity: .95; }
   .win button {
-    margin-top: 12px; min-height: 56px; padding: 0 26px; border: none; border-radius: 14px;
-    background: #2563eb; color: #fff; font-weight: 800; font-size: 1rem; font-family: inherit;
+    margin-top: 10px; min-height: 58px; padding: 0 28px; border: 0; border-radius: 20px;
+    background: #fff; color: #d85b12; font-weight: 900; font-size: 1.02rem;
+    font-family: inherit; cursor: pointer; box-shadow: 0 7px 0 rgba(160, 74, 0, .3);
   }
-  .hint { color: #94a3b8; font-size: .9rem; text-align: center; margin-top: 10px; line-height: 1.4; }
+  .win button:active { transform: translateY(4px); box-shadow: 0 3px 0 rgba(160, 74, 0, .3); }
+
   .confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; }
-  .confetti i { position: absolute; top: -20px; width: 10px; height: 16px; animation: fall linear forwards; }
+  .confetti i {
+    position: absolute; top: -20px; width: 11px; height: 17px; border-radius: 3px;
+    animation: fall linear forwards;
+  }
   @keyframes fall {
     0% { transform: translateY(-10vh) rotate(0deg); }
     100% { transform: translateY(110vh) rotate(720deg); }
@@ -425,25 +507,24 @@
 </head>
 <body>
 <div class="app">
-  <div class="top">
-    <button class="back hidden" id="btnBack">‹ Späť</button>
+  <div class="hud">
     <div class="title">Nájdi to!</div>
     <div class="timer" id="timer">0:00</div>
   </div>
 
   <div class="clues" id="clues"></div>
 
-  <div class="stage" id="stage">
+  <div class="frame" id="frame">
     <canvas id="board"></canvas>
     <div class="win hidden" id="win">
       <h2 id="winTitle">Našiel si všetko!</h2>
       <div class="stars" id="winStars"></div>
-      <p id="winTime"></p>
+      <div class="time" id="winTime"></div>
       <button id="btnAgain">HRAŤ ZNOVA</button>
     </div>
   </div>
 
-  <div class="hint" id="hint">Ťukni na vec na fotke, ktorá patrí k obrázku hore.</div>
+  <div class="say" id="say">Ťukni na vec, ktorá patrí k obrázku hore.</div>
 </div>
 
 <script id="payload" type="application/json">__PAYLOAD__<\/script>
@@ -458,9 +539,21 @@
   var audio = null;
   var finished = false;
 
+  var HINT_AFTER_MS = 30000;
+  var HINT_SHOW_MS = 5200;
+  var HINT_GAP_MS = 18000;
+
+  var lastProgressAt = 0;
+  var lastHintEnd = 0;
+  var hintTarget = null;
+  var hintStart = 0;
+  var hintActive = false;
+  var ripples = [];
+  var animId = null;
+
   var el = {
     board: document.getElementById("board"),
-    stage: document.getElementById("stage"),
+    frame: document.getElementById("frame"),
     clues: document.getElementById("clues"),
     timer: document.getElementById("timer"),
     win: document.getElementById("win"),
@@ -468,8 +561,7 @@
     winStars: document.getElementById("winStars"),
     winTime: document.getElementById("winTime"),
     btnAgain: document.getElementById("btnAgain"),
-    btnBack: document.getElementById("btnBack"),
-    hint: document.getElementById("hint")
+    say: document.getElementById("say")
   };
 
   function fmt(ms) {
@@ -479,52 +571,41 @@
     return m + ":" + (s < 10 ? "0" : "") + s;
   }
 
-  function beep(freq, dur, vol) {
-    try {
-      if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
-      var osc = audio.createOscillator();
-      var gain = audio.createGain();
-      var now = audio.currentTime;
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(freq, now);
-      gain.gain.setValueAtTime(0.001, now);
-      gain.gain.exponentialRampToValueAtTime(vol || 0.3, now + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
-      osc.connect(gain);
-      gain.connect(audio.destination);
-      osc.start(now);
-      osc.stop(now + dur + 0.02);
-    } catch (err) {}
+  function ac() {
+    if (!audio) {
+      try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audio = null; }
+    }
+    return audio;
   }
 
-  function buzz() {
+  function beep(freq, dur, vol, type) {
+    var ctx = ac();
+    if (!ctx) return;
     try {
-      if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
-      var osc = audio.createOscillator();
-      var gain = audio.createGain();
-      var now = audio.currentTime;
-      osc.type = "square";
-      osc.frequency.setValueAtTime(120, now);
-      gain.gain.setValueAtTime(0.18, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      var now = ctx.currentTime;
+      osc.type = type || "sine";
+      osc.frequency.setValueAtTime(freq, now);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(vol || 0.28, now + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
       osc.connect(gain);
-      gain.connect(audio.destination);
+      gain.connect(ctx.destination);
       osc.start(now);
-      osc.stop(now + 0.2);
-    } catch (err) {}
+      osc.stop(now + dur + 0.03);
+    } catch (e) {}
   }
 
   function draw() {
     if (!img.complete || !img.naturalWidth) return;
     var cv = el.board;
     var ratio = img.naturalHeight / img.naturalWidth;
-    var w = Math.round(el.stage.clientWidth);
-    var maxH = Math.max(280, Math.round(window.innerHeight - 200));
+    var w = Math.round(el.frame.clientWidth - 18);
+    var maxH = Math.max(260, Math.round(window.innerHeight - 240));
     var h = Math.round(w * ratio);
-    if (h > maxH) {
-      h = maxH;
-      w = Math.round(maxH / ratio);
-    }
+    if (h > maxH) { h = maxH; w = Math.round(maxH / ratio); }
+
     cv.width = w;
     cv.height = h;
     cv.style.width = w + "px";
@@ -534,19 +615,73 @@
     ctx.clearRect(0, 0, w, h);
     ctx.drawImage(img, 0, 0, w, h);
 
-    var r = Math.max(14, Math.min(w, h) * 0.06);
+    var minSide = Math.min(w, h);
+    var now = Date.now();
+
+    var r = Math.max(16, minSide * 0.065);
     for (var i = 0; i < items.length; i++) {
       if (!items[i].found) continue;
       var mx = items[i].x * w;
       var my = items[i].y * h;
       ctx.beginPath();
       ctx.arc(mx, my, r, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(16, 185, 129, 0.28)";
+      ctx.fillStyle = "rgba(22, 163, 74, .22)";
       ctx.fill();
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = "#10b981";
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = "#16a34a";
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(mx, my, r, 0, Math.PI * 2);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(255,255,255,.85)";
       ctx.stroke();
     }
+
+    ripples = ripples.filter(function (rp) { return now - rp.t < 550; });
+    ripples.forEach(function (rp) {
+      var p = (now - rp.t) / 550;
+      var rad = minSide * (0.03 + 0.11 * p);
+      ctx.beginPath();
+      ctx.arc(rp.x * w, rp.y * h, rad, 0, Math.PI * 2);
+      ctx.lineWidth = Math.max(2, 7 * (1 - p));
+      ctx.strokeStyle = "rgba(" + rp.rgb + ", " + (0.9 * (1 - p)).toFixed(3) + ")";
+      ctx.stroke();
+    });
+
+    if (hintActive && hintTarget) {
+      var ph = ((now - hintStart) % 1100) / 1100;
+      var rad2 = minSide * (0.10 + 0.13 * ph);
+      ctx.beginPath();
+      ctx.arc(hintTarget.x * w, hintTarget.y * h, rad2, 0, Math.PI * 2);
+      ctx.lineWidth = 7;
+      ctx.strokeStyle = "rgba(255, 122, 47, " + (0.95 * (1 - ph)).toFixed(3) + ")";
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(hintTarget.x * w, hintTarget.y * h, minSide * 0.022, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255, 201, 60, .95)";
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "rgba(255,255,255,.9)";
+      ctx.stroke();
+    }
+  }
+
+  function needsAnim() {
+    return ripples.length > 0 || hintActive;
+  }
+
+  function loop() {
+    draw();
+    if (needsAnim()) {
+      animId = requestAnimationFrame(loop);
+    } else {
+      animId = null;
+    }
+  }
+
+  function kick() {
+    if (animId === null) animId = requestAnimationFrame(loop);
   }
 
   function renderClues() {
@@ -563,20 +698,41 @@
     return items.filter(function (it) { return !it.found; }).length;
   }
 
+  function showHint() {
+    var open = items.filter(function (it) { return !it.found; });
+    if (!open.length) return;
+    hintTarget = open[Math.floor(Math.random() * open.length)];
+    hintStart = Date.now();
+    hintActive = true;
+    el.say.textContent = "Hľadaj tu — bliká to celé kolo.";
+    beep(520, 0.14, 0.16);
+    kick();
+    setTimeout(function () {
+      hintActive = false;
+      hintTarget = null;
+      lastHintEnd = Date.now();
+      draw();
+    }, HINT_SHOW_MS);
+  }
+
   function tick() {
     if (finished) return;
     el.timer.textContent = fmt(Date.now() - start);
+    var idle = Date.now() - lastProgressAt;
+    if (!hintActive && idle > HINT_AFTER_MS && Date.now() - lastHintEnd > HINT_GAP_MS && remaining() > 0) {
+      showHint();
+    }
   }
 
   function confetti() {
     var box = document.createElement("div");
     box.className = "confetti";
-    var colors = ["#facc15", "#22c55e", "#3b82f6", "#ef4444", "#a855f7", "#f97316"];
-    for (var i = 0; i < 70; i++) {
+    var colors = ["#ff7a2f", "#ffc93c", "#16a34a", "#3b82f6", "#a855f7", "#ec4899"];
+    for (var i = 0; i < 80; i++) {
       var bit = document.createElement("i");
       bit.style.left = Math.random() * 100 + "vw";
       bit.style.background = colors[Math.floor(Math.random() * colors.length)];
-      bit.style.animationDuration = (2.2 + Math.random() * 1.8) + "s";
+      bit.style.animationDuration = (2.1 + Math.random() * 1.7) + "s";
       bit.style.animationDelay = (Math.random() * 0.8) + "s";
       box.appendChild(bit);
     }
@@ -589,18 +745,21 @@
   function finishGame() {
     finished = true;
     clearInterval(timerId);
+    hintActive = false;
+    hintTarget = null;
+
     var ms = Date.now() - start;
     var seconds = ms / 1000;
-    var stars = seconds < 20 ? "★★★" : (seconds < 45 ? "★★☆" : "★☆☆");
-    el.winStars.textContent = stars;
+    el.winStars.textContent = seconds < 20 ? "★★★" : (seconds < 45 ? "★★☆" : "★☆☆");
     el.winTime.textContent = "Čas: " + fmt(ms);
     el.win.classList.remove("hidden");
-    el.hint.textContent = "Hotovo! Všetko si našiel.";
+    el.say.textContent = "Hotovo! Všetko si našiel.";
+    draw();
     confetti();
-    beep(660, 0.18, 0.35);
-    setTimeout(function () { beep(880, 0.22, 0.35); }, 190);
-    setTimeout(function () { beep(1180, 0.3, 0.35); }, 400);
-    if (navigator.vibrate) navigator.vibrate([80, 60, 80, 60, 160]);
+    beep(660, 0.16, 0.3);
+    setTimeout(function () { beep(880, 0.18, 0.3); }, 170);
+    setTimeout(function () { beep(1180, 0.28, 0.3); }, 360);
+    if (navigator.vibrate) navigator.vibrate([70, 50, 70, 50, 150]);
   }
 
   function handleTap(event) {
@@ -617,32 +776,52 @@
       var dx = (items[i].x - px) * rect.width;
       var dy = (items[i].y - py) * rect.height;
       var d = Math.sqrt(dx * dx + dy * dy);
-      if (d < bestDist) {
-        bestDist = d;
-        best = items[i];
-      }
+      if (d < bestDist) { bestDist = d; best = items[i]; }
     }
 
-    var tolerance = Math.min(rect.width, rect.height) * 0.11;
+    var minSide = Math.min(rect.width, rect.height);
+    var tolerance = minSide * 0.11;
 
     if (best && bestDist <= tolerance) {
       best.found = true;
+      ripples.push({ x: px, y: py, t: Date.now(), rgb: "22, 163, 74" });
+      lastProgressAt = Date.now();
+      hintActive = false;
+      hintTarget = null;
       draw();
       renderClues();
-      beep(520 + remaining() * 60, 0.16, 0.32);
-      if (navigator.vibrate) navigator.vibrate(50);
+      kick();
+      beep(560 + remaining() * 70, 0.15, 0.3);
+      if (navigator.vibrate) navigator.vibrate(45);
       if (remaining() === 0) {
         finishGame();
       } else {
-        el.hint.textContent = "Dobre! Ešte " + remaining() + ".";
+        el.say.textContent = "Dobre! Ešte " + remaining() + ".";
       }
-    } else {
-      el.stage.classList.add("shake");
-      setTimeout(function () { el.stage.classList.remove("shake"); }, 300);
-      buzz();
-      if (navigator.vibrate) navigator.vibrate(90);
-      el.hint.textContent = "Tu to nie je. Skús inde.";
+      return;
     }
+
+    var far = Math.min(1, Math.max(0, (bestDist - tolerance) / (minSide * 0.55)));
+    if (!best) far = 1;
+    var freq = 940 - 700 * far;
+    var rgb = far < 0.28 ? "255, 122, 47" : (far < 0.62 ? "255, 201, 60" : "96, 165, 250");
+
+    ripples.push({ x: px, y: py, t: Date.now(), rgb: rgb });
+    kick();
+
+    beep(freq, 0.12, 0.16, "triangle");
+    if (far < 0.28) {
+      beep(freq * 1.06, 0.1, 0.12, "sine");
+      el.say.textContent = "HORÚCO! Si hneď vedľa.";
+    } else if (far < 0.62) {
+      el.say.textContent = "Teplo — ideš správnym smerom.";
+    } else {
+      el.say.textContent = "Zima. Skús celkom inú časť fotky.";
+      el.frame.classList.add("shake");
+      setTimeout(function () { el.frame.classList.remove("shake"); }, 320);
+      if (navigator.vibrate) navigator.vibrate(80);
+    }
+    draw();
   }
 
   function reset() {
@@ -650,9 +829,15 @@
       return { x: it.x, y: it.y, e: it.e, found: false };
     });
     finished = false;
+    ripples = [];
+    hintActive = false;
+    hintTarget = null;
     start = Date.now();
+    lastProgressAt = start;
+    lastHintEnd = 0;
+
     el.win.classList.add("hidden");
-    el.hint.textContent = "Ťukni na vec na fotke, ktorá patrí k obrázku hore.";
+    el.say.textContent = "Ťukni na vec, ktorá patrí k obrázku hore.";
     draw();
     renderClues();
     clearInterval(timerId);
@@ -662,14 +847,6 @@
 
   el.board.addEventListener("click", handleTap);
   el.btnAgain.addEventListener("click", reset);
-
-  if (data.local) {
-    el.btnBack.classList.remove("hidden");
-    el.btnBack.addEventListener("click", function () {
-      if (window.history.length > 1) window.history.back();
-    });
-  }
-
   window.addEventListener("resize", draw);
 
   img.onload = function () { reset(); };
@@ -682,10 +859,9 @@
 </body>
 </html>`;
 
-  function buildGameFile(localPlay) {
+  function buildGameFile() {
     var payload = {
-      v: 1,
-      local: !!localPlay,
+      v: 2,
       img: state.dataUrl,
       items: state.items.map(function (it) {
         return {
@@ -723,26 +899,20 @@
       document.body.removeChild(a);
       setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
 
-      var localHtml = buildGameFile(true);
-      if (state.playUrl) URL.revokeObjectURL(state.playUrl);
-      state.playUrl = URL.createObjectURL(new Blob([localHtml], { type: "text/html;charset=utf-8" }));
+      el.gameFrame.srcdoc = html;
       el.btnPlay.classList.remove("hidden");
-
-      setStatus(el.status, "Hra je hotová (" + Math.round(blob.size / 1024) + " kB). Hraj hneď na tomto telefóne, alebo ju pošli ďalej.", "ok");
-
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         el.btnShare.classList.remove("hidden");
       }
+      setStatus(el.status, "Hra je hotová (" + Math.round(blob.size / 1024) + " kB). Klikni HRAŤ TERAZ alebo ju pošli.", "ok");
     } catch (err) {
       setStatus(el.status, "Hru sa nepodarilo vyrobiť: " + (err && err.message ? err.message : err), "err");
     }
   });
 
   el.btnPlay.addEventListener("click", function () {
-    if (!state.playUrl) return;
-    el.gameFrame.srcdoc = buildGameFile(false);
+    el.gameFrame.srcdoc = buildGameFile();
     el.playOverlay.classList.remove("hidden");
-    el.btnClosePlay.scrollIntoView({ block: "start" });
     window.scrollTo(0, 0);
   });
 
