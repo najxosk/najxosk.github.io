@@ -80,6 +80,19 @@
     background: #0f172a; cursor: pointer; padding: 0;
   }
   .emoji-grid button:active { background: #1d4ed8; }
+  .play-overlay {
+    position: fixed; inset: 0; z-index: 30; background: #0f172a;
+    display: flex; flex-direction: column;
+  }
+  .play-overlay.hidden { display: none; }
+  .play-bar { padding: 10px 12px 8px; border-bottom: 1px solid #334155; }
+  .play-bar button {
+    background: #1e293b; border: 1px solid #334155; color: #cbd5e1;
+    border-radius: 10px; padding: 10px 14px; font-family: inherit;
+    font-size: .95rem; font-weight: 700; cursor: pointer;
+  }
+  #game-frame { flex: 1; width: 100%; border: 0; background: #0f172a; }
+
   .picker-cancel {
     margin-top: 14px; width: 100%; min-height: 52px; border-radius: 14px;
     border: none; background: #475569; color: #fff; font-weight: 800;
@@ -125,10 +138,18 @@
     <div id="chips" class="chips"></div>
 
     <button id="btn-create" class="primary" disabled>VYTVORIŤ HRU</button>
-    <button id="btn-share" class="second hidden">POSLAŤ HRU</button>
+    <button id="btn-play" class="second hidden" style="background:#f59e0b;">▶ HRAŤ TERAZ (na tomto telefóne)</button>
+    <button id="btn-share" class="second hidden">POSLAŤ HRU INÉMU</button>
     <div id="status" class="status"></div>
   </div>
 
+</div>
+
+<div id="play-overlay" class="play-overlay hidden">
+  <div class="play-bar">
+    <button id="btn-close-play">‹ Späť do tvorby hry</button>
+  </div>
+  <iframe id="game-frame" title="Hra"></iframe>
 </div>
 
 <div id="picker" class="picker hidden">
@@ -153,8 +174,12 @@
     preview: document.getElementById("preview"),
     chips: document.getElementById("chips"),
     btnCreate: document.getElementById("btn-create"),
+    btnPlay: document.getElementById("btn-play"),
     btnShare: document.getElementById("btn-share"),
     status: document.getElementById("status"),
+    playOverlay: document.getElementById("play-overlay"),
+    gameFrame: document.getElementById("game-frame"),
+    btnClosePlay: document.getElementById("btn-close-play"),
     picker: document.getElementById("picker"),
     emojiGrid: document.getElementById("emoji-grid"),
     pickerCancel: document.getElementById("picker-cancel")
@@ -164,7 +189,7 @@
                 "📚", "🕯️", "🧦", "🎩", "☂️", "🍪", "🧢", "🐶", "🍫", "🎁", "🔔", "🪥"];
 
   var MAX_ITEMS = 5;
-  var state = { img: null, dataUrl: null, items: [], pending: null, file: null };
+  var state = { img: null, dataUrl: null, items: [], pending: null, file: null, playUrl: null };
 
   var MAX_SIDE = 1600;
   var JPEG_QUALITY = 0.82;
@@ -352,6 +377,11 @@
   .app { width: 100%; max-width: 640px; position: relative; }
   .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .title { font-weight: 900; font-size: 1.05rem; }
+  .back {
+    background: #1e293b; border: 1px solid #334155; color: #cbd5e1; border-radius: 10px;
+    padding: 8px 12px; font-family: inherit; font-size: .92rem; font-weight: 700; cursor: pointer;
+  }
+  .back.hidden { display: none; }
   .timer { font-variant-numeric: tabular-nums; font-weight: 800; color: #94a3b8; }
   .clues { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
   .clue {
@@ -396,6 +426,7 @@
 <body>
 <div class="app">
   <div class="top">
+    <button class="back hidden" id="btnBack">‹ Späť</button>
     <div class="title">Nájdi to!</div>
     <div class="timer" id="timer">0:00</div>
   </div>
@@ -437,6 +468,7 @@
     winStars: document.getElementById("winStars"),
     winTime: document.getElementById("winTime"),
     btnAgain: document.getElementById("btnAgain"),
+    btnBack: document.getElementById("btnBack"),
     hint: document.getElementById("hint")
   };
 
@@ -631,6 +663,13 @@
   el.board.addEventListener("click", handleTap);
   el.btnAgain.addEventListener("click", reset);
 
+  if (data.local) {
+    el.btnBack.classList.remove("hidden");
+    el.btnBack.addEventListener("click", function () {
+      if (window.history.length > 1) window.history.back();
+    });
+  }
+
   window.addEventListener("resize", draw);
 
   img.onload = function () { reset(); };
@@ -643,9 +682,10 @@
 </body>
 </html>`;
 
-  function buildGameFile() {
+  function buildGameFile(localPlay) {
     var payload = {
       v: 1,
+      local: !!localPlay,
       img: state.dataUrl,
       items: state.items.map(function (it) {
         return {
@@ -683,7 +723,12 @@
       document.body.removeChild(a);
       setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
 
-      setStatus(el.status, "Hra je hotová a stiahla sa (" + Math.round(blob.size / 1024) + " kB). Pošli ju ako súbor.", "ok");
+      var localHtml = buildGameFile(true);
+      if (state.playUrl) URL.revokeObjectURL(state.playUrl);
+      state.playUrl = URL.createObjectURL(new Blob([localHtml], { type: "text/html;charset=utf-8" }));
+      el.btnPlay.classList.remove("hidden");
+
+      setStatus(el.status, "Hra je hotová (" + Math.round(blob.size / 1024) + " kB). Hraj hneď na tomto telefóne, alebo ju pošli ďalej.", "ok");
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         el.btnShare.classList.remove("hidden");
@@ -691,6 +736,19 @@
     } catch (err) {
       setStatus(el.status, "Hru sa nepodarilo vyrobiť: " + (err && err.message ? err.message : err), "err");
     }
+  });
+
+  el.btnPlay.addEventListener("click", function () {
+    if (!state.playUrl) return;
+    el.gameFrame.srcdoc = buildGameFile(false);
+    el.playOverlay.classList.remove("hidden");
+    el.btnClosePlay.scrollIntoView({ block: "start" });
+    window.scrollTo(0, 0);
+  });
+
+  el.btnClosePlay.addEventListener("click", function () {
+    el.playOverlay.classList.add("hidden");
+    el.gameFrame.srcdoc = "";
   });
 
   el.btnShare.addEventListener("click", function () {
